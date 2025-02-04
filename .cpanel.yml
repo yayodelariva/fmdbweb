@@ -1,0 +1,8 @@
+---
+deployment:
+  tasks:
+    - "export DEPLOYPATH=/home1/bgyakwmy/public_html/"
+    - "/bin/cp -R images $DEPLOYPATH"
+    - "/bin/cp index.js $DEPLOYPATH"
+    - "/bin/cp template.html $DEPLOYPATH"
+    - "/bin/cp style.css $DEPLOYPATH"
