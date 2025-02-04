@@ -4,5 +4,5 @@ deployment:
     - "export DEPLOYPATH=/home1/bgyakwmy/public_html/website_aae26e63/"
     - "/bin/cp -R images $DEPLOYPATH"
     - "/bin/cp index.js $DEPLOYPATH"
-    - "/bin/cp template.html $DEPLOYPATH"
+    - "/bin/cp index.html $DEPLOYPATH"
     - "/bin/cp style.css $DEPLOYPATH"
