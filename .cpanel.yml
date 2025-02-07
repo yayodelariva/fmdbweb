@@ -2,4 +2,7 @@
 deployment:
   tasks:
     - "export DEPLOYPATH=/home1/bgyakwmy/public_html/website_aae26e63/"
-    - "/bin/cp -R dist $DEPLOYPATH"
+    - "/bin/cp -R dist/index.html $DEPLOYPATH"
+    - "/bin/cp -R dist/main.js $DEPLOYPATH"
+    - "/bin/cp -R dist/*.png $DEPLOYPATH"
+    - "/bin/cp -R dist/*.ico $DEPLOYPATH"
