@@ -5,4 +5,3 @@ deployment:
     - "/bin/cp -R dist/images $DEPLOYPATH"
     - "/bin/cp dist/index.html $DEPLOYPATH"
     - "/bin/cp dist/main.js $DEPLOYPATH"
-    - "/bin/cp favicon.ico $DEPLOYPATH"
