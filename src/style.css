@@ -32,12 +32,64 @@ body {
   gap: 1em;
 }
 
+@media (max-width: 1080px) {
+  .proximamenteWrapper {
+    max-width: 200px;
+    text-align: center;
+  }
+}
+
 .proximamenteContainer {
   font-size: 2.5em;
 }
 
 .comingSoonContainer {
-  font-size: 2em;
+  font-size: 2.5em;
+}
+
+.buttonsWrapper {
+  display: flex;
+  gap: 2em;
+}
+
+@media (max-width: 1080px) {
+  .buttonsWrapper {
+    flex-direction: column;
+  }
+}
+
+.afiliacionBtn {
+  font-family: "nunito";
+
+  font-weight: 300;
+  font-size: 2.5em;
+  color: rgb(39, 39, 39);
+  background-color: rgb(21, 143, 102);
+  border-style: solid;
+  border-color: rgb(0, 50, 0);
+  border-radius: 5px;
+}
+.afiliacionBtn:hover {
+  color: rgb(21, 143, 102);
+  background-color: rgb(12, 71, 52);
+  cursor: pointer;
+}
+
+.nacionalesBtn {
+  font-family: "nunito";
+  font-weight: 300;
+  font-size: 2.5em;
+  color: rgb(39, 39, 39);
+  background-color: rgb(21, 143, 102);
+  border-style: solid;
+  border-color: rgb(0, 50, 0);
+  border-radius: 5px;
+}
+
+.nacionalesBtn:hover {
+  color: rgb(21, 143, 102);
+  background-color: rgb(12, 71, 52);
+  cursor: pointer;
 }
 
 .adomexLogo {
