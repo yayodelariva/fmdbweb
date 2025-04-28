@@ -24,6 +24,12 @@ body {
   width: 35%;
 }
 
+@media (max-width: 1080px) {
+  .logoContainer {
+    padding-top: 15em;
+  }
+}
+
 .proximamenteWrapper {
   display: flex;
   flex-direction: column;
@@ -34,7 +40,7 @@ body {
 
 @media (max-width: 1080px) {
   .proximamenteWrapper {
-    max-width: 200px;
+    max-width: 230px;
     text-align: center;
   }
 }
@@ -43,8 +49,20 @@ body {
   font-size: 2.5em;
 }
 
+@media (max-width: 1080px) {
+  .proximamenteContainer {
+    font-size: 1.5em;
+  }
+}
+
 .comingSoonContainer {
   font-size: 2.5em;
+}
+
+@media (max-width: 1080px) {
+  .comingSoonContainer {
+    font-size: 1.5em;
+  }
 }
 
 .buttonsWrapper {
@@ -55,6 +73,7 @@ body {
 @media (max-width: 1080px) {
   .buttonsWrapper {
     flex-direction: column;
+    align-items: center;
   }
 }
 
