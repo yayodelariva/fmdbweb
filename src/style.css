@@ -3,6 +3,7 @@
 
 body {
   background-color: rgb(17, 117, 84);
+  margin: 0
 }
 
 .mainContent {
@@ -17,17 +18,18 @@ body {
   font-family: "nunito";
 }
 
+@media (max-width: 1080px) {
+  .mainContent {
+    padding-top: 2em;
+    padding-bottom: 6.5em;
+  }
+}
+
 .logoContainer {
   display: flex;
   justify-content: center;
   height: 35%;
   width: 35%;
-}
-
-@media (max-width: 1080px) {
-  .logoContainer {
-    padding-top: 15em;
-  }
 }
 
 .proximamenteWrapper {
