@@ -1,7 +1,6 @@
 ---
 deployment:
   tasks:
-    - "export DEPLOYPATH=/home1/website_09fb3217/public_html/"
-    - /bin/cp -R dist/assets $DEPLOYPATH
-    - /bin/cp -R dist/index.html $DEPLOYPATH
-    - /bin/cp -R dist/vite.svg $DEPLOYPATH
+    - export DEPLOYPATH=/home1/website_09fb3217/public_html/
+    - /bin/rm -rf $DEPLOYPATH*
+    - /bin/cp -r /home1/udmbypmy/public_html/website_09fb3217/dist/. $DEPLOYPATH
