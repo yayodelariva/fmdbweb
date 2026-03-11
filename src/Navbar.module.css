@@ -1,0 +1,19 @@
+.navbarContainer {
+  display: flex;
+  background-color: rgb(17, 117, 84);
+  width: 100%;
+  height: 90px;
+}
+
+a {
+  color: blanchedalmond;
+  text-decoration: none;
+}
+
+.navbarLinks {
+  display: flex;
+  list-style-type: none;
+
+  justify-content: space-between;
+  gap: 1rem;
+}
