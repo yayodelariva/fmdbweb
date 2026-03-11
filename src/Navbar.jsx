@@ -1,9 +1,13 @@
 import { NavLink } from 'react-router-dom'
 import styles from './Navbar.module.css'
+import logo from './media/FMDB_logo.png'
 function Navbar(){
     return (
         <div className={styles.navbarContainer}>
             <ul className={styles.navbarLinks}>
+            <NavLink to="/">
+            <img src={logo} alt="Home" className={styles.logo} />
+            </NavLink>
             <NavLink to="/afiliacion">Afiliación</NavLink>
             <NavLink to="/ranking">Ranking</NavLink>
             <NavLink to="/organigrama">Organigrama</NavLink>
