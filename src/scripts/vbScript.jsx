@@ -2,7 +2,7 @@ import { useState } from "react";
 
 export default function EmbedScript() {
   const [channel] = useState("radiomaxiquatrevingts"); //name of the channel
-  const [domain] = useState("https://www.dodgeballmexico.com"); //the domain where the embed will be used example: "google.com"
+  const [domain] = useState("dodgeballmexico.com"); //the domain where the embed will be used example: "google.com"
 
   return (
     <iframe
