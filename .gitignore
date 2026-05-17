@@ -17,3 +17,4 @@ wp-content/*
 !wp-content/themes/
 wp-content/themes/*
 !wp-content/themes/fmdb-theme/
+!wp-content/mu-plugins/
