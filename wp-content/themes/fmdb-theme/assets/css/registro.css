@@ -1,0 +1,140 @@
+/* === Registration Page === */
+.fmdb-registro {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+    background: var(--fmdb-pale-green);
+}
+.fmdb-registro__card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 4px 24px rgba(8,80,65,0.10);
+}
+.fmdb-registro__logo {
+    text-align: center;
+    margin-bottom: 24px;
+}
+.fmdb-registro__logo-img { max-height: 56px; width: auto; }
+.fmdb-registro__logo-text {
+    display: inline-block;
+    background: var(--fmdb-dark-green);
+    color: var(--fmdb-text-dark);
+    font-size: 1.4rem;
+    font-weight: 800;
+    padding: 8px 20px;
+    border-radius: 8px;
+    letter-spacing: 0.05em;
+}
+.fmdb-registro__title {
+    text-align: center;
+    font-size: 1.6rem;
+    margin: 0 0 6px;
+    color: var(--fmdb-dark-green);
+}
+.fmdb-registro__subtitle {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #777;
+    margin: 0 0 28px;
+}
+
+/* Notices */
+.fmdb-registro__notice {
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+.fmdb-registro__notice p { margin: 2px 0; }
+.fmdb-registro__notice--success {
+    background: var(--fmdb-pale-green);
+    border-left: 4px solid var(--fmdb-green);
+    color: var(--fmdb-dark-green);
+}
+.fmdb-registro__notice--error {
+    background: #fff0f0;
+    border-left: 4px solid #c0392b;
+    color: #7b1f1f;
+}
+
+/* Form */
+.fmdb-registro__form { display: flex; flex-direction: column; gap: 16px; }
+.fmdb-registro__row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fmdb-registro__field { display: flex; flex-direction: column; gap: 5px; }
+.fmdb-registro__field label {
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: #333;
+}
+.fmdb-registro__field input {
+    border: 1px solid var(--fmdb-neutral);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+.fmdb-registro__field input:focus {
+    border-color: var(--fmdb-green);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+}
+
+/* Remember me */
+.fmdb-login__remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #555;
+    cursor: pointer;
+}
+.fmdb-login__remember input { margin: 0; accent-color: var(--fmdb-green); }
+
+/* Submit */
+.fmdb-registro__btn {
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+    padding: 12px;
+    font-size: 1rem;
+}
+
+/* Forgot password link */
+.fmdb-registro__forgot {
+    text-align: center;
+    margin: 4px 0 0;
+    font-size: 0.83rem;
+}
+.fmdb-registro__forgot a {
+    color: #888;
+    text-decoration: none;
+}
+.fmdb-registro__forgot a:hover { color: var(--fmdb-dark-green); text-decoration: underline; }
+
+/* Login link */
+.fmdb-registro__login-link {
+    text-align: center;
+    margin: 20px 0 0;
+    font-size: 0.88rem;
+    color: #666;
+}
+.fmdb-registro__login-link a {
+    color: var(--fmdb-green);
+    font-weight: 600;
+    text-decoration: none;
+}
+.fmdb-registro__login-link a:hover { text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 520px) {
+    .fmdb-registro__card { padding: 32px 20px; }
+    .fmdb-registro__row { grid-template-columns: 1fr; }
+}

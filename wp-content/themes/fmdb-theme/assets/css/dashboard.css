@@ -1,0 +1,297 @@
+/* === Representative Dashboard === */
+.fmdb-dashboard { min-height: 60vh; }
+
+/* --- Profile bar --- */
+.fmdb-dashboard__profile {
+    background: var(--fmdb-dark-green);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.fmdb-dashboard__profile-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.fmdb-profile-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--fmdb-green);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fmdb-profile-name {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.9);
+    font-weight: 500;
+}
+.fmdb-profile-logout {
+    margin-left: auto;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.fmdb-profile-logout:hover { color: #fff; }
+
+/* --- Hero --- */
+.fmdb-dashboard-hero {
+    background: var(--fmdb-dark-green);
+    padding: 40px 0;
+    color: var(--fmdb-text-dark);
+}
+.fmdb-dashboard-hero__inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+/* Reuse .fmdb-team-crest from team-single */
+.fmdb-dashboard-hero__info { flex: 1; }
+.fmdb-dashboard-hero__label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--fmdb-light-green);
+    margin: 0 0 6px;
+}
+.fmdb-dashboard-hero__info h1 {
+    margin: 0 0 8px;
+    font-size: 1.8rem;
+    color: #fff;
+}
+.fmdb-dashboard-hero__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    opacity: 0.85;
+    flex-wrap: wrap;
+}
+.fmdb-dashboard-hero__stats {
+    display: flex;
+    gap: 24px;
+    flex-shrink: 0;
+}
+.fmdb-dash-stat { text-align: center; }
+.fmdb-dash-stat span {
+    display: block;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--fmdb-mid-green);
+    line-height: 1;
+}
+.fmdb-dash-stat small {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.7);
+    margin-top: 3px;
+    display: block;
+}
+
+/* --- Team switcher (managers with multiple teams) --- */
+.fmdb-team-switcher {
+    background: var(--fmdb-pale-green);
+    border-bottom: 1px solid var(--fmdb-neutral);
+}
+.fmdb-team-switcher__inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.fmdb-team-switcher__label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--fmdb-dark-green);
+    white-space: nowrap;
+}
+.fmdb-team-switcher__select {
+    border: 1px solid var(--fmdb-neutral);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.88rem;
+    background: #fff;
+    cursor: pointer;
+    min-width: 200px;
+}
+.fmdb-team-switcher__select:focus {
+    border-color: var(--fmdb-green);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+}
+
+/* --- Body --- */
+.fmdb-dashboard__body {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 32px 60px;
+}
+
+/* --- Notice --- */
+.fmdb-dashboard__notice {
+    background: var(--fmdb-pale-green);
+    border-left: 4px solid var(--fmdb-green);
+    padding: 14px 20px;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    color: var(--fmdb-dark-green);
+    font-weight: 500;
+    margin-bottom: 24px;
+}
+
+/* --- Tabs (same pattern as team-single) --- */
+.fmdb-dashboard__tabs { }
+.fmdb-tabs-nav {
+    display: flex;
+    border-bottom: 2px solid var(--fmdb-neutral);
+    margin-bottom: 0;
+    gap: 0;
+}
+.fmdb-tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 26px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    color: #555;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+    font-weight: 500;
+}
+.fmdb-tab-btn:hover,
+.fmdb-tab-btn:focus { background: none; box-shadow: none; outline: none; color: var(--fmdb-dark-green); }
+.fmdb-tab-btn.active { color: var(--fmdb-green); border-bottom-color: var(--fmdb-green); }
+
+.fmdb-tab-panel { display: none; padding: 28px 0; }
+.fmdb-tab-panel.active { display: block; }
+
+/* --- ACF form overrides --- */
+.acf-form { max-width: 720px; }
+
+/* Field label */
+.acf-label label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    text-transform: none;
+}
+.acf-label .description { color: #888; font-size: 0.78rem; }
+
+/* Text / number / email / url inputs */
+.acf-field input[type="text"],
+.acf-field input[type="number"],
+.acf-field input[type="email"],
+.acf-field input[type="url"],
+.acf-field textarea,
+.acf-field select {
+    border: 1px solid var(--fmdb-neutral) !important;
+    border-radius: 6px !important;
+    padding: 9px 12px !important;
+    font-size: 0.9rem !important;
+    width: 100% !important;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.acf-field input:focus,
+.acf-field textarea:focus,
+.acf-field select:focus {
+    border-color: var(--fmdb-green) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.12) !important;
+}
+
+/* Checkbox */
+.acf-checkbox-list li label { font-size: 0.9rem; }
+
+/* Repeater */
+.acf-repeater .acf-row-handle { background: var(--fmdb-pale-green) !important; }
+.acf-repeater .acf-button.button { background: var(--fmdb-green) !important; color: #fff !important; border-color: var(--fmdb-green) !important; border-radius: 6px !important; }
+.acf-repeater .acf-button.button:hover { background: var(--fmdb-dark-green) !important; border-color: var(--fmdb-dark-green) !important; }
+.acf-repeater thead th { background: var(--fmdb-dark-green) !important; color: var(--fmdb-text-dark) !important; font-size: 0.78rem !important; text-transform: uppercase; }
+
+/* Submit button */
+.fmdb-form-submit {
+    margin-top: 12px;
+    cursor: pointer;
+}
+
+/* --- No team assigned --- */
+.fmdb-dashboard__no-team {
+    max-width: 480px;
+    margin: 80px auto;
+    text-align: center;
+    padding: 0 24px;
+}
+.fmdb-dashboard__no-team-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--fmdb-pale-green);
+    color: var(--fmdb-green);
+    font-size: 2rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+}
+.fmdb-dashboard__no-team h1 { margin: 0 0 12px; color: var(--fmdb-dark-green); }
+.fmdb-dashboard__no-team p { color: #666; margin: 0 0 28px; line-height: 1.65; }
+
+/* --- Footer link --- */
+.fmdb-dashboard__footer-link {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--fmdb-neutral);
+}
+
+/* --- Badge colors (needed in hero) --- */
+.fmdb-badge { padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; }
+.fmdb-badge--varonil { background: #1a6eb5; color: #fff; }
+.fmdb-badge--femenil { background: #b51a6e; color: #fff; }
+.fmdb-badge--mixto   { background: var(--fmdb-green); color: #fff; }
+
+/* --- Plantel form --- */
+.fmdb-plantel-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.fmdb-plantel-row { display: flex; align-items: center; gap: 10px; background: #fff; border: 1.5px solid var(--fmdb-neutral); border-radius: 10px; padding: 10px 14px; flex-wrap: wrap; }
+.fmdb-plantel-row__player { display: flex; align-items: center; gap: 8px; min-width: 160px; flex: 1; font-size: 0.9rem; font-weight: 600; color: var(--fmdb-dark-green); }
+.fmdb-plantel-input { border: 1px solid var(--fmdb-neutral); border-radius: 6px; padding: 7px 10px; font-size: 0.85rem; }
+.fmdb-plantel-input--num { width: 60px; text-align: center; }
+.fmdb-plantel-select { border: 1px solid var(--fmdb-neutral); border-radius: 6px; padding: 7px 10px; font-size: 0.85rem; background: #fff; cursor: pointer; }
+.fmdb-plantel-select--sm { min-width: 90px; }
+.fmdb-plantel-input:focus,
+.fmdb-plantel-select:focus { border-color: var(--fmdb-green); outline: none; box-shadow: 0 0 0 3px rgba(29,158,117,.1); }
+.fmdb-plantel-cap { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; color: #555; cursor: pointer; white-space: nowrap; }
+.fmdb-plantel-cap input { accent-color: var(--fmdb-green); }
+.fmdb-plantel-remove { margin-left: auto; background: none; border: none; color: #bbb; font-size: 1rem; cursor: pointer; padding: 4px 6px; border-radius: 4px; line-height: 1; transition: color .15s, background .15s; }
+.fmdb-plantel-remove:hover { color: #c0392b; background: #fff0f0; }
+
+.fmdb-plantel-add { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-top: 1.5px dashed var(--fmdb-neutral); flex-wrap: wrap; }
+.fmdb-plantel-add__select { flex: 1; min-width: 200px; border: 1px solid var(--fmdb-neutral); border-radius: 6px; padding: 8px 12px; font-size: 0.9rem; background: #fff; }
+.fmdb-plantel-add__select:focus { border-color: var(--fmdb-green); outline: none; box-shadow: 0 0 0 3px rgba(29,158,117,.1); }
+.fmdb-plantel-footer { padding-top: 20px; }
+.fmdb-plantel-empty { margin-top: 16px; }
+
+/* --- Responsive --- */
+@media (max-width: 700px) {
+    .fmdb-dashboard-hero__inner { flex-direction: column; text-align: center; gap: 16px; }
+    .fmdb-dashboard-hero__meta { justify-content: center; }
+    .fmdb-dashboard-hero__stats { justify-content: center; }
+    .fmdb-dashboard__body { padding: 24px 20px 48px; }
+    .fmdb-tab-btn { padding: 10px 14px; font-size: 0.85rem; }
+}

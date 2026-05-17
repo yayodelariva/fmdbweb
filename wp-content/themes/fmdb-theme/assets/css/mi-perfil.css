@@ -1,0 +1,81 @@
+/* === Mi Perfil === */
+.fmdb-perfil {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+    background: var(--fmdb-pale-green);
+}
+.fmdb-perfil__card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 4px 24px rgba(8,80,65,0.10);
+}
+.fmdb-perfil__title {
+    text-align: center;
+    font-size: 1.6rem;
+    margin: 0 0 28px;
+    color: var(--fmdb-dark-green);
+}
+.fmdb-perfil__form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Avatar */
+.fmdb-perfil__avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.fmdb-perfil__avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--fmdb-green);
+    color: #fff;
+    font-size: 2.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 3px solid var(--fmdb-light-green);
+}
+.fmdb-perfil__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.fmdb-perfil__avatar-btn {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(8,80,65,0.35);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--fmdb-dark-green);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.fmdb-perfil__avatar-btn:hover {
+    background: var(--fmdb-pale-green);
+    border-color: var(--fmdb-green);
+}
+.fmdb-perfil__file-input { display: none; }
+.fmdb-perfil__avatar-hint {
+    font-size: 0.78rem;
+    color: #999;
+    margin: 0;
+}
+
+@media (max-width: 520px) {
+    .fmdb-perfil__card { padding: 32px 20px; }
+}

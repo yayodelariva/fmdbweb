@@ -1,0 +1,45 @@
+/* === League Single === */
+.fmdb-league-single { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+
+/* Hero (shares .fmdb-team-crest from team-single) */
+.fmdb-league-hero { background: var(--fmdb-dark-green); color: var(--fmdb-text-dark); padding: 40px 32px; border-radius: 12px; margin: 32px 0 0; }
+.fmdb-league-hero__inner { display: flex; gap: 32px; align-items: center; }
+.fmdb-league-hero__info { flex: 1; }
+.fmdb-league-hero__label { margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fmdb-light-green); }
+.fmdb-league-hero__info h1 { margin: 0 0 10px; font-size: 1.8rem; color: #fff; }
+.fmdb-league-hero__meta { display: flex; gap: 12px; flex-wrap: wrap; margin: 0; opacity: 0.85; font-size: 0.9rem; }
+.fmdb-league-hero__meta span { display: inline-flex; align-items: center; }
+.fmdb-league-hero__meta span + span::before { content: "•"; margin-right: 12px; opacity: 0.5; }
+
+/* Body */
+.fmdb-league-body { padding: 32px 0 0; }
+.fmdb-league-body__inner { display: flex; flex-direction: column; gap: 32px; }
+.fmdb-league-body h2 { font-size: 1.15rem; color: var(--fmdb-dark-green); margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--fmdb-neutral); }
+.fmdb-league-about p { color: #555; line-height: 1.7; font-size: 0.95rem; margin: 0; }
+
+/* Team grid (shares .fmdb-team-card / .fmdb-team-grid from equipos.css when bundled) */
+.fmdb-league-teams .fmdb-team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.fmdb-league-teams .fmdb-team-card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16px 12px; border: 1px solid var(--fmdb-neutral); border-radius: 8px; text-decoration: none; color: inherit; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; background: #fff; }
+.fmdb-league-teams .fmdb-team-card:hover { border-color: var(--fmdb-green); box-shadow: 0 4px 12px rgba(29,158,117,0.12); transform: translateY(-2px); }
+.fmdb-league-teams .fmdb-team-card__avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--fmdb-green); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; overflow: hidden; }
+.fmdb-league-teams .fmdb-team-card__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.fmdb-league-teams .fmdb-team-card__avatar span { color: #fff; font-weight: 700; font-size: 1rem; }
+.fmdb-league-teams .fmdb-team-card__info strong { display: block; font-size: 0.88rem; margin-bottom: 3px; }
+.fmdb-league-teams .fmdb-team-card__info small { font-size: 0.75rem; color: #888; display: block; margin-bottom: 6px; }
+.fmdb-league-teams .fmdb-team-card__cats { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.fmdb-league-teams .fmdb-team-card__cats .fmdb-badge { font-size: 0.65rem; padding: 2px 6px; }
+
+/* Contact (reuses .fmdb-team-detail-list / .fmdb-team-social from team-single.css) */
+.fmdb-league-contact .fmdb-team-detail-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.fmdb-league-contact .fmdb-team-detail-list li { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+.fmdb-league-contact .fmdb-team-social { display: flex; gap: 12px; }
+.fmdb-league-contact .fmdb-team-social a { background: var(--fmdb-green); color: #fff; padding: 6px 16px; border-radius: 20px; text-decoration: none; font-size: 0.85rem; }
+.fmdb-league-contact .fmdb-team-social a:hover { background: var(--fmdb-dark-green); }
+
+.fmdb-league-back { margin-top: 8px; }
+.fmdb-league-back a { color: var(--fmdb-green); text-decoration: none; font-weight: 500; }
+.fmdb-league-back a:hover { color: var(--fmdb-dark-green); }
+
+@media (max-width: 600px) {
+    .fmdb-league-hero__inner { flex-direction: column; text-align: center; }
+}

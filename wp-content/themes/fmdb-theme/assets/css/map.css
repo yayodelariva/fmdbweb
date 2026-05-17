@@ -1,0 +1,68 @@
+#fmdb-mexico-map {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.fmdb-state {
+  fill: #D3D1C7;
+  stroke: #fff;
+  stroke-width: 0.8;
+  cursor: pointer;
+  transition: fill 0.2s ease;
+}
+
+.fmdb-state:hover,
+.fmdb-state:focus {
+  fill: #5DCAA5;
+  outline: none;
+}
+
+.fmdb-state.has-teams {
+  fill: #1D9E75;
+}
+
+.fmdb-state.has-teams.few-teams   { fill: #9FE1CB; }
+.fmdb-state.has-teams.some-teams  { fill: #5DCAA5; }
+.fmdb-state.has-teams.many-teams  { fill: #1D9E75; }
+.fmdb-state.has-teams.most-teams  { fill: #085041; }
+
+.fmdb-state.active {
+  fill: #085041;
+  stroke: #1D9E75;
+  stroke-width: 1.5;
+}
+
+/* Wrapper */
+.fmdb-map-wrapper {
+  position: relative;
+  background: #f8f8f8;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Legend */
+.fmdb-map-legend {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #555;
+}
+
+.fmdb-map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fmdb-map-legend i {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}

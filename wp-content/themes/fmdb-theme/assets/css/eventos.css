@@ -1,0 +1,592 @@
+/* === Eventos page === */
+.fmdb-eventos__header {
+    background: var(--fmdb-dark-green);
+    color: #fff;
+    text-align: center;
+    padding: 56px 20px 48px;
+}
+.fmdb-eventos__title {
+    font-size: 2.2rem;
+    margin: 0 0 8px;
+    color: #fff;
+}
+.fmdb-eventos__subtitle {
+    font-size: 1rem;
+    color: var(--fmdb-light-green);
+    margin: 0;
+}
+.fmdb-eventos__wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 20px 64px;
+}
+
+/* Tabs */
+.fmdb-eventos__tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    border-bottom: 2px solid var(--fmdb-neutral);
+    padding-bottom: 0;
+}
+.fmdb-eventos__tab {
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #888;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+}
+.fmdb-eventos__tab:hover { color: var(--fmdb-dark-green); }
+.fmdb-eventos__tab.is-active {
+    color: var(--fmdb-dark-green);
+    border-bottom-color: var(--fmdb-green);
+}
+
+/* Grid */
+.fmdb-eventos__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+@media (max-width: 900px) { .fmdb-eventos__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .fmdb-eventos__grid { grid-template-columns: 1fr; } }
+
+/* Event card */
+.fmdb-evento-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(8,80,65,0.1);
+    box-shadow: 0 2px 12px rgba(8,80,65,0.06);
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+.fmdb-evento-card:hover {
+    box-shadow: 0 6px 24px rgba(8,80,65,0.13);
+    transform: translateY(-2px);
+}
+.fmdb-evento-card__date {
+    background: var(--fmdb-dark-green);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 14px;
+    min-width: 62px;
+    flex-shrink: 0;
+    text-align: center;
+}
+.fmdb-evento-card__day {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #fff;
+}
+.fmdb-evento-card__date.is-range .fmdb-evento-card__day,
+.fmdb-evento-single__date-badge.is-range .fmdb-evento-card__day {
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+}
+.fmdb-evento-card__date.is-range,
+.fmdb-evento-single__date-badge.is-range { min-width: 78px; }
+.fmdb-evento-card__month {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+    color: var(--fmdb-light-green);
+}
+.fmdb-evento-card__year {
+    font-size: 0.68rem;
+    color: var(--fmdb-mid-green);
+    margin-top: 2px;
+}
+.fmdb-evento-card__body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+.fmdb-evento-card__cats { display: flex; flex-wrap: wrap; gap: 5px; }
+.fmdb-evento-card__cat {
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: var(--fmdb-pale-green);
+    color: var(--fmdb-dark-green);
+    padding: 2px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+}
+.fmdb-evento-card__title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.3;
+    color: var(--fmdb-dark-green);
+}
+.fmdb-evento-card__title a {
+    color: inherit;
+    text-decoration: none;
+}
+.fmdb-evento-card__title a:hover { text-decoration: underline; }
+.fmdb-evento-card__location,
+.fmdb-evento-card__time {
+    font-size: 0.8rem;
+    color: #777;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.fmdb-evento-card__location svg,
+.fmdb-evento-card__time svg { flex-shrink: 0; color: var(--fmdb-green); }
+.fmdb-evento-card__excerpt {
+    font-size: 0.82rem;
+    color: #555;
+    margin: 4px 0 0;
+    line-height: 1.5;
+}
+.fmdb-evento-card__link {
+    margin-top: auto;
+    padding-top: 10px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: var(--fmdb-green);
+    text-decoration: none;
+}
+.fmdb-evento-card__link:hover { text-decoration: underline; }
+
+/* Empty state */
+.fmdb-eventos__empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+    font-size: 0.95rem;
+}
+
+/* === Category styling (color tokens live in style.css) === */
+/* Date badge tinting per category */
+.fmdb-evento-card__date.fmdb-cat--torneo,
+.fmdb-evento-card__date.fmdb-cat--campamento,
+.fmdb-evento-card__date.fmdb-cat--miscelaneo {
+    background: var(--cat-color);
+}
+.fmdb-evento-card__date.fmdb-cat--torneo .fmdb-evento-card__month,
+.fmdb-evento-card__date.fmdb-cat--campamento .fmdb-evento-card__month,
+.fmdb-evento-card__date.fmdb-cat--miscelaneo .fmdb-evento-card__month,
+.fmdb-evento-card__date.fmdb-cat--torneo .fmdb-evento-card__year,
+.fmdb-evento-card__date.fmdb-cat--campamento .fmdb-evento-card__year,
+.fmdb-evento-card__date.fmdb-cat--miscelaneo .fmdb-evento-card__year {
+    color: rgba(255,255,255,0.85);
+}
+
+/* Category pill on cards */
+.fmdb-evento-card__cat.fmdb-cat--torneo,
+.fmdb-evento-card__cat.fmdb-cat--campamento,
+.fmdb-evento-card__cat.fmdb-cat--miscelaneo {
+    background: var(--cat-color);
+    color: #fff;
+}
+
+/* === View toggle === */
+.fmdb-eventos__view-toggle {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+.fmdb-eventos__view-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid var(--fmdb-neutral);
+    border-radius: 20px;
+    background: #fff;
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.fmdb-eventos__view-btn:hover { color: var(--fmdb-dark-green); border-color: var(--fmdb-green); }
+.fmdb-eventos__view-btn.is-active {
+    background: var(--fmdb-dark-green);
+    color: #fff;
+    border-color: var(--fmdb-dark-green);
+}
+
+/* === Calendar === */
+.fmdb-cal { margin-top: 0; }
+.fmdb-cal__nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+.fmdb-cal__title {
+    font-size: 1.3rem;
+    margin: 0;
+    color: var(--fmdb-dark-green);
+    text-transform: capitalize;
+    min-width: 220px;
+    text-align: center;
+}
+.fmdb-cal__btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--fmdb-neutral);
+    background: #fff;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--fmdb-dark-green);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.fmdb-cal__btn:hover { background: var(--fmdb-pale-green); border-color: var(--fmdb-green); }
+
+.fmdb-cal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--fmdb-neutral);
+    border: 1px solid var(--fmdb-neutral);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.fmdb-cal__weekday {
+    background: var(--fmdb-dark-green);
+    color: #fff;
+    text-align: center;
+    padding: 10px 4px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.fmdb-cal__cell {
+    background: #fff;
+    min-height: 110px;
+    padding: 6px 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    position: relative;
+}
+.fmdb-cal__cell--empty { background: #fafafa; }
+.fmdb-cal__cell.is-today {
+    background: var(--fmdb-pale-green);
+}
+.fmdb-cal__cell.is-today .fmdb-cal__day {
+    background: var(--fmdb-green);
+    color: #fff;
+}
+.fmdb-cal__day {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #555;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-end;
+}
+.fmdb-cal__event {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #fff;
+    background: var(--cat-color, #888);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    transition: opacity 0.15s, transform 0.15s;
+}
+.fmdb-cal__event:hover { opacity: 0.85; transform: translateY(-1px); }
+
+/* Legend */
+.fmdb-cal__legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 18px;
+    padding: 10px;
+    flex-wrap: wrap;
+}
+.fmdb-cal__legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.83rem;
+    color: #555;
+}
+.fmdb-cal__legend-item i {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--cat-color, #888);
+    display: inline-block;
+}
+
+@media (max-width: 600px) {
+    .fmdb-cal__cell { min-height: 70px; padding: 4px; }
+    .fmdb-cal__weekday { padding: 8px 2px; font-size: 0.65rem; }
+    .fmdb-cal__event { font-size: 0.62rem; padding: 1px 4px; }
+    .fmdb-cal__title { font-size: 1rem; min-width: 140px; }
+}
+
+/* === Single event === */
+.fmdb-evento-single {
+    background: var(--fmdb-pale-green);
+    min-height: 80vh;
+}
+.fmdb-evento-single__wrap {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 36px 20px 64px;
+}
+.fmdb-evento-single__content {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(8,80,65,0.1);
+    padding: 28px 32px;
+    box-shadow: 0 2px 12px rgba(8,80,65,0.06);
+}
+@media (min-width: 761px) {
+    .fmdb-evento-single__sidebar {
+        position: sticky;
+        top: 100px;
+    }
+}
+.fmdb-evento-single__back {
+    display: inline-block;
+    font-size: 0.85rem;
+    color: var(--fmdb-green);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 28px;
+}
+.fmdb-evento-single__back:hover { text-decoration: underline; }
+
+.fmdb-evento-single__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 36px;
+}
+.fmdb-evento-single__date-badge {
+    background: var(--fmdb-dark-green);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: 70px;
+    text-align: center;
+}
+.fmdb-evento-single__heading { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.fmdb-evento-single__title {
+    font-size: 1.9rem;
+    margin: 0;
+    color: var(--fmdb-dark-green);
+    line-height: 1.2;
+}
+
+.fmdb-evento-single__layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 32px;
+    align-items: start;
+}
+@media (max-width: 760px) {
+    .fmdb-evento-single__layout { grid-template-columns: 1fr; }
+    .fmdb-evento-single__sidebar { order: -1; }
+    .fmdb-evento-single__header { flex-direction: column; }
+}
+
+.fmdb-evento-single__thumbnail { margin-bottom: 24px; border-radius: 10px; overflow: hidden; }
+.fmdb-evento-single__thumbnail img { width: 100%; height: auto; display: block; }
+.fmdb-evento-single__body { font-size: 0.95rem; line-height: 1.7; color: #333; }
+.fmdb-evento-single__body p { margin: 0 0 16px; }
+
+/* === Tournament bracket === */
+.fmdb-tournament {
+    margin-top: 36px;
+    padding-top: 28px;
+    border-top: 1px solid var(--fmdb-neutral);
+}
+.fmdb-tournament__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--fmdb-dark-green);
+    margin: 0 0 14px;
+}
+.fmdb-tournament__teams {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 22px;
+    padding: 10px 14px;
+    background: var(--fmdb-pale-green);
+    border-radius: 8px;
+}
+.fmdb-tournament__teams-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--fmdb-dark-green);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+}
+.fmdb-tournament__team-pill {
+    background: #fff;
+    color: var(--fmdb-dark-green);
+    font-size: 0.83rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--fmdb-light-green);
+}
+.fmdb-tournament__rounds {
+    display: flex;
+    gap: 22px;
+    overflow-x: auto;
+    padding: 4px 2px 14px;
+}
+.fmdb-tournament__round {
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.fmdb-tournament__round-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--fmdb-green);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin: 0 0 4px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--fmdb-light-green);
+}
+.fmdb-match {
+    background: #fff;
+    border: 1px solid var(--fmdb-neutral);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.fmdb-match.is-played { border-color: var(--fmdb-light-green); box-shadow: 0 1px 4px rgba(8,80,65,0.06); }
+.fmdb-match__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+    color: #555;
+    transition: background 0.2s;
+}
+.fmdb-match__row + .fmdb-match__row { border-top: 1px solid var(--fmdb-neutral); }
+.fmdb-match__row.is-winner {
+    background: var(--fmdb-pale-green);
+    color: var(--fmdb-dark-green);
+    font-weight: 700;
+}
+.fmdb-match__team {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 12px;
+}
+.fmdb-match__score {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--fmdb-dark-green);
+    min-width: 24px;
+    text-align: right;
+}
+.fmdb-match__row.is-winner .fmdb-match__score { color: var(--fmdb-green); }
+.fmdb-match__tie,
+.fmdb-match__pending {
+    text-align: center;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px;
+    background: #f6f6f4;
+    color: #888;
+    border-top: 1px solid var(--fmdb-neutral);
+}
+
+/* PDFs */
+.fmdb-evento-single__pdfs { margin-top: 32px; }
+.fmdb-evento-single__pdfs-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--fmdb-dark-green);
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--fmdb-neutral);
+}
+.fmdb-evento-single__pdf-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.fmdb-evento-single__pdf-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--fmdb-pale-green);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--fmdb-dark-green);
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.fmdb-evento-single__pdf-link:hover { background: var(--fmdb-light-green); }
+
+/* Sidebar meta card */
+.fmdb-evento-single__meta-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(8,80,65,0.1);
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(8,80,65,0.06);
+}
+.fmdb-evento-single__meta-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--fmdb-green);
+    margin: 0 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--fmdb-neutral);
+}
+.fmdb-evento-single__meta-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    color: #444;
+}
+.fmdb-evento-single__meta-item svg { flex-shrink: 0; margin-top: 2px; color: var(--fmdb-green); }
+.fmdb-evento-single__meta-item div { display: flex; flex-direction: column; gap: 2px; }
+.fmdb-evento-single__meta-item strong { color: var(--fmdb-dark-green); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }

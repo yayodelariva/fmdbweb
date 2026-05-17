@@ -1,0 +1,318 @@
+/*
+Theme Name: FMDB Theme
+Theme URI: https://github.com/yayodelariva/fmdbweb
+Description: Child theme for Federación Mexicana de Dodgeball
+Author: Eduardo de la Riva
+Author URI: https://github.com/yayodelariva
+Template: kadence
+Version: 1.0.0
+Text Domain: fmdb-theme
+*/
+
+/* --- Remove Kadence edge padding from header so nav items don't wrap --- */
+.site-header .site-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* --- Nav profile dropdown --- */
+.fmdb-nav-profile {
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center;
+    position: relative;
+    padding: 0 !important;
+}
+.fmdb-nav-profile__toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid rgba(8,80,65,0.25);
+    border-radius: 20px;
+    padding: 4px 10px 4px 4px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.2s, background 0.2s;
+}
+.fmdb-nav-profile__toggle:hover,
+.fmdb-nav-profile.is-open .fmdb-nav-profile__toggle {
+    background: var(--fmdb-pale-green);
+    border-color: var(--fmdb-green);
+}
+.fmdb-nav-profile__avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--fmdb-green);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fmdb-nav-profile__name {
+    font-size: 0.85rem;
+    color: var(--fmdb-dark-green);
+    font-weight: 500;
+    white-space: nowrap;
+}
+.fmdb-nav-profile__avatar--img {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.fmdb-nav-profile__caret {
+    font-size: 0.7rem;
+    color: var(--fmdb-dark-green);
+    line-height: 1;
+    transition: transform 0.2s;
+}
+.fmdb-nav-profile.is-open .fmdb-nav-profile__caret { transform: rotate(180deg); }
+
+/* Dropdown panel */
+.fmdb-nav-profile__dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #fff;
+    border: 1px solid rgba(8,80,65,0.15);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(8,80,65,0.12);
+    min-width: 180px;
+    padding: 6px 0;
+    list-style: none;
+    margin: 0;
+    z-index: 9999;
+}
+.fmdb-nav-profile.is-open .fmdb-nav-profile__dropdown,
+.fmdb-nav-profile:hover .fmdb-nav-profile__dropdown { display: block; }
+.fmdb-nav-profile__dropdown::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 0;
+    right: 0;
+    height: 8px;
+}
+.fmdb-nav-profile:hover .fmdb-nav-profile__toggle { background: var(--fmdb-pale-green); border-color: var(--fmdb-green); }
+.fmdb-nav-profile:hover .fmdb-nav-profile__caret { transform: rotate(180deg); }
+.fmdb-nav-profile__dropdown li a {
+    display: block;
+    padding: 9px 18px;
+    font-size: 0.88rem;
+    color: var(--fmdb-dark-green);
+    text-decoration: none;
+    transition: background 0.15s;
+}
+.fmdb-nav-profile__dropdown li a:hover { background: var(--fmdb-pale-green); }
+.fmdb-nav-profile__dropdown-divider {
+    border-top: 1px solid rgba(8,80,65,0.1);
+    margin: 5px 0;
+}
+.fmdb-nav-profile__dropdown-logout { color: #c0392b !important; }
+.fmdb-nav-profile__dropdown-logout:hover { background: #fff0f0 !important; }
+
+/* --- Player avatar (roster table inline) --- */
+.fmdb-player-avatar { width: 30px; height: 30px; border-radius: 50%; vertical-align: middle; margin-right: 6px; flex-shrink: 0; }
+img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
+.fmdb-player-avatar--initials { background: var(--fmdb-green); color: #fff; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.fmdb-roster-name-cell { display: flex; align-items: center; }
+
+/* --- Nav cart counter --- */
+.fmdb-nav-cart { display: flex !important; align-items: center; }
+.fmdb-nav-cart__link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    color: var(--fmdb-dark-green);
+    text-decoration: none;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+.fmdb-nav-cart__link:hover { background: var(--fmdb-pale-green); }
+.fmdb-nav-cart__count {
+    display: none;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 20px;
+    background: var(--fmdb-green);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+}
+.fmdb-nav-cart__count.has-items { display: inline-block; }
+
+/* --- Nav login / profile — push the auth group + cart to the right --- */
+.fmdb-nav-login  { margin-left: auto !important; display: flex !important; align-items: center; }
+.fmdb-nav-profile { margin-left: auto !important; }
+.fmdb-nav-login__link {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--fmdb-dark-green) !important;
+    text-decoration: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(8,80,65,0.35);
+    transition: background 0.2s, border-color 0.2s;
+}
+.fmdb-nav-login__link:hover {
+    background: var(--fmdb-pale-green);
+    border-color: var(--fmdb-green);
+}
+
+:root {
+  --fmdb-green:       #1D9E75;
+  --fmdb-dark-green:  #085041;
+  --fmdb-mid-green:   #5DCAA5;
+  --fmdb-light-green: #9FE1CB;
+  --fmdb-pale-green:  #E1F5EE;
+  --fmdb-neutral:     #D3D1C7;
+  --fmdb-text-dark:   #E1F5EE;
+}
+
+/* --- Event category color tokens (used on homepage, eventos page, etc.) --- */
+.fmdb-cat--torneo     { --cat-color: #c0392b; --cat-color-bg: #fdecea; }
+.fmdb-cat--campamento { --cat-color: #2980b9; --cat-color-bg: #e8f2fa; }
+.fmdb-cat--miscelaneo { --cat-color: #7f8c8d; --cat-color-bg: #eef0f1; }
+
+/* === Nav dropdown submenus (Organigrama with nested Comisiones) === */
+.fmdb-nav-organigrama,
+.fmdb-nav-comisiones { position: relative; }
+.fmdb-nav-caret { font-size: .65rem; margin-left: 3px; display: inline-block; }
+.fmdb-nav-caret--right { margin-left: 6px; }
+.fmdb-nav-submenu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid rgba(8, 80, 65, 0.15);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(8, 80, 65, 0.12);
+    min-width: 230px;
+    padding: 6px 0;
+    margin: 8px 0 0;
+    list-style: none;
+    z-index: 9999;
+}
+.fmdb-nav-organigrama:hover > .fmdb-nav-submenu,
+.fmdb-nav-organigrama:focus-within > .fmdb-nav-submenu { display: block; }
+.fmdb-nav-submenu::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 0;
+    right: 0;
+    height: 8px;
+}
+.fmdb-nav-submenu li { margin: 0; }
+.fmdb-nav-submenu li a {
+    display: block;
+    padding: 9px 18px;
+    font-size: 0.88rem;
+    color: var(--fmdb-dark-green);
+    text-decoration: none;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+.fmdb-nav-submenu li a:hover,
+.fmdb-nav-submenu li a:focus { background: var(--fmdb-pale-green); }
+
+/* Nested submenu (Comisiones) — opens to the right */
+.fmdb-nav-submenu--nested {
+    top: -6px;
+    left: 100%;
+    margin: 0 0 0 4px;
+}
+.fmdb-nav-comisiones:hover > .fmdb-nav-submenu--nested,
+.fmdb-nav-comisiones:focus-within > .fmdb-nav-submenu--nested { display: block; }
+.fmdb-nav-comisiones > a { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fmdb-nav-submenu--nested::before {
+    top: 0;
+    left: -8px;
+    right: auto;
+    width: 8px;
+    height: 100%;
+}
+
+@media (max-width: 900px) {
+    .fmdb-nav-submenu { position: static; box-shadow: none; border: 0; margin: 0; padding-left: 12px; }
+    .fmdb-nav-submenu--nested { padding-left: 24px; }
+    .fmdb-nav-organigrama:hover > .fmdb-nav-submenu,
+    .fmdb-nav-comisiones:hover > .fmdb-nav-submenu--nested { display: none; }
+}
+
+/* === Consejo Directivo page === */
+.fmdb-consejo { padding: 0 20px 60px; }
+.fmdb-consejo__wrap { max-width: 1200px; margin: 0 auto; }
+.fmdb-consejo__header { text-align: center; padding: 40px 0 32px; }
+.fmdb-consejo__title { margin: 0 0 12px; font-size: 2.25rem; color: var(--fmdb-dark-green); font-weight: 800; }
+.fmdb-consejo__lede { margin: 0 auto; max-width: 640px; color: #555; font-size: 1.02rem; line-height: 1.55; }
+.fmdb-consejo__intro { max-width: 720px; margin: 0 auto; color: #444; line-height: 1.6; }
+.fmdb-consejo__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 28px;
+    margin-top: 12px;
+}
+.fmdb-consejo__empty { text-align: center; color: #888; font-style: italic; padding: 40px 0; }
+
+.fmdb-consejo-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1.5px solid var(--fmdb-neutral);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.fmdb-consejo-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--fmdb-green);
+    box-shadow: 0 8px 28px rgba(29, 158, 117, 0.14);
+}
+.fmdb-consejo-card__photo {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    background: linear-gradient(135deg, var(--fmdb-dark-green) 0%, var(--fmdb-green) 100%);
+    overflow: hidden;
+    position: relative;
+}
+.fmdb-consejo-card__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fmdb-consejo-card__initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+.fmdb-consejo-card__body { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.fmdb-consejo-card__position {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--fmdb-green);
+}
+.fmdb-consejo-card__name { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--fmdb-dark-green); line-height: 1.3; }
+.fmdb-consejo-card__bio { margin: 6px 0 0; font-size: 0.85rem; color: #555; line-height: 1.5; }
+
+@media (max-width: 600px) {
+    .fmdb-consejo__title { font-size: 1.7rem; }
+    .fmdb-consejo__grid { gap: 18px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}

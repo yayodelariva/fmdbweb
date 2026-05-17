@@ -1,0 +1,71 @@
+/* === Selecciones Nacionales page === */
+.fmdb-selecciones { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
+
+.fmdb-selecciones__header { padding: 32px 0 16px; text-align: center; }
+.fmdb-selecciones__header h1 { margin: 0 0 6px; font-size: 2rem; color: var(--fmdb-dark-green); }
+.fmdb-selecciones__header p { color: #666; margin: 0; }
+
+/* Tabs */
+.fmdb-selecciones__tabs { display: flex; width: fit-content; margin: 24px auto; background: #fff; border: 1px solid var(--fmdb-neutral); border-radius: 999px; padding: 4px; gap: 2px; flex-wrap: wrap; }
+.fmdb-selecciones__tab { display: flex; align-items: center; gap: 6px; background: none; border: none; padding: 8px 20px; font-size: 0.9rem; font-weight: 600; color: #555; border-radius: 999px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.fmdb-selecciones__tab:hover { color: var(--fmdb-dark-green); }
+.fmdb-selecciones__tab.active { background: var(--fmdb-green); color: #fff; }
+.fmdb-selecciones__tab .fmdb-tab-count { display: inline-block; margin-left: 6px; background: var(--fmdb-pale-green); color: var(--fmdb-dark-green); font-size: 0.72rem; font-weight: 700; padding: 1px 7px; border-radius: 10px; vertical-align: middle; }
+.fmdb-selecciones__tab.active .fmdb-tab-count { background: rgba(255,255,255,0.25); color: #fff; }
+
+/* Panels */
+.fmdb-seleccion-panel { display: none; }
+.fmdb-seleccion-panel.active { display: block; }
+
+/* Hub page: two ball-type cards */
+.fmdb-selecciones__hub { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 16px 0 48px; }
+.fmdb-seleccion-hub-card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 32px; border: 2px solid var(--fmdb-neutral); border-radius: 16px; background: #fff; text-decoration: none; color: inherit; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; }
+.fmdb-seleccion-hub-card:hover { border-color: var(--fmdb-green); box-shadow: 0 8px 32px rgba(29,158,117,0.13); transform: translateY(-3px); }
+.fmdb-seleccion-hub-card__icon { width: 80px; height: 80px; border-radius: 50%; background: var(--fmdb-pale-green); color: var(--fmdb-dark-green); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+.fmdb-seleccion-hub-card__title { margin: 0 0 10px; font-size: 1.6rem; font-weight: 800; color: var(--fmdb-dark-green); }
+.fmdb-seleccion-hub-card__desc { margin: 0 0 20px; font-size: 0.9rem; color: #666; line-height: 1.5; }
+.fmdb-seleccion-hub-card__cta { font-size: 0.85rem; font-weight: 700; color: var(--fmdb-green); }
+
+/* Type page: back link + header icon */
+.fmdb-seleccion-tipo__icon { color: var(--fmdb-dark-green); margin-bottom: 12px; }
+.fmdb-seleccion-tipo__back { display: inline-block; margin-top: 12px; font-size: 0.85rem; font-weight: 600; color: var(--fmdb-green); text-decoration: none; }
+.fmdb-seleccion-tipo__back:hover { text-decoration: underline; }
+
+/* Gender sections within a ball-type panel */
+.fmdb-seleccion-category { margin-bottom: 48px; }
+.fmdb-seleccion-category:last-child { margin-bottom: 0; }
+.fmdb-seleccion-category__header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--fmdb-pale-green); }
+.fmdb-seleccion-category__title { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--fmdb-dark-green); }
+.fmdb-seleccion-category__count { font-size: 0.75rem; font-weight: 700; color: var(--fmdb-dark-green); background: var(--fmdb-pale-green); padding: 2px 8px; border-radius: 10px; }
+
+/* Member grid */
+.fmdb-seleccion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; padding: 8px 0 16px; }
+
+/* Member card */
+.fmdb-member-card { background: #fff; border: 1px solid var(--fmdb-neutral); border-radius: 12px; overflow: hidden; text-align: center; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; }
+.fmdb-member-card:hover { border-color: var(--fmdb-green); box-shadow: 0 4px 16px rgba(29,158,117,0.12); transform: translateY(-2px); }
+
+.fmdb-member-card__photo { position: relative; width: 100%; aspect-ratio: 3 / 4; background: var(--fmdb-dark-green); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.fmdb-member-card__photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.fmdb-member-card__photo > span { color: #fff; font-size: 2.2rem; font-weight: 700; }
+
+.fmdb-member-card__pos-badge { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.55); color: #fff; font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 20px; white-space: nowrap; backdrop-filter: blur(2px); }
+.fmdb-member-card__pos-badge--capitan   { background: rgba(8,80,65,0.88); }
+.fmdb-member-card__pos-badge--tirador   { background: rgba(29,158,117,0.88); }
+.fmdb-member-card__pos-badge--bloqueador { background: rgba(93,202,165,0.9); color: var(--fmdb-dark-green); }
+.fmdb-member-card__pos-badge--comodin   { background: rgba(0,0,0,0.55); }
+
+.fmdb-member-card__info { padding: 12px 10px; }
+.fmdb-member-card__number { display: block; font-size: 0.72rem; font-weight: 700; color: var(--fmdb-green); margin-bottom: 3px; letter-spacing: 0.04em; }
+.fmdb-member-card__name { display: block; font-size: 0.9rem; font-weight: 700; color: var(--fmdb-dark-green); line-height: 1.3; margin-bottom: 7px; }
+.fmdb-member-card__club { font-size: 0.78rem; color: #888; }
+.fmdb-member-card__club a { color: var(--fmdb-green); text-decoration: none; font-weight: 600; }
+.fmdb-member-card__club a:hover { text-decoration: underline; }
+
+.fmdb-empty { color: #888; font-style: italic; padding: 32px 0; text-align: center; }
+
+@media (max-width: 768px) {
+    .fmdb-seleccion-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
+    .fmdb-selecciones__tabs { border-radius: 12px; padding: 6px; width: fit-content; justify-content: center; }
+    .fmdb-selecciones__tab { padding: 8px 14px; font-size: 0.85rem; }
+}
