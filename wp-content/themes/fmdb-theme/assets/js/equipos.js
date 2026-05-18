@@ -18,10 +18,13 @@
     function applyFilters() {
         var stateBlocks = document.querySelectorAll('.fmdb-state-block');
         var anyVisible  = false;
+        var stateHasBlock = false;
 
         stateBlocks.forEach(function (block) {
             var blockState = block.getAttribute('data-state');
             var stateMatch = !activeState || blockState === activeState;
+
+            if (stateMatch && activeState) stateHasBlock = true;
 
             if (!stateMatch) {
                 block.classList.add('hidden');
@@ -45,7 +48,16 @@
             if (blockVisible) anyVisible = true;
         });
 
-        noResults.style.display = anyVisible ? 'none' : 'block';
+        if (noResults) {
+            if (anyVisible) {
+                noResults.style.display = 'none';
+            } else {
+                noResults.textContent = (activeState && !stateHasBlock)
+                    ? 'No se encontraron equipos en este estado.'
+                    : 'No se encontraron equipos con los filtros seleccionados.';
+                noResults.style.display = 'block';
+            }
+        }
     }
 
     function applyLigasFilters(state) {
@@ -133,14 +145,16 @@
         });
     }
 
-    // Read ?estado= from URL on load
+    // Read ?estado= from URL on load. Match against SVG paths (all 32 states),
+    // not just the sidebar list (which excludes states with no teams).
     var params = new URLSearchParams(window.location.search);
     var urlState = params.get('estado');
     if (urlState) {
-        // Match against actual state names (case-insensitive slug comparison)
-        stateListItems.forEach(function (li) {
-            if (li.getAttribute('data-state').toLowerCase().replace(/\s+/g, '-') === urlState.toLowerCase()) {
-                setActiveState(li.getAttribute('data-state'));
+        var target = urlState.toLowerCase();
+        document.querySelectorAll('.fmdb-state').forEach(function (path) {
+            var name = path.getAttribute('data-state');
+            if (name && name.toLowerCase().replace(/\s+/g, '-') === target) {
+                setActiveState(name);
             }
         });
     }
