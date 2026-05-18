@@ -20,7 +20,29 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
 <main class="fmdb-home">
 
     <!-- Hero -->
-    <section class="fmdb-hero">
+    <?php
+    $hero_video_path   = get_stylesheet_directory() . '/assets/hero.mp4';
+    $hero_video_url    = get_stylesheet_directory_uri() . '/assets/hero.mp4';
+    $hero_poster_path  = get_stylesheet_directory() . '/assets/hero-poster.jpg';
+    $hero_poster_url   = get_stylesheet_directory_uri() . '/assets/hero-poster.jpg';
+    $has_hero_video    = file_exists( $hero_video_path );
+    $has_hero_poster   = file_exists( $hero_poster_path );
+    ?>
+    <section class="fmdb-hero<?php echo $has_hero_video ? ' has-video' : ''; ?>">
+        <?php if ( $has_hero_video ) : ?>
+            <video
+                class="fmdb-hero__video"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+                <?php if ( $has_hero_poster ) : ?>poster="<?php echo esc_url( $hero_poster_url ); ?>"<?php endif; ?>
+            >
+                <source src="<?php echo esc_url( $hero_video_url ); ?>" type="video/mp4">
+            </video>
+            <div class="fmdb-hero__overlay" aria-hidden="true"></div>
+        <?php endif; ?>
         <div class="fmdb-hero__inner">
             <p class="fmdb-hero__eyebrow">Federación Mexicana de Dodgeball</p>
             <h1 class="fmdb-hero__title">El dodgeball<br>organizado de México</h1>
