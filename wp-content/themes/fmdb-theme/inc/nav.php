@@ -1,7 +1,7 @@
 <?php
 /**
- * Primary nav menu injection: Organigrama dropdown, Ranking, Tienda,
- * Afiliación, Iniciar sesión / profile pill, and cart icon.
+ * Primary nav menu injection: Ranking, Tienda, Afiliación,
+ * Organigrama dropdown, Iniciar sesión / profile pill, and cart icon.
  * Also: the footer JS that toggles the profile dropdown.
  */
 
@@ -20,6 +20,18 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
     $clubes_url     = home_url( '/organigrama/clubes/' );
     $ranking_url    = home_url( '/ranking/' );
 
+    $items .= '<li class="menu-item fmdb-nav-ranking">'
+        . '<a href="' . esc_url( $ranking_url ) . '">Ranking</a>'
+        . '</li>';
+
+    $tienda_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/tienda/' );
+    $items .= '<li class="menu-item fmdb-nav-tienda">'
+        . '<a href="' . esc_url( $tienda_url ) . '">Tienda</a>'
+        . '</li>';
+    $items .= '<li class="menu-item fmdb-nav-afiliacion">'
+        . '<a href="https://dodgeball.mx/login" target="_blank" rel="noopener noreferrer">Afiliación</a>'
+        . '</li>';
+
     $items .= '<li class="menu-item menu-item-has-children fmdb-nav-organigrama">'
         . '<a href="' . esc_url( $org_url ) . '">Organigrama <span class="fmdb-nav-caret" aria-hidden="true">&#9662;</span></a>'
         . '<ul class="sub-menu fmdb-nav-submenu">'
@@ -35,17 +47,6 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
             . '<li class="menu-item"><a href="' . esc_url( $asoc_url ) . '">Asociaciones</a></li>'
             . '<li class="menu-item"><a href="' . esc_url( $clubes_url ) . '">Clubes</a></li>'
         . '</ul>'
-        . '</li>';
-    $items .= '<li class="menu-item fmdb-nav-ranking">'
-        . '<a href="' . esc_url( $ranking_url ) . '">Ranking</a>'
-        . '</li>';
-
-    $tienda_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/tienda/' );
-    $items .= '<li class="menu-item fmdb-nav-tienda">'
-        . '<a href="' . esc_url( $tienda_url ) . '">Tienda</a>'
-        . '</li>';
-    $items .= '<li class="menu-item fmdb-nav-afiliacion">'
-        . '<a href="https://dodgeball.mx/login" target="_blank" rel="noopener noreferrer">Afiliación</a>'
         . '</li>';
 
     // Build cart icon once — appended last so it stays rightmost

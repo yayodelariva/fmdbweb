@@ -15,6 +15,21 @@ Text Domain: fmdb-theme
     padding-right: 0 !important;
 }
 
+/* --- Keep all primary-menu items (including profile pill + cart) on one row --- */
+#primary-menu {
+    flex-wrap: nowrap;
+    align-items: center;
+}
+/* Hide the "Inicio" (home) item on desktop only; mobile drawer keeps it. */
+#primary-menu > .menu-item-home {
+    display: none;
+}
+.fmdb-nav-profile__name {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* --- Nav profile dropdown --- */
 .fmdb-nav-profile {
     margin-left: auto !important;
