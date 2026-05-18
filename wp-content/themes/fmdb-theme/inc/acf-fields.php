@@ -417,6 +417,11 @@ add_action( 'acf/validate_save_post', function () {
 add_action( 'acf/init', function () {
     if ( ! function_exists( 'acf_add_local_field_group' ) ) return;
 
+    // Resolve the Consejo Directivo page by path so the binding survives
+    // re-imports or environments where the page has a different ID.
+    $consejo_page = get_page_by_path( 'organigrama/consejo-directivo' );
+    if ( ! $consejo_page ) return;
+
     acf_add_local_field_group( [
         'key'    => 'group_fmdb_consejo_directivo',
         'title'  => 'Miembros del Consejo Directivo',
@@ -464,7 +469,7 @@ add_action( 'acf/init', function () {
         ],
         'location' => [
             [
-                [ 'param' => 'page', 'operator' => '==', 'value' => '116' ],
+                [ 'param' => 'page', 'operator' => '==', 'value' => (string) $consejo_page->ID ],
             ],
         ],
     ] );
