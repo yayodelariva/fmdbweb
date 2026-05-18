@@ -62,18 +62,13 @@ wp-content/
 | `shortcodes.php` | `[fmdb_map]`                                                 |
 | `misc.php`       | Small filters (comments/pings off for posts)                 |
 
-## Dependencies
+## Required plugins
 
-Required WP plugins (install via wp-admin):
+Install via wp-admin:
 
 - Advanced Custom Fields (ACF Free)
 - CMB2
 - The Events Calendar
 - WooCommerce
-- Polylang
-- Members (provides the `editor_fmdb` and `representante_equipo` roles
-  referenced by the theme)
-
-Optional / live-site only: WP Mail SMTP, LiteSpeed Cache, MailPoet,
-Theme My Login, User Registration, Presto Player, Akismet, social/marketing
-plugins.
+- Members — provides the `editor_fmdb` and `representante_equipo` roles
+  referenced by the theme
