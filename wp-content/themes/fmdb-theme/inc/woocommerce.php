@@ -27,14 +27,19 @@ add_action( 'init', function () {
     remove_action( 'woocommerce_cart_is_empty', 'woocommerce_return_to_shop', 20 );
 } );
 
-// Cart page title in Spanish — covers both WooCommerce template and Kadence hero
-add_filter( 'woocommerce_page_title', function ( $title ) {
-    if ( function_exists( 'is_cart' ) && is_cart() ) return 'Tu carrito de compras';
-    return $title;
+// Cart page title in Spanish — covers both WooCommerce template (woocommerce_page_title)
+// and Kadence hero (the_title). Same string + condition in both filters.
+$fmdb_cart_title_es = 'Tu carrito de compras';
+
+add_filter( 'woocommerce_page_title', function ( $title ) use ( $fmdb_cart_title_es ) {
+    return ( function_exists( 'is_cart' ) && is_cart() ) ? $fmdb_cart_title_es : $title;
 } );
-add_filter( 'the_title', function ( $title, $post_id = null ) {
-    if ( ! function_exists( 'wc_get_page_id' ) || ! function_exists( 'is_cart' ) ) return $title;
-    if ( is_cart() && (int) $post_id === wc_get_page_id( 'cart' ) ) return 'Tu carrito de compras';
+
+add_filter( 'the_title', function ( $title, $post_id = null ) use ( $fmdb_cart_title_es ) {
+    if ( function_exists( 'wc_get_page_id' ) && function_exists( 'is_cart' )
+         && is_cart() && (int) $post_id === wc_get_page_id( 'cart' ) ) {
+        return $fmdb_cart_title_es;
+    }
     return $title;
 }, 10, 2 );
 
