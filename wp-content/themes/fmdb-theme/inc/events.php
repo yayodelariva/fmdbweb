@@ -160,90 +160,26 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
     }
 }, 20 );
 
-// Admin styles + JS for event type picker and bracket visibility
-add_action( 'admin_footer', function () {
+// Enqueue admin styles + JS only on the tribe_events edit screen
+add_action( 'admin_enqueue_scripts', function ( $hook ) {
+    if ( ! in_array( $hook, [ 'post.php', 'post-new.php' ], true ) ) return;
     $screen = get_current_screen();
-    if ( ! $screen || $screen->post_type !== 'tribe_events' || $screen->base !== 'post' ) return;
-    ?>
-    <style>
-    .fmdb-event-type-picker { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; }
-    .fmdb-et-pill { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 6px; border: 2px solid transparent; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--et-color); background: #fff; transition: background .15s, border-color .15s; }
-    .fmdb-et-pill:hover { background: var(--et-bg); border-color: var(--et-color); }
-    .fmdb-et-pill.is-active { background: var(--et-bg); border-color: var(--et-color); }
-    .fmdb-et-pill input[type="radio"] { display: none; }
-    .fmdb-et-pill::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--et-color); flex-shrink: 0; }
-    /* Required-field error highlight */
-    .fmdb-field-error #title,
-    .fmdb-field-error #EventStartDate { border-color: #d63638 !important; box-shadow: 0 0 0 1px #d63638 !important; }
-    .fmdb-field-error #fmdb_event_type_box { border: 2px solid #d63638 !important; }
-    .fmdb-required-msg { display: none; color: #d63638; font-size: 12px; margin-top: 4px; }
-    .fmdb-field-error .fmdb-required-msg { display: block; }
-    </style>
-    <script>
-    (function ($) {
-        function toggleBracket() {
-            var val = $('input[name="event_type"]:checked').val();
-            $('#fmdb_tournament_box').toggle(val === 'torneo');
-        }
-        function syncPillActive() {
-            var val = $('input[name="event_type"]:checked').val();
-            $('.fmdb-et-pill').each(function () {
-                $(this).toggleClass('is-active', $(this).find('input').val() === val);
-            });
-            toggleBracket();
-        }
-        function validateEvent() {
-            var ok = true;
-            var $title = $('#title');
-            var $date  = $('#EventStartDate');
-            var $type  = $('#fmdb_event_type_box');
+    if ( ! $screen || $screen->post_type !== 'tribe_events' ) return;
 
-            // Title
-            if ( ! $title.val().trim() ) {
-                $title.closest('#titlediv, #titlewrap, .fmdb-field-wrap').addClass('fmdb-field-error');
-                $title.addClass('fmdb-field-error');
-                ok = false;
-            } else {
-                $title.removeClass('fmdb-field-error');
-            }
+    $base = get_stylesheet_directory_uri() . '/assets/admin/';
+    $dir  = get_stylesheet_directory() . '/assets/admin/';
 
-            // Start date
-            if ( ! $date.val() || ! $date.val().trim() ) {
-                $date.addClass('fmdb-field-error');
-                ok = false;
-            } else {
-                $date.removeClass('fmdb-field-error');
-            }
-
-            // Event type (always has a default value so this won't block, but marks the box)
-            var hasType = $('input[name="event_type"]:checked').length > 0;
-            $type.toggleClass('fmdb-field-error', ! hasType);
-
-            return ok;
-        }
-
-        $(document).ready(function () {
-            syncPillActive();
-            $(document).on('change', 'input[name="event_type"]', syncPillActive);
-
-            // Add helper messages
-            $('#title').after('<p class="fmdb-required-msg">El título es obligatorio.</p>');
-            $('#EventStartDate').closest('td, .tribe-timepicker').after('<p class="fmdb-required-msg">La fecha de inicio es obligatoria.</p>');
-
-            // Intercept publish/update
-            $('#publish, #save-post').on('click', function (e) {
-                var $btn = $(this);
-                var status = $('#post_status').val();
-                // Only enforce on publish; allow draft saves
-                if ( $btn.attr('id') === 'save-post' ) return;
-                if ( status === 'draft' || status === 'pending' ) return;
-                if ( ! validateEvent() ) {
-                    e.preventDefault();
-                    $('html, body').animate({ scrollTop: 0 }, 200);
-                }
-            });
-        });
-    }(jQuery));
-    </script>
-    <?php
+    wp_enqueue_style(
+        'fmdb-event-picker',
+        $base . 'event-picker.css',
+        [],
+        file_exists( $dir . 'event-picker.css' ) ? (string) filemtime( $dir . 'event-picker.css' ) : wp_get_theme()->get( 'Version' )
+    );
+    wp_enqueue_script(
+        'fmdb-event-picker',
+        $base . 'event-picker.js',
+        [ 'jquery' ],
+        file_exists( $dir . 'event-picker.js' ) ? (string) filemtime( $dir . 'event-picker.js' ) : wp_get_theme()->get( 'Version' ),
+        true
+    );
 } );
