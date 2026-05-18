@@ -27,6 +27,20 @@ add_action( 'init', function () {
     remove_action( 'woocommerce_cart_is_empty', 'woocommerce_return_to_shop', 20 );
 } );
 
+// Remove popularity + average-rating options and rename default/date labels
+add_filter( 'woocommerce_catalog_orderby', function ( $options ) {
+    unset( $options['popularity'], $options['rating'] );
+    if ( isset( $options['menu_order'] ) ) $options['menu_order'] = 'Predeterminado';
+    if ( isset( $options['date'] ) )       $options['date']       = 'Agregados recientemente';
+    return $options;
+} );
+add_filter( 'woocommerce_default_catalog_orderby_options', function ( $options ) {
+    unset( $options['popularity'], $options['rating'] );
+    if ( isset( $options['menu_order'] ) ) $options['menu_order'] = 'Predeterminado';
+    if ( isset( $options['date'] ) )       $options['date']       = 'Agregados recientemente';
+    return $options;
+} );
+
 // Cart page title in Spanish — covers both WooCommerce template (woocommerce_page_title)
 // and Kadence hero (the_title). Same string + condition in both filters.
 $fmdb_cart_title_es = 'Tu carrito de compras';

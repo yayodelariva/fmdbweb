@@ -15,16 +15,27 @@
     color: var(--fmdb-dark-green);
 }
 
-/* Breadcrumb */
-.woocommerce-breadcrumb {
-    font-size: 0.83rem;
-    color: #888;
-    margin: 0 0 6px;
-    background: none !important;
-    padding: 0 !important;
+/* Hide Kadence's title-area breadcrumb on WooCommerce pages — we use a back link instead. */
+body.woocommerce .kadence-breadcrumbs,
+body.woocommerce-page .kadence-breadcrumbs { display: none !important; }
+
+/* Hide the "Posted in" category line on single product pages. */
+.single-product .product_meta .posted_in { display: none !important; }
+
+/* Hide star ratings on the empty-cart page (cross-sells / recommended products).
+   Covers both classic .star-rating and the block-cart .wc-block-components-product-rating. */
+body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocommerce-empty-cart-block) .star-rating,
+body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocommerce-empty-cart-block) .wc-block-components-product-rating,
+body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocommerce-empty-cart-block) .wc-block-grid__product-rating { display: none !important; }
+
+/* Back-to-shop link (product, cart, checkout) */
+.fmdb-tienda__back { margin: 24px 0 8px; }
+.fmdb-tienda__back-link {
+    font-size: 0.9rem;
+    color: var(--fmdb-green);
+    text-decoration: none;
 }
-.woocommerce-breadcrumb a { color: var(--fmdb-green); text-decoration: none; }
-.woocommerce-breadcrumb a:hover { text-decoration: underline; }
+.fmdb-tienda__back-link:hover { text-decoration: underline; }
 
 /* Notices */
 .woocommerce-info,
@@ -40,12 +51,20 @@
 /* Result count + ordering */
 .woocommerce-result-count { font-size: 0.85rem; color: #888; margin-bottom: 16px; }
 .woocommerce-ordering { margin-bottom: 16px; }
-.woocommerce-ordering select {
+.woocommerce-ordering select,
+.kadence-woo-ordering select.orderby {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
     border: 1px solid var(--fmdb-neutral);
     border-radius: 6px;
-    padding: 7px 10px;
+    padding: 7px 30px 7px 10px;
     font-size: 0.85rem;
-    background: #fff;
+    background-color: #fff !important;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23555' d='M0 0l5 6 5-6z'/></svg>") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 10px 6px !important;
 }
 
 /* Product grid */
@@ -599,17 +618,9 @@
 .woocommerce ul.products li.product .woocommerce-product-rating,
 .woocommerce div.product .woocommerce-product-rating { display: none !important; }
 
-/* Guest CTA: always-visible compact button in the rating slot, text swaps on card hover */
-.woocommerce ul.products li.product:has(.fmdb-shop-login-cta) .product-details {
-    display: flex;
-    flex-direction: column;
-}
-.woocommerce ul.products li.product:has(.fmdb-shop-login-cta) .woocommerce-loop-product__title { order: 1; }
-.woocommerce ul.products li.product:has(.fmdb-shop-login-cta) .product-action-wrap   { order: 2; }
-.woocommerce ul.products li.product:has(.fmdb-shop-login-cta) .price                  { order: 3; }
-.woocommerce ul.products li.product:has(.fmdb-shop-login-cta) .product-excerpt        { order: 4; }
-
-.woocommerce ul.products li.product:has(.fmdb-shop-login-cta) .product-action-wrap {
+/* Shop archive action button — always-visible compact pill, same placement for
+   guests (login CTA) and logged-in users (add-to-cart). */
+.woocommerce ul.products li.product .product-action-wrap {
     position: static !important;
     transform: none !important;
     opacity: 1 !important;
@@ -621,7 +632,8 @@
     pointer-events: auto !important;
 }
 
-.woocommerce ul.products li.product .fmdb-shop-login-cta {
+.woocommerce ul.products li.product .fmdb-shop-login-cta,
+.woocommerce ul.products li.product .product-action-wrap .button {
     background: transparent !important;
     color: var(--fmdb-green) !important;
     border: 1.5px solid var(--fmdb-green) !important;
@@ -636,14 +648,21 @@
     text-decoration: none !important;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.fmdb-shop-login-cta .fmdb-cta-text--hover { display: none; }
+
+/* Card-hover or button-hover fills the pill */
 .woocommerce ul.products li.product:hover .fmdb-shop-login-cta,
+.woocommerce ul.products li.product:hover .product-action-wrap .button,
 .fmdb-shop-login-cta:hover,
-.fmdb-shop-login-cta:focus {
+.fmdb-shop-login-cta:focus,
+.woocommerce ul.products li.product .product-action-wrap .button:hover,
+.woocommerce ul.products li.product .product-action-wrap .button:focus {
     background: var(--fmdb-green) !important;
     color: #fff !important;
     border-color: var(--fmdb-green) !important;
 }
+
+/* Text-swap behavior only applies to the guest login CTA */
+.fmdb-shop-login-cta .fmdb-cta-text--hover { display: none; }
 .woocommerce ul.products li.product:hover .fmdb-shop-login-cta .fmdb-cta-text--idle,
 .fmdb-shop-login-cta:hover .fmdb-cta-text--idle,
 .fmdb-shop-login-cta:focus .fmdb-cta-text--idle { display: none; }
