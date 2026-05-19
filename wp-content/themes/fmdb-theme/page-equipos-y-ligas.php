@@ -74,11 +74,45 @@ $league_states = array_keys( $league_states );
 sort( $league_states );
 ?>
 
-<main id="fmdb-equipos" class="fmdb-equipos" data-view="todos">
+<main id="fmdb-equipos" class="fmdb-equipos" data-view="todos" data-mode="mapa">
 
     <div class="fmdb-equipos__header">
         <h1>Equipos y Ligas</h1>
         <p>Selecciona un estado en el mapa o usa los filtros para encontrar equipos.</p>
+    </div>
+
+    <!-- Controls row: view pill on the left, mode icons on the right -->
+    <div class="fmdb-equipos__controls">
+        <div class="fmdb-equipos__toggle" role="tablist" aria-label="Vista del mapa">
+            <button class="fmdb-equipos__toggle-btn" data-view="equipos" type="button" role="tab">
+                Mostrar solo Equipos <span class="fmdb-tab-count"><?php echo count( $all_teams ); ?></span>
+            </button>
+            <button class="fmdb-equipos__toggle-btn" data-view="ligas" type="button" role="tab">
+                Mostrar solo Ligas <span class="fmdb-tab-count"><?php echo count( $all_leagues ); ?></span>
+            </button>
+            <button class="fmdb-equipos__toggle-btn active" data-view="todos" type="button" role="tab" aria-selected="true">
+                Mostrar Equipos y Ligas
+            </button>
+        </div>
+        <div class="fmdb-equipos__modes" role="group" aria-label="Modo de vista">
+            <button class="fmdb-mode-btn" data-mode="lista" type="button" title="Modo lista" aria-label="Modo lista" aria-pressed="false">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="8" y1="6" x2="21" y2="6"/>
+                    <line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+            </button>
+            <button class="fmdb-mode-btn active" data-mode="mapa" type="button" title="Modo mapa" aria-label="Modo mapa" aria-pressed="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                    <line x1="8" y1="2" x2="8" y2="18"/>
+                    <line x1="16" y1="6" x2="16" y2="22"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
     <!-- SVG Map -->
@@ -96,24 +130,10 @@ sort( $league_states );
         </div>
     </div>
 
-    <!-- Map view toggle: Equipos / Ligas / Todos -->
-    <div class="fmdb-equipos__toggle" role="tablist" aria-label="Vista del mapa">
-        <button class="fmdb-equipos__toggle-btn" data-view="equipos" type="button" role="tab">
-            Equipos <span class="fmdb-tab-count"><?php echo count( $all_teams ); ?></span>
-        </button>
-        <button class="fmdb-equipos__toggle-btn" data-view="ligas" type="button" role="tab">
-            Ligas <span class="fmdb-tab-count"><?php echo count( $all_leagues ); ?></span>
-        </button>
-        <button class="fmdb-equipos__toggle-btn active" data-view="todos" type="button" role="tab" aria-selected="true">
-            Todos
-        </button>
-    </div>
-
     <!-- ============ EQUIPOS PANEL ============ -->
     <div class="fmdb-equipos__panel" data-panel="equipos">
         <h2 class="fmdb-equipos__panel-title">Equipos por estado</h2>
 
-        <!-- Filter bar -->
         <div class="fmdb-equipos__filters">
             <div class="fmdb-filter-group">
                 <label for="filter-state">Estado</label>
@@ -124,43 +144,10 @@ sort( $league_states );
                     <?php endforeach; ?>
                 </select>
             </div>
-            <?php if ( $all_categories ) : ?>
-            <div class="fmdb-filter-group">
-                <label>Categoría</label>
-                <div class="fmdb-filter-checkboxes">
-                    <?php foreach ( $all_categories as $cat ) : ?>
-                        <label class="fmdb-check-label">
-                            <input type="checkbox" class="filter-category" value="<?php echo esc_attr( $cat ); ?>">
-                            <?php echo esc_html( $cat ); ?>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
-            <button id="fmdb-clear-filters" class="fmdb-btn-ghost">Limpiar filtros</button>
         </div>
 
-        <!-- Content: sidebar + main -->
-        <div class="fmdb-equipos__body">
-
-            <!-- Sidebar: state list -->
-            <aside class="fmdb-equipos__sidebar">
-                <h3>Estados</h3>
-                <ul class="fmdb-state-list">
-                    <?php foreach ( $by_state as $state => $leagues ) :
-                        $count = array_sum( array_map( 'count', $leagues ) );
-                    ?>
-                        <li class="fmdb-state-list__item"
-                            data-state="<?php echo esc_attr( $state ); ?>">
-                            <span class="fmdb-state-list__name"><?php echo esc_html( $state ); ?></span>
-                            <span class="fmdb-state-list__count"><?php echo esc_html( $count ); ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </aside>
-
-            <!-- Main: state blocks → flat team grid -->
-            <section class="fmdb-equipos__main" id="fmdb-teams-container">
+        <!-- Main: state blocks → flat team grid -->
+        <section class="fmdb-equipos__main" id="fmdb-teams-container">
 
                 <?php if ( empty( $by_state ) ) : ?>
                     <p class="fmdb-empty">No hay equipos registrados aún.</p>
@@ -219,28 +206,11 @@ sort( $league_states );
                     No se encontraron equipos con los filtros seleccionados.
                 </div>
             </section>
-
-        </div>
     </div>
 
     <!-- ============ LIGAS PANEL ============ -->
     <div class="fmdb-equipos__panel" data-panel="ligas">
         <h2 class="fmdb-equipos__panel-title">Ligas registradas</h2>
-
-        <?php if ( $league_states ) : ?>
-        <div class="fmdb-equipos__filters">
-            <div class="fmdb-filter-group">
-                <label for="filter-state-ligas">Estado</label>
-                <select id="filter-state-ligas">
-                    <option value="">Todos los estados</option>
-                    <?php foreach ( $league_states as $s ) : ?>
-                        <option value="<?php echo esc_attr( $s ); ?>"><?php echo esc_html( $s ); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <button id="fmdb-clear-filters-ligas" class="fmdb-btn-ghost">Limpiar filtros</button>
-        </div>
-        <?php endif; ?>
 
         <?php if ( empty( $all_leagues ) ) : ?>
             <p class="fmdb-empty">No hay ligas registradas aún.</p>

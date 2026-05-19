@@ -41,6 +41,45 @@
 .fmdb-equipos__header h1 { margin: 0 0 6px; font-size: 2rem; color: var(--fmdb-dark-green); }
 .fmdb-equipos__header p { color: #666; margin: 0; }
 
+/* Controls row: view pill on the left, mode icons on the right */
+.fmdb-equipos__controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 0 0 24px;
+}
+.fmdb-equipos__controls .fmdb-equipos__toggle { margin: 0; }
+
+.fmdb-equipos__modes { display: flex; gap: 8px; flex-shrink: 0; }
+.fmdb-mode-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--fmdb-neutral);
+    background: #fff;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--fmdb-dark-green);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.fmdb-mode-btn:hover { background: var(--fmdb-pale-green); border-color: var(--fmdb-green); }
+.fmdb-mode-btn.active { background: var(--fmdb-green); border-color: var(--fmdb-green); color: #fff; }
+.fmdb-mode-btn svg { display: block; }
+
+/* Mode toggles: lista hides the map; mapa hides the filters bar
+   (the team grid and ligas panel stay visible alongside the map). */
+.fmdb-equipos[data-mode="lista"] .fmdb-equipos__map { display: none; }
+.fmdb-equipos[data-mode="mapa"] .fmdb-equipos__filters { display: none; }
+
+/* In "Todos" view, the Equipos panel's Estado dropdown already drives both
+   panels — hide the duplicate Ligas filter bar to avoid two state pickers. */
+.fmdb-equipos[data-view="todos"] .fmdb-equipos__panel[data-panel="ligas"] .fmdb-equipos__filters { display: none; }
+
 /* Map */
 .fmdb-equipos__map { background: #f5f5f3; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
 .fmdb-equipos__map #fmdb-mexico-map { max-height: 380px; }
@@ -55,18 +94,6 @@
 .fmdb-check-label input { accent-color: var(--fmdb-green); }
 .fmdb-btn-ghost { background: none; border: 1px solid var(--fmdb-neutral); border-radius: 6px; padding: 8px 16px; font-size: 0.85rem; cursor: pointer; color: #555; align-self: flex-end; }
 .fmdb-btn-ghost:hover { border-color: var(--fmdb-green); color: var(--fmdb-green); }
-
-/* Body layout */
-.fmdb-equipos__body { display: grid; grid-template-columns: 220px 1fr; gap: 32px; align-items: start; }
-
-/* Sidebar */
-.fmdb-equipos__sidebar h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin: 0 0 12px; }
-.fmdb-state-list { list-style: none; padding: 0; margin: 0; position: sticky; top: 80px; max-height: 70vh; overflow-y: auto; }
-.fmdb-state-list__item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.88rem; transition: background 0.15s; }
-.fmdb-state-list__item:hover { background: var(--fmdb-pale-green); }
-.fmdb-state-list__item.active { background: var(--fmdb-green); color: #fff; }
-.fmdb-state-list__item.active .fmdb-state-list__count { background: rgba(255,255,255,0.25); color: #fff; }
-.fmdb-state-list__count { background: var(--fmdb-pale-green); color: var(--fmdb-dark-green); font-size: 0.75rem; font-weight: 700; padding: 1px 7px; border-radius: 10px; }
 
 /* State block */
 .fmdb-state-block { margin-bottom: 40px; }
@@ -103,8 +130,3 @@
 
 .fmdb-empty { color: #888; font-style: italic; padding: 32px 0; text-align: center; }
 
-@media (max-width: 768px) {
-    .fmdb-equipos__body { grid-template-columns: 1fr; }
-    .fmdb-state-list { position: static; max-height: none; display: flex; flex-wrap: wrap; gap: 6px; }
-    .fmdb-state-list__item { border: 1px solid var(--fmdb-neutral); border-radius: 20px; }
-}

@@ -9,11 +9,21 @@
     var filterStateSelect     = document.getElementById('filter-state');
     var filterCategoryBoxes   = document.querySelectorAll('.filter-category');
     var clearBtn              = document.getElementById('fmdb-clear-filters');
-    var stateListItems        = document.querySelectorAll('.fmdb-state-list__item');
     var noResults             = document.getElementById('fmdb-no-results');
     var filterStateLigasSelect = document.getElementById('filter-state-ligas');
     var clearBtnLigas         = document.getElementById('fmdb-clear-filters-ligas');
     var noResultsLigas        = document.getElementById('fmdb-ligas-no-results');
+    var teamCountEl           = document.querySelector('.fmdb-equipos__toggle-btn[data-view="equipos"] .fmdb-tab-count');
+    var ligaCountEl           = document.querySelector('.fmdb-equipos__toggle-btn[data-view="ligas"] .fmdb-tab-count');
+
+    function updateTabCounts() {
+        var visibleTeams = document.querySelectorAll(
+            '.fmdb-state-block:not(.hidden) .fmdb-team-card:not(.hidden)'
+        ).length;
+        var visibleLeagues = document.querySelectorAll('.fmdb-league-card:not(.hidden)').length;
+        if (teamCountEl) teamCountEl.textContent = visibleTeams;
+        if (ligaCountEl) ligaCountEl.textContent = visibleLeagues;
+    }
 
     function applyFilters() {
         var stateBlocks = document.querySelectorAll('.fmdb-state-block');
@@ -58,6 +68,8 @@
                 noResults.style.display = 'block';
             }
         }
+
+        updateTabCounts();
     }
 
     function applyLigasFilters(state) {
@@ -72,6 +84,7 @@
         if (noResultsLigas) {
             noResultsLigas.style.display = (cards.length && !anyVisible) ? 'block' : 'none';
         }
+        updateTabCounts();
     }
 
     function setActiveState(state) {
@@ -80,11 +93,6 @@
         // Sync dropdown
         if (filterStateSelect) filterStateSelect.value = state || '';
 
-        // Sync sidebar
-        stateListItems.forEach(function (li) {
-            li.classList.toggle('active', li.getAttribute('data-state') === state);
-        });
-
         // Sync SVG map
         document.querySelectorAll('.fmdb-state').forEach(function (path) {
             path.classList.toggle('active', path.getAttribute('data-state') === state);
@@ -92,16 +100,24 @@
 
         applyFilters();
 
-        // In todos view, also filter leagues by the same state
-        if (equiposEl && equiposEl.getAttribute('data-view') === 'todos') {
-            activeLigaState = state || null;
-            if (filterStateLigasSelect) filterStateLigasSelect.value = state || '';
-            applyLigasFilters(activeLigaState);
-        }
+        // Always cross-filter the ligas panel by the same state. The ligas
+        // grid can be visible alongside the map in any view/mode, so the
+        // selected state should drive both panels.
+        activeLigaState = state || null;
+        if (filterStateLigasSelect) filterStateLigasSelect.value = state || '';
+        applyLigasFilters(activeLigaState);
 
-        // Scroll to first visible state block
+        // Scroll target depends on the active view. States with no equipos/ligas
+        // still scroll so the user lands on the empty-state message.
         if (state) {
-            var target = document.querySelector('.fmdb-state-block[data-state="' + CSS.escape(state) + '"]');
+            var view   = equiposEl ? equiposEl.getAttribute('data-view') : 'todos';
+            var target;
+            if (view === 'ligas') {
+                target = document.querySelector('.fmdb-equipos__panel[data-panel="ligas"]');
+            } else {
+                target = document.querySelector('.fmdb-state-block[data-state="' + CSS.escape(state) + '"]')
+                      || document.getElementById('fmdb-teams-container');
+            }
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
@@ -120,14 +136,6 @@
                 .filter(function (b) { return b.checked; })
                 .map(function (b) { return b.value; });
             applyFilters();
-        });
-    });
-
-    // Sidebar state list → filter
-    stateListItems.forEach(function (li) {
-        li.addEventListener('click', function () {
-            var state = li.getAttribute('data-state');
-            setActiveState(activeState === state ? null : state);
         });
     });
 
@@ -182,6 +190,31 @@
     if (urlView === 'equipos' || urlView === 'ligas' || urlView === 'todos') {
         setView(urlView);
     }
+
+    // Mode toggle (Modo lista / Modo mapa). Clicking the active button
+    // returns to the default view (both map and panels visible).
+    var modeBtns = document.querySelectorAll('.fmdb-mode-btn');
+    modeBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var mode    = btn.getAttribute('data-mode');
+            var current = equiposEl ? (equiposEl.getAttribute('data-mode') || '') : '';
+            if (!equiposEl) return;
+            if (current === mode) {
+                equiposEl.removeAttribute('data-mode');
+                modeBtns.forEach(function (b) {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-pressed', 'false');
+                });
+            } else {
+                equiposEl.setAttribute('data-mode', mode);
+                modeBtns.forEach(function (b) {
+                    var on = b === btn;
+                    b.classList.toggle('active', on);
+                    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+            }
+        });
+    });
 
     // Ligas state filter (Ligas panel only)
     if (filterStateLigasSelect) {

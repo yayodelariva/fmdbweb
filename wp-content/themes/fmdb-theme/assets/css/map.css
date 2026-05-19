@@ -29,10 +29,14 @@
 .fmdb-state.has-teams.many-teams  { fill: #1D9E75; }
 .fmdb-state.has-teams.most-teams  { fill: #085041; }
 
-.fmdb-state.active {
-  fill: #085041;
-  stroke: #1D9E75;
-  stroke-width: 1.5;
+/* Selected state — amber so it never collides with the 10+ shade.
+   The .has-teams.active selector matches the 3-class specificity of the
+   intensity rules above, so it wins for shaded states too. */
+.fmdb-state.active,
+.fmdb-state.has-teams.active {
+  fill: #F4A52E;
+  stroke: #8E5800;
+  stroke-width: 1.8;
 }
 
 /* Wrapper */
