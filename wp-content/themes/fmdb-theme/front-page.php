@@ -4,15 +4,13 @@
  */
 get_header();
 
-$team_count   = (int) wp_count_posts( 'fmdb_team' )->publish;
-$league_count = (int) wp_count_posts( 'fmdb_league' )->publish;
-$state_set    = [];
-$all_teams    = get_posts( [ 'post_type' => 'fmdb_team', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
+$state_set = [];
+$all_teams = get_posts( [ 'post_type' => 'fmdb_team', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
 foreach ( $all_teams as $t ) {
     $s = get_field( 'team_state', $t->ID );
     if ( $s ) $state_set[ $s ] = true;
 }
-$state_count  = count( $state_set );
+$state_count = count( $state_set );
 
 $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ] );
 ?>
@@ -27,6 +25,8 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
     $hero_poster_url   = get_stylesheet_directory_uri() . '/assets/hero-poster.jpg';
     $has_hero_video    = file_exists( $hero_video_path );
     $has_hero_poster   = file_exists( $hero_poster_path );
+    if ( $has_hero_video )  $hero_video_url  .= '?v=' . filemtime( $hero_video_path );
+    if ( $has_hero_poster ) $hero_poster_url .= '?v=' . filemtime( $hero_poster_path );
     ?>
     <section class="fmdb-hero<?php echo $has_hero_video ? ' has-video' : ''; ?>">
         <?php if ( $has_hero_video ) : ?>
@@ -53,24 +53,6 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
             </div>
         </div>
         <div class="fmdb-hero__deco" aria-hidden="true"></div>
-    </section>
-
-    <!-- Stats strip -->
-    <section class="fmdb-stats-strip">
-        <div class="fmdb-stats-strip__inner">
-            <div class="fmdb-stat-item">
-                <span class="fmdb-stat-item__number"><?php echo esc_html( $team_count ); ?></span>
-                <span class="fmdb-stat-item__label">Equipos registrados</span>
-            </div>
-            <div class="fmdb-stat-item">
-                <span class="fmdb-stat-item__number"><?php echo esc_html( $state_count ); ?></span>
-                <span class="fmdb-stat-item__label">Estados con equipos</span>
-            </div>
-            <div class="fmdb-stat-item">
-                <span class="fmdb-stat-item__number"><?php echo esc_html( $league_count ); ?></span>
-                <span class="fmdb-stat-item__label">Ligas activas</span>
-            </div>
-        </div>
     </section>
 
     <!-- Map section -->

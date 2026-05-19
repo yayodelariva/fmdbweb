@@ -4,7 +4,7 @@
 .fmdb-hero {
     position: relative;
     background: var(--fmdb-dark-green);
-    min-height: 75vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -61,9 +61,7 @@
     inset: 0;
     z-index: 1;
     pointer-events: none;
-    background:
-        linear-gradient(90deg, rgba(8,80,65,0.85) 0%, rgba(8,80,65,0.55) 55%, rgba(8,80,65,0.35) 100%),
-        linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 100%);
+    background: linear-gradient(90deg, rgba(8,80,65,0.85) 0%, rgba(8,80,65,0.55) 55%, rgba(8,80,65,0.35) 100%);
 }
 
 /* When video is present, soften the decorative circle so it doesn't fight the footage */
@@ -130,33 +128,6 @@
     border-color: #fff;
     background: rgba(255,255,255,0.08);
     transform: translateY(-1px);
-}
-
-/* --- Stats strip --- */
-.fmdb-stats-strip { background: var(--fmdb-green); padding: 36px 0; }
-.fmdb-stats-strip__inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 40px;
-    display: flex;
-    justify-content: center;
-    gap: 72px;
-}
-.fmdb-stat-item { text-align: center; }
-.fmdb-stat-item__number {
-    display: block;
-    font-size: 2.6rem;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1;
-}
-.fmdb-stat-item__label {
-    display: block;
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.8);
-    margin-top: 5px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
 }
 
 /* --- Shared helpers --- */
@@ -322,13 +293,11 @@ a.fmdb-event-item.fmdb-cat--miscelaneo .fmdb-event-date small {
     .fmdb-home-map__inner { grid-template-columns: 1fr; gap: 32px; }
     .fmdb-home-map__text { order: -1; }
     .fmdb-news-grid { grid-template-columns: 1fr 1fr; }
-    .fmdb-stats-strip__inner { gap: 40px; }
 }
 
 @media (max-width: 640px) {
     .fmdb-hero__inner { padding: 72px 24px; }
     .fmdb-hero__deco { display: none; }
-    .fmdb-stats-strip__inner { flex-direction: column; gap: 20px; padding: 0 24px; }
     .fmdb-news-grid { grid-template-columns: 1fr; }
     .fmdb-home-map__inner,
     .fmdb-home-news__inner,
