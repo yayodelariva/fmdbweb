@@ -5,7 +5,7 @@
     align-items: center;
     justify-content: center;
     padding: 48px 20px;
-    background: var(--fmdb-pale-green);
+    background: #08302a;
 }
 .fmdb-registro__card {
     background: #fff;
@@ -132,6 +132,17 @@
     text-decoration: none;
 }
 .fmdb-registro__login-link a:hover { text-decoration: underline; }
+
+/* Primary-button hover (scoped to auth/profile pages). Pale-green bg with
+   dark-green text — matches the dashboard treatment. Beats the global
+   .fmdb-btn--primary:hover via the extra wrapper class. Mi perfil uses
+   .fmdb-perfil, the rest use .fmdb-registro. */
+.fmdb-registro .fmdb-btn--primary:hover,
+.fmdb-perfil   .fmdb-btn--primary:hover {
+    background: #CEF9D7;
+    color: #085041;
+    border-color: #fff;
+}
 
 /* Responsive */
 @media (max-width: 520px) {

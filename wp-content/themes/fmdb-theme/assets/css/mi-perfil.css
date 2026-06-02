@@ -5,7 +5,7 @@
     align-items: center;
     justify-content: center;
     padding: 48px 20px;
-    background: var(--fmdb-pale-green);
+    background: #08302a;
 }
 .fmdb-perfil__card {
     background: #fff;

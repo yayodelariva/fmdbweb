@@ -125,8 +125,9 @@
     border-color: rgba(255,255,255,0.45);
 }
 .fmdb-btn--outline:hover {
+    background: #CEF9D7;
+    color: #085041;
     border-color: #fff;
-    background: rgba(255,255,255,0.08);
     transform: translateY(-1px);
 }
 
@@ -151,7 +152,7 @@
 }
 
 /* --- Map section --- */
-.fmdb-home-map { padding: 80px 0; background: var(--fmdb-pale-green); }
+.fmdb-home-map { padding: 80px 0; background: #f9f9f7; }
 .fmdb-home-map__inner {
     max-width: 1200px;
     margin: 0 auto;
@@ -171,7 +172,7 @@
 .fmdb-home-map__text p { color: #444; margin: 0 0 28px; line-height: 1.65; }
 
 /* --- News section --- */
-.fmdb-home-news { padding: 80px 0; background: #fff; }
+.fmdb-home-news { padding: 80px 0; background: #f2f2f2; }
 .fmdb-home-news__inner { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
 .fmdb-news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 
@@ -233,15 +234,24 @@ a.fmdb-event-item { text-decoration: none; color: inherit; }
 
 /* Category color: tint the date badge */
 a.fmdb-event-item.fmdb-cat--torneo .fmdb-event-date,
+a.fmdb-event-item.fmdb-cat--liga .fmdb-event-date,
 a.fmdb-event-item.fmdb-cat--campamento .fmdb-event-date,
+a.fmdb-event-item.fmdb-cat--entrenamiento .fmdb-event-date,
+a.fmdb-event-item.fmdb-cat--anuncio .fmdb-event-date,
 a.fmdb-event-item.fmdb-cat--miscelaneo .fmdb-event-date {
     background: var(--cat-color);
 }
 a.fmdb-event-item.fmdb-cat--torneo .fmdb-event-date span,
+a.fmdb-event-item.fmdb-cat--liga .fmdb-event-date span,
 a.fmdb-event-item.fmdb-cat--campamento .fmdb-event-date span,
+a.fmdb-event-item.fmdb-cat--entrenamiento .fmdb-event-date span,
+a.fmdb-event-item.fmdb-cat--anuncio .fmdb-event-date span,
 a.fmdb-event-item.fmdb-cat--miscelaneo .fmdb-event-date span,
 a.fmdb-event-item.fmdb-cat--torneo .fmdb-event-date small,
+a.fmdb-event-item.fmdb-cat--liga .fmdb-event-date small,
 a.fmdb-event-item.fmdb-cat--campamento .fmdb-event-date small,
+a.fmdb-event-item.fmdb-cat--entrenamiento .fmdb-event-date small,
+a.fmdb-event-item.fmdb-cat--anuncio .fmdb-event-date small,
 a.fmdb-event-item.fmdb-cat--miscelaneo .fmdb-event-date small {
     color: rgba(255,255,255,0.95);
 }
@@ -258,7 +268,7 @@ a.fmdb-event-item.fmdb-cat--miscelaneo .fmdb-event-date small {
 .fmdb-events-empty { text-align: center; color: #888; padding: 40px 20px; font-size: 0.95rem; }
 
 /* --- Sponsors section --- */
-.fmdb-home-sponsors { padding: 60px 0; background: #fff; border-top: 1px solid var(--fmdb-neutral); }
+.fmdb-home-sponsors { padding: 60px 0; background: #f2f2f2; border-top: 1px solid var(--fmdb-neutral); }
 .fmdb-home-sponsors__inner { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
 .fmdb-home-sponsors__title {
     text-align: center;

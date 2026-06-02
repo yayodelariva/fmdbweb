@@ -11,6 +11,9 @@ add_action( 'wp_enqueue_scripts', function () {
         return file_exists( $path ) ? (string) filemtime( $path ) : wp_get_theme()->get( 'Version' );
     };
 
+    // Nunito webfont — used for the desktop + mobile nav menus.
+    wp_enqueue_style( 'fmdb-nunito', 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap', [], null );
+
     wp_enqueue_style( 'kadence-parent', get_template_directory_uri() . '/style.css' );
     wp_enqueue_style( 'fmdb-theme', get_stylesheet_uri(), [ 'kadence-parent' ], $ver( 'style.css' ) );
     wp_enqueue_style( 'fmdb-map', get_stylesheet_directory_uri() . '/assets/css/map.css', [], $ver( 'assets/css/map.css' ) );
@@ -27,13 +30,16 @@ add_action( 'wp_enqueue_scripts', function () {
     if ( is_page( 'noticias' ) || is_singular( 'post' ) ) {
         wp_enqueue_style( 'fmdb-noticias', get_stylesheet_directory_uri() . '/assets/css/noticias.css', [], $ver( 'assets/css/noticias.css' ) );
     }
-    if ( is_page( 'equipos-y-ligas' ) ) {
+    if ( is_page( 'mapa-interactivo' ) ) {
         wp_enqueue_style(  'fmdb-equipos', get_stylesheet_directory_uri() . '/assets/css/equipos.css', [], $ver( 'assets/css/equipos.css' ) );
         wp_enqueue_script( 'fmdb-equipos', get_stylesheet_directory_uri() . '/assets/js/equipos.js', [ 'fmdb-map' ], $ver( 'assets/js/equipos.js' ), true );
     }
     if ( is_front_page() ) {
         wp_enqueue_style(  'fmdb-home', get_stylesheet_directory_uri() . '/assets/css/home.css', [], $ver( 'assets/css/home.css' ) );
         wp_enqueue_script( 'fmdb-home', get_stylesheet_directory_uri() . '/assets/js/home.js', [ 'fmdb-map' ], $ver( 'assets/js/home.js' ), true );
+    }
+    if ( is_404() ) {
+        wp_enqueue_style( 'fmdb-home', get_stylesheet_directory_uri() . '/assets/css/home.css', [], $ver( 'assets/css/home.css' ) );
     }
     if ( is_page( 'registro' ) || is_page( 'login' ) || is_page( 'olvide-mi-contrasena' ) ) {
         wp_enqueue_style( 'fmdb-registro', get_stylesheet_directory_uri() . '/assets/css/registro.css', [], $ver( 'assets/css/registro.css' ) );
@@ -70,9 +76,10 @@ add_action( 'wp_enqueue_scripts', function () {
 
     wp_enqueue_script( 'fmdb-map', get_stylesheet_directory_uri() . '/assets/js/map.js', [], $ver( 'assets/js/map.js' ), true );
 
-    // Pass per-state team and league counts to JS: [ 'Estado' => count ]
-    $team_counts   = [];
-    $league_counts = [];
+    // Pass per-state team, league and asociación counts to JS: [ 'Estado' => count ]
+    $team_counts       = [];
+    $league_counts     = [];
+    $asociacion_counts = [];
     if ( function_exists( 'get_posts' ) ) {
         $teams = get_posts( [ 'post_type' => 'fmdb_team', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
         foreach ( $teams as $team ) {
@@ -89,9 +96,17 @@ add_action( 'wp_enqueue_scripts', function () {
                 $league_counts[ $state ] = ( $league_counts[ $state ] ?? 0 ) + 1;
             }
         }
+        $asociaciones = get_posts( [ 'post_type' => 'fmdb_asociacion', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
+        foreach ( $asociaciones as $asoc ) {
+            $state = get_field( 'asociacion_state', $asoc->ID );
+            if ( $state ) {
+                $asociacion_counts[ $state ] = ( $asociacion_counts[ $state ] ?? 0 ) + 1;
+            }
+        }
     }
     wp_localize_script( 'fmdb-map', 'fmdbMapData', [
-        'teams'   => $team_counts,
-        'leagues' => $league_counts,
+        'teams'        => $team_counts,
+        'leagues'      => $league_counts,
+        'asociaciones' => $asociacion_counts,
     ] );
 } );

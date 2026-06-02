@@ -212,6 +212,132 @@ add_action( 'cmb2_init', function () {
 } );
 
 /* ===================================================================
+ * Organigrama "Miembros" repeater — CMB2 group on Organigrama people-grid
+ * pages (Consejo Directivo, the three Comisiones, Asociaciones).
+ *
+ * Originally built as an ACF Repeater, but ACF Free does not include the
+ * Repeater field. Same field name (`org_members`) and sub-field names so
+ * the shared render helper in inc/helpers.php works unchanged.
+ * Storage: serialized array under postmeta `org_members`.
+ * =================================================================== */
+add_action( 'cmb2_init', function () {
+    $cmb = new_cmb2_box( [
+        'id'           => 'fmdb_org_members_box',
+        'title'        => __( 'Miembros', 'fmdb' ),
+        'object_types' => [ 'page' ],
+        'context'      => 'normal',
+        'priority'     => 'default',
+        'show_on_cb'   => function ( $cmb ) {
+            $page_paths = [
+                'organigrama/consejo-directivo',
+                'organigrama/comisiones/comision-selecciones-nacionales',
+                'organigrama/comisiones/comision-arbitraje-jueceo',
+                'organigrama/comisiones/comision-eventos',
+                'organigrama/asociaciones',
+            ];
+            $allowed = [];
+            foreach ( $page_paths as $path ) {
+                $p = get_page_by_path( $path );
+                if ( $p ) $allowed[] = (int) $p->ID;
+            }
+            return in_array( (int) $cmb->object_id(), $allowed, true );
+        },
+    ] );
+
+    $cmb->add_field( [
+        'name'    => __( 'Miembros', 'fmdb' ),
+        'id'      => 'org_members',
+        'type'    => 'group',
+        'options' => [
+            'group_title'   => __( 'Miembro {#}', 'fmdb' ),
+            'add_button'    => __( 'Añadir miembro', 'fmdb' ),
+            'remove_button' => __( 'Eliminar miembro', 'fmdb' ),
+            'sortable'      => true,
+        ],
+    ] );
+    $cmb->add_group_field( 'org_members', [
+        'name' => __( 'Nombre', 'fmdb' ),
+        'id'   => 'member_name',
+        'type' => 'text',
+    ] );
+    $cmb->add_group_field( 'org_members', [
+        'name'        => __( 'Cargo', 'fmdb' ),
+        'desc'        => __( 'Ej. Presidente, Vicepresidente, Representante por Jalisco…', 'fmdb' ),
+        'id'          => 'member_position',
+        'type'        => 'text',
+    ] );
+    $cmb->add_group_field( 'org_members', [
+        'name'         => __( 'Foto', 'fmdb' ),
+        'id'           => 'member_photo',
+        'type'         => 'file',
+        'options'      => [ 'url' => false ],
+        'text'         => [ 'add_upload_file_text' => __( 'Subir foto', 'fmdb' ) ],
+        'query_args'   => [ 'type' => 'image' ],
+        'preview_size' => 'medium',
+    ] );
+    $cmb->add_group_field( 'org_members', [
+        'name' => __( 'Biografía corta', 'fmdb' ),
+        'id'   => 'member_bio',
+        'type' => 'textarea_small',
+    ] );
+} );
+
+/* ===================================================================
+ * Extra event dates — CMB2 group on tribe_events
+ * One main event with multiple non-contiguous occurrences. Each row
+ * adds another date that appears as its own card/dot in the calendar,
+ * all linking back to the same event post. Time/note are optional
+ * overrides; when blank they inherit from the main event.
+ * Storage: serialized array under postmeta `event_extra_dates`.
+ * =================================================================== */
+add_action( 'cmb2_init', function () {
+    $cmb = new_cmb2_box( [
+        'id'           => 'fmdb_event_extra_dates_box',
+        'title'        => __( 'Fechas adicionales', 'fmdb' ),
+        'object_types' => [ 'tribe_events' ],
+        'context'      => 'normal',
+        'priority'     => 'default',
+    ] );
+
+    $cmb->add_field( [
+        'name'        => __( 'Otras fechas del evento', 'fmdb' ),
+        'desc'        => __( 'Cada fecha aparece como una tarjeta y un punto adicional en el calendario, todas enlazadas al mismo evento. Deja el horario en blanco para reutilizar el del evento principal.', 'fmdb' ),
+        'id'          => 'event_extra_dates',
+        'type'        => 'group',
+        'options'     => [
+            'group_title'   => __( 'Fecha {#}', 'fmdb' ),
+            'add_button'    => __( 'Añadir fecha', 'fmdb' ),
+            'remove_button' => __( 'Eliminar fecha', 'fmdb' ),
+            'sortable'      => true,
+        ],
+    ] );
+    $cmb->add_group_field( 'event_extra_dates', [
+        'name'        => __( 'Fecha', 'fmdb' ),
+        'id'          => 'date',
+        'type'        => 'text_date',
+        'date_format' => 'Y-m-d',
+    ] );
+    $cmb->add_group_field( 'event_extra_dates', [
+        'name'        => __( 'Hora de inicio (opcional)', 'fmdb' ),
+        'id'          => 'start_time',
+        'type'        => 'text_time',
+        'time_format' => 'g:i a',
+    ] );
+    $cmb->add_group_field( 'event_extra_dates', [
+        'name'        => __( 'Hora de fin (opcional)', 'fmdb' ),
+        'id'          => 'end_time',
+        'type'        => 'text_time',
+        'time_format' => 'g:i a',
+    ] );
+    $cmb->add_group_field( 'event_extra_dates', [
+        'name'        => __( 'Nota (opcional)', 'fmdb' ),
+        'desc'        => __( 'Ej. "Inauguración", "Jornada 2", "Final".', 'fmdb' ),
+        'id'          => 'note',
+        'type'        => 'text',
+    ] );
+} );
+
+/* ===================================================================
  * Event PDFs (Documentos) — CMB2 group on tribe_events
  * =================================================================== */
 add_action( 'cmb2_init', function () {

@@ -48,7 +48,7 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
             <h1 class="fmdb-hero__title">El dodgeball<br>organizado de México</h1>
             <p class="fmdb-hero__subtitle">Conectamos equipos, ligas y jugadores en todo el país.</p>
             <div class="fmdb-hero__ctas">
-                <a href="<?php echo esc_url( home_url( '/equipos-y-ligas/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Encuentra tu equipo</a>
+                <a href="<?php echo esc_url( home_url( '/mapa-interactivo/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Encuentra tu equipo</a>
                 <a href="#" class="fmdb-btn fmdb-btn--outline">Únete a la FMDB</a>
             </div>
         </div>
@@ -68,7 +68,7 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
                 <span class="fmdb-section-eyebrow">Directorio de equipos</span>
                 <h2>Encuentra equipos cerca de ti</h2>
                 <p>Tenemos equipos en <?php echo esc_html( $state_count ); ?> estados de la República. Haz clic en el mapa para explorar los equipos de cada estado.</p>
-                <a href="<?php echo esc_url( home_url( '/equipos-y-ligas/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Ver todos los equipos</a>
+                <a href="<?php echo esc_url( home_url( '/mapa-interactivo/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Ver todos los equipos</a>
             </div>
         </div>
     </section>
@@ -103,13 +103,24 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
     <!-- Próximos eventos -->
     <?php
     global $wpdb;
-    $home_event_ids = $wpdb->get_col( $wpdb->prepare(
+    // Pull anything that could have an upcoming occurrence (within ~3 months),
+    // expand each into occurrences, then take the next 3 across all events.
+    $candidate_ids = $wpdb->get_col(
         "SELECT p.ID FROM {$wpdb->posts} p
          INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_EventStartDate'
-         WHERE p.post_type='tribe_events' AND p.post_status='publish' AND pm.meta_value >= %s
-         ORDER BY pm.meta_value ASC LIMIT 3",
-        current_time( 'mysql' )
-    ) );
+         WHERE p.post_type='tribe_events' AND p.post_status='publish'"
+    );
+    $now_ts = strtotime( current_time( 'mysql' ) );
+    $home_occurrences = [];
+    foreach ( $candidate_ids as $cid ) {
+        foreach ( fmdb_get_event_occurrences( $cid ) as $occ ) {
+            if ( $occ['start_ts'] >= $now_ts ) $home_occurrences[] = $occ;
+        }
+    }
+    usort( $home_occurrences, function ( $a, $b ) {
+        return $a['start_ts'] <=> $b['start_ts'];
+    } );
+    $home_occurrences = array_slice( $home_occurrences, 0, 3 );
     ?>
     <section class="fmdb-home-events">
         <div class="fmdb-home-events__inner">
@@ -118,10 +129,13 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
                 <a href="<?php echo esc_url( home_url( '/eventos/' ) ); ?>" class="fmdb-link-more">Ver calendario →</a>
             </div>
             <div class="fmdb-events-list">
-                <?php if ( $home_event_ids ) : foreach ( $home_event_ids as $eid ) :
-                    $start_ts = strtotime( get_post_meta( $eid, '_EventStartDate', true ) );
-                    $end_ts   = strtotime( get_post_meta( $eid, '_EventEndDate',   true ) );
-                    $dp       = fmdb_event_date_parts( $start_ts, $end_ts );
+                <?php if ( $home_occurrences ) : foreach ( $home_occurrences as $occ ) :
+                    $eid      = $occ['post_id'];
+                    $start_ts = $occ['start_ts'];
+                    $end_ts   = $occ['end_ts'];
+                    $dp       = $occ['is_primary']
+                        ? fmdb_event_date_parts( $start_ts, $end_ts )
+                        : fmdb_event_date_parts( $start_ts, $start_ts );
                     $venue_id = get_post_meta( $eid, '_EventVenueID', true );
                     $city     = $venue_id ? get_post_meta( $venue_id, '_VenueCity',  true ) : '';
                     $state    = $venue_id ? get_post_meta( $venue_id, '_VenueState', true ) : '';
@@ -129,14 +143,18 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
                     $cats     = get_the_terms( $eid, 'tribe_events_cat' );
                     $cat_slug = ( $cats && ! is_wp_error( $cats ) ) ? $cats[0]->slug : 'miscelaneo';
                     $cat_name = ( $cats && ! is_wp_error( $cats ) ) ? $cats[0]->name : 'Misceláneo';
+                    $permalink = $occ['is_primary']
+                        ? get_permalink( $eid )
+                        : add_query_arg( 'fecha', $occ['index'], get_permalink( $eid ) ) . '#fecha-' . $occ['index'];
+                    $title     = get_the_title( $eid ) . ( ( ! $occ['is_primary'] && $occ['note'] !== '' ) ? ' — ' . $occ['note'] : '' );
                 ?>
-                    <a href="<?php echo esc_url( get_permalink( $eid ) ); ?>" class="fmdb-event-item fmdb-cat--<?php echo esc_attr( $cat_slug ); ?>">
+                    <a href="<?php echo esc_url( $permalink ); ?>" class="fmdb-event-item fmdb-cat--<?php echo esc_attr( $cat_slug ); ?>">
                         <div class="fmdb-event-date<?php echo $dp['is_range'] ? ' is-range' : ''; ?>">
                             <span><?php echo esc_html( $dp['day'] ); ?></span>
                             <small><?php echo esc_html( $dp['month'] ); ?></small>
                         </div>
                         <div class="fmdb-event-info">
-                            <strong><?php echo esc_html( get_the_title( $eid ) ); ?></strong>
+                            <strong><?php echo esc_html( $title ); ?></strong>
                             <span><?php echo esc_html( $location ); ?></span>
                         </div>
                         <span class="fmdb-badge"><?php echo esc_html( $cat_name ); ?></span>

@@ -13,3 +13,16 @@ add_filter( 'pings_open', function ( $open, $post_id ) {
     if ( get_post_type( $post_id ) === 'post' ) return false;
     return $open;
 }, 10, 2 );
+
+// Translate Kadence parent-theme strings that ship with es_ES only
+// (site runs es_MX so WP doesn't fall back to es_ES).
+add_filter( 'gettext', function ( $translation, $text, $domain ) {
+    if ( $domain !== 'kadence' ) return $translation;
+    static $map = [
+        'Search Results for: %s' => 'Resultados de búsqueda para: %s',
+        'Nothing Found'          => 'Sin resultados',
+        'Sorry, but nothing matched your search terms. Please try again with some different keywords.'
+            => 'Lo sentimos, no encontramos resultados para tu búsqueda. Intenta con otras palabras.',
+    ];
+    return $map[ $text ] ?? $translation;
+}, 10, 3 );

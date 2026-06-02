@@ -31,13 +31,6 @@
 .fmdb-seleccion-tipo__back { display: inline-block; margin-top: 12px; font-size: 0.85rem; font-weight: 600; color: var(--fmdb-green); text-decoration: none; }
 .fmdb-seleccion-tipo__back:hover { text-decoration: underline; }
 
-/* Gender sections within a ball-type panel */
-.fmdb-seleccion-category { margin-bottom: 48px; }
-.fmdb-seleccion-category:last-child { margin-bottom: 0; }
-.fmdb-seleccion-category__header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--fmdb-pale-green); }
-.fmdb-seleccion-category__title { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--fmdb-dark-green); }
-.fmdb-seleccion-category__count { font-size: 0.75rem; font-weight: 700; color: var(--fmdb-dark-green); background: var(--fmdb-pale-green); padding: 2px 8px; border-radius: 10px; }
-
 /* Member grid */
 .fmdb-seleccion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; padding: 8px 0 16px; }
 

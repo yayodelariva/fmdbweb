@@ -173,22 +173,34 @@
 /* === Category styling (color tokens live in style.css) === */
 /* Date badge tinting per category */
 .fmdb-evento-card__date.fmdb-cat--torneo,
+.fmdb-evento-card__date.fmdb-cat--liga,
 .fmdb-evento-card__date.fmdb-cat--campamento,
+.fmdb-evento-card__date.fmdb-cat--entrenamiento,
+.fmdb-evento-card__date.fmdb-cat--anuncio,
 .fmdb-evento-card__date.fmdb-cat--miscelaneo {
     background: var(--cat-color);
 }
 .fmdb-evento-card__date.fmdb-cat--torneo .fmdb-evento-card__month,
+.fmdb-evento-card__date.fmdb-cat--liga .fmdb-evento-card__month,
 .fmdb-evento-card__date.fmdb-cat--campamento .fmdb-evento-card__month,
+.fmdb-evento-card__date.fmdb-cat--entrenamiento .fmdb-evento-card__month,
+.fmdb-evento-card__date.fmdb-cat--anuncio .fmdb-evento-card__month,
 .fmdb-evento-card__date.fmdb-cat--miscelaneo .fmdb-evento-card__month,
 .fmdb-evento-card__date.fmdb-cat--torneo .fmdb-evento-card__year,
+.fmdb-evento-card__date.fmdb-cat--liga .fmdb-evento-card__year,
 .fmdb-evento-card__date.fmdb-cat--campamento .fmdb-evento-card__year,
+.fmdb-evento-card__date.fmdb-cat--entrenamiento .fmdb-evento-card__year,
+.fmdb-evento-card__date.fmdb-cat--anuncio .fmdb-evento-card__year,
 .fmdb-evento-card__date.fmdb-cat--miscelaneo .fmdb-evento-card__year {
     color: rgba(255,255,255,0.85);
 }
 
 /* Category pill on cards */
 .fmdb-evento-card__cat.fmdb-cat--torneo,
+.fmdb-evento-card__cat.fmdb-cat--liga,
 .fmdb-evento-card__cat.fmdb-cat--campamento,
+.fmdb-evento-card__cat.fmdb-cat--entrenamiento,
+.fmdb-evento-card__cat.fmdb-cat--anuncio,
 .fmdb-evento-card__cat.fmdb-cat--miscelaneo {
     background: var(--cat-color);
     color: #fff;
@@ -590,3 +602,19 @@
 .fmdb-evento-single__meta-item svg { flex-shrink: 0; margin-top: 2px; color: var(--fmdb-green); }
 .fmdb-evento-single__meta-item div { display: flex; flex-direction: column; gap: 2px; }
 .fmdb-evento-single__meta-item strong { color: var(--fmdb-dark-green); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Extra-dates list inside the meta sidebar */
+.fmdb-evento-single__dates { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fmdb-evento-single__dates li { border-radius: 6px; background: #f6f7f5; }
+.fmdb-evento-single__dates li.is-active { background: #e8f5ec; outline: 2px solid var(--fmdb-green); }
+.fmdb-evento-single__dates li a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding: 6px 8px; text-decoration: none; color: inherit; }
+.fmdb-evento-single__dates li:hover { background: #ecf3ee; }
+.fmdb-evento-single__dates-date { font-weight: 600; color: var(--fmdb-dark-green); }
+.fmdb-evento-single__dates-time { color: #555; font-size: 0.85rem; }
+.fmdb-evento-single__dates-note { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; background: var(--fmdb-green); color: #fff; }
+
+/* Active occurrence note next to the title */
+.fmdb-evento-single__title-note { font-weight: 400; color: var(--fmdb-green); font-size: 0.7em; }
+
+/* Note chip on per-occurrence cards (eventos list) */
+.fmdb-evento-card__cat--note { background: #2c3e50 !important; color: #fff !important; }

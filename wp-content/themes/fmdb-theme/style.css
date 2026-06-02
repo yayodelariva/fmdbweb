@@ -173,7 +173,7 @@ img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
 .fmdb-nav-profile { margin-left: auto !important; }
 .fmdb-nav-login__link {
     font-size: 0.88rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--fmdb-dark-green) !important;
     text-decoration: none;
     padding: 6px 16px;
@@ -196,10 +196,34 @@ img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
   --fmdb-text-dark:   #E1F5EE;
 }
 
+/* Override Kadence's first palette colour site-wide. Kadence emits its own
+   `:root{--global-palette1:…}` inline in the page <head>, which loads AFTER
+   our enqueued stylesheet — equal specificity rules lose on cascade order.
+   Match the selector and bump with `!important` so we win at the same element
+   instead of relying on body-to-descendant inheritance (Kadence resolves the
+   var in computed-value rules that don't honour the body inheritance path). */
+:root {
+  --global-palette1: #17876a !important;
+}
+
+/* Kadence hardcodes #ffffff on the header via an inline <style> that uses the
+   same selector as us and loads after this file, so it wins on cascade order.
+   Prefix with `body` to raise specificity above Kadence's #masthead rule while
+   staying below the transparent-header rules (so the homepage hero keeps its
+   transparent header). */
+body #masthead,
+body #masthead .kadence-sticky-header.item-is-fixed:not(.item-at-start):not(.site-header-row-container):not(.site-main-header-wrap),
+body #masthead .kadence-sticky-header.item-is-fixed:not(.item-at-start) > .site-header-row-container-inner {
+    background: #f2f2f2;
+}
+
 /* --- Event category color tokens (used on homepage, eventos page, etc.) --- */
-.fmdb-cat--torneo     { --cat-color: #c0392b; --cat-color-bg: #fdecea; }
-.fmdb-cat--campamento { --cat-color: #2980b9; --cat-color-bg: #e8f2fa; }
-.fmdb-cat--miscelaneo { --cat-color: #7f8c8d; --cat-color-bg: #eef0f1; }
+.fmdb-cat--torneo        { --cat-color: #c0392b; --cat-color-bg: #fdecea; }
+.fmdb-cat--liga          { --cat-color: #27ae60; --cat-color-bg: #e8f7ee; }
+.fmdb-cat--campamento    { --cat-color: #2980b9; --cat-color-bg: #e8f2fa; }
+.fmdb-cat--entrenamiento { --cat-color: #8e44ad; --cat-color-bg: #f3e9f7; }
+.fmdb-cat--anuncio       { --cat-color: #d35400; --cat-color-bg: #fdece0; }
+.fmdb-cat--miscelaneo    { --cat-color: #7f8c8d; --cat-color-bg: #eef0f1; }
 
 /* === Nav dropdown submenus (Organigrama with nested Comisiones) === */
 .fmdb-nav-organigrama,
@@ -211,7 +235,7 @@ img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
     position: absolute;
     top: 100%;
     left: 0;
-    background: #fff;
+    background: #f2f2f2;
     border: 1px solid rgba(8, 80, 65, 0.15);
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(8, 80, 65, 0.12);
@@ -232,17 +256,24 @@ img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
     height: 8px;
 }
 .fmdb-nav-submenu li { margin: 0; }
-.fmdb-nav-submenu li a {
+.fmdb-nav-submenu li a,
+.fmdb-nav-submenu li > .fmdb-nav-heading {
     display: block;
     padding: 9px 18px;
     font-size: 0.88rem;
-    color: var(--fmdb-dark-green);
+    font-family: "Nunito", var(--global-body-font-family, sans-serif);
+    color: #085041;
     text-decoration: none;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
     white-space: nowrap;
 }
 .fmdb-nav-submenu li a:hover,
-.fmdb-nav-submenu li a:focus { background: var(--fmdb-pale-green); }
+.fmdb-nav-submenu li a:focus,
+.fmdb-nav-comisiones:hover > .fmdb-nav-heading,
+.fmdb-nav-comisiones:focus-within > .fmdb-nav-heading {
+    background: var(--fmdb-pale-green);
+    color: #117554;
+}
 
 /* Nested submenu (Comisiones) — opens to the right */
 .fmdb-nav-submenu--nested {
@@ -252,7 +283,41 @@ img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
 }
 .fmdb-nav-comisiones:hover > .fmdb-nav-submenu--nested,
 .fmdb-nav-comisiones:focus-within > .fmdb-nav-submenu--nested { display: block; }
-.fmdb-nav-comisiones > a { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fmdb-nav-comisiones > a,
+.fmdb-nav-comisiones > .fmdb-nav-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* Non-clickable nav headings (Organigrama, Comisiones) — render like other
+   top-level/submenu items but without navigating. Mirrors the structural +
+   themed styles Kadence applies to `.header-menu-container > ul > li > a`
+   and `.primary-menu-container > ul > li.menu-item > a` (color, padding,
+   hover) so the heading is visually indistinguishable from a real link. */
+.fmdb-nav-heading { cursor: default; user-select: none; text-decoration: none; }
+.fmdb-nav-heading:focus { outline: none; }
+
+.header-menu-container > ul > li > .fmdb-nav-heading {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    position: relative;
+}
+.primary-menu-container > ul > li.menu-item > .fmdb-nav-heading {
+    padding-left: calc(1.2em / 2);
+    padding-right: calc(1.2em / 2);
+    padding-top: 0.6em;
+    padding-bottom: 0.6em;
+    color: var(--global-palette5);
+}
+.primary-menu-container > ul > li.menu-item:hover > .fmdb-nav-heading,
+.primary-menu-container > ul > li.menu-item:focus-within > .fmdb-nav-heading {
+    color: var(--global-palette-highlight);
+}
+
+/* Submenu heading (Comisiones) — mirror Kadence's nested submenu link
+   structure so it matches sibling <a> rows exactly. */
+.header-navigation .header-menu-container ul ul li.menu-item > .fmdb-nav-heading {
+    padding-top: 1em;
+    padding-bottom: 1em;
+}
 .fmdb-nav-submenu--nested::before {
     top: 0;
     left: -8px;
@@ -261,29 +326,97 @@ img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
     height: 100%;
 }
 
-@media (max-width: 900px) {
-    .fmdb-nav-submenu { position: static; box-shadow: none; border: 0; margin: 0; padding-left: 12px; }
-    .fmdb-nav-submenu--nested { padding-left: 24px; }
-    .fmdb-nav-organigrama:hover > .fmdb-nav-submenu,
-    .fmdb-nav-comisiones:hover > .fmdb-nav-submenu--nested { display: none; }
+/* Organigrama submenus — Kadence styles these with high-specificity rules
+   (dark palette3 background, near-white palette8 links) emitted inline in the
+   <head>. Match its selector path + a `body` prefix so our navbar palette wins
+   regardless of cascade order: light bg, dark-green text, green hover. */
+body .header-navigation .header-menu-container ul ul.sub-menu {
+    background: #f2f2f2;
+}
+/* Kadence's item divider is a white line (invisible on the light bg) — swap it
+   for a subtle dark-green tint. */
+body .header-navigation .header-menu-container ul ul li.menu-item {
+    border-bottom: 1px solid rgba(8, 80, 65, 0.1);
+}
+body .header-navigation .header-menu-container ul ul li.menu-item:last-child {
+    border-bottom: none;
+}
+body .header-navigation .header-menu-container ul ul li.menu-item > a,
+body .header-navigation .header-menu-container ul ul li.menu-item > .fmdb-nav-heading {
+    color: #085041;
+    font-family: "Nunito", var(--global-body-font-family, sans-serif);
+    font-size: 15px;
+    width: auto;
+}
+body .header-navigation .header-menu-container ul ul li.menu-item > a:hover,
+body .header-navigation .header-menu-container ul ul li.menu-item > a:focus,
+body .header-navigation .header-menu-container ul ul li.menu-item:hover > .fmdb-nav-heading,
+body .header-navigation .header-menu-container ul ul li.menu-item:focus-within > .fmdb-nav-heading {
+    color: #117554;
+    background: var(--fmdb-pale-green);
 }
 
-/* === Consejo Directivo page === */
-.fmdb-consejo { padding: 0 20px 60px; }
-.fmdb-consejo__wrap { max-width: 1200px; margin: 0 auto; }
-.fmdb-consejo__header { text-align: center; padding: 40px 0 32px; }
-.fmdb-consejo__title { margin: 0 0 12px; font-size: 2.25rem; color: var(--fmdb-dark-green); font-weight: 800; }
-.fmdb-consejo__lede { margin: 0 auto; max-width: 640px; color: #555; font-size: 1.02rem; line-height: 1.55; }
-.fmdb-consejo__intro { max-width: 720px; margin: 0 auto; color: #444; line-height: 1.6; }
-.fmdb-consejo__grid {
+/* Mobile drawer submenus. Scoped to #mobile-drawer (not a width media query)
+   because Kadence can open the drawer above 900px. The injected Organigrama
+   items bypass Kadence's menu walker, so they get no drawer toggle button;
+   hover/focus don't apply on touch, so we reveal via a JS-toggled .is-open
+   class (see nav.php). The #mobile-drawer id also outranks the desktop hover
+   rules, so only .is-open opens a submenu inside the drawer.
+   Submenus sit inline (no floating panel) and share the dark drawer background;
+   text is already #f2f2f2 from the drawer rules. */
+/* Organigrama/Comisiones headings aren't <a>, so they miss the sibling link
+   padding + divider — make them render as plain block menu rows that match,
+   including the same bottom border Kadence puts on the other items. */
+#mobile-drawer .fmdb-nav-heading {
+    display: block;
+    padding: 1em 0;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+/* Match each heading's left padding to the links it sits beside: top-level
+   links use Kadence's .5em, submenu links use our 18px. */
+#mobile-drawer .fmdb-nav-organigrama > .fmdb-nav-heading { padding-left: .5em; }
+#mobile-drawer .fmdb-nav-submenu .fmdb-nav-heading { padding-left: 18px; }
+/* Indent each submenu level so the hierarchy reads clearly: Organigrama's
+   children step in once, Comisiones' children step in again. */
+#mobile-drawer .fmdb-nav-submenu { position: static; box-shadow: none; border: 0; margin: 0; padding-left: 16px; background: transparent; }
+#mobile-drawer .fmdb-nav-submenu--nested { padding-left: 16px; }
+/* No dividers between items inside the Organigrama/Comisiones submenus — only
+   the top-level Organigrama row keeps its border. */
+#mobile-drawer .fmdb-nav-submenu li a,
+#mobile-drawer .fmdb-nav-submenu .fmdb-nav-heading { border-bottom: none; }
+/* Kill the pale-green hover/focus background (desktop dropdown style) and the
+   mobile tap-flash so tapping Comisiones/items shows no white highlight. */
+#mobile-drawer .fmdb-nav-heading,
+#mobile-drawer .fmdb-nav-submenu li a { -webkit-tap-highlight-color: transparent; }
+#mobile-drawer .fmdb-nav-submenu li a:hover,
+#mobile-drawer .fmdb-nav-submenu li a:focus,
+#mobile-drawer .fmdb-nav-comisiones:hover > .fmdb-nav-heading,
+#mobile-drawer .fmdb-nav-comisiones:focus-within > .fmdb-nav-heading { background: transparent; }
+#mobile-drawer .fmdb-nav-organigrama > .fmdb-nav-submenu,
+#mobile-drawer .fmdb-nav-comisiones > .fmdb-nav-submenu--nested { display: none; }
+#mobile-drawer .fmdb-nav-organigrama.is-open > .fmdb-nav-submenu,
+#mobile-drawer .fmdb-nav-comisiones.is-open > .fmdb-nav-submenu--nested { display: block; }
+/* Caret flips when its section is open */
+#mobile-drawer .fmdb-nav-organigrama.is-open > .fmdb-nav-heading .fmdb-nav-caret,
+#mobile-drawer .fmdb-nav-comisiones.is-open > .fmdb-nav-heading .fmdb-nav-caret { transform: rotate(180deg); }
+
+/* === Organigrama people-grid pages (Consejo Directivo, Comisiones, Asociaciones) === */
+.fmdb-org { padding: 0 20px 60px; }
+.fmdb-org__wrap { max-width: 1200px; margin: 0 auto; }
+.fmdb-org__header { text-align: center; padding: 40px 0 32px; }
+.fmdb-org__title { margin: 0 0 12px; font-size: 2.25rem; color: var(--fmdb-dark-green); font-weight: 800; }
+.fmdb-org__lede { margin: 0 auto; max-width: 640px; color: #555; font-size: 1.02rem; line-height: 1.55; }
+.fmdb-org__intro { max-width: 720px; margin: 0 auto; color: #444; line-height: 1.6; }
+.fmdb-org__grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 28px;
     margin-top: 12px;
 }
-.fmdb-consejo__empty { text-align: center; color: #888; font-style: italic; padding: 40px 0; }
+.fmdb-org__empty { text-align: center; color: #888; font-style: italic; padding: 40px 0; }
 
-.fmdb-consejo-card {
+.fmdb-org-card {
     display: flex;
     flex-direction: column;
     background: #fff;
@@ -292,20 +425,20 @@ img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
     overflow: hidden;
     transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
-.fmdb-consejo-card:hover {
+.fmdb-org-card:hover {
     transform: translateY(-3px);
     border-color: var(--fmdb-green);
     box-shadow: 0 8px 28px rgba(29, 158, 117, 0.14);
 }
-.fmdb-consejo-card__photo {
+.fmdb-org-card__photo {
     width: 100%;
     aspect-ratio: 4 / 5;
     background: linear-gradient(135deg, var(--fmdb-dark-green) 0%, var(--fmdb-green) 100%);
     overflow: hidden;
     position: relative;
 }
-.fmdb-consejo-card__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.fmdb-consejo-card__initials {
+.fmdb-org-card__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fmdb-org-card__initials {
     width: 100%;
     height: 100%;
     display: flex;
@@ -316,18 +449,285 @@ img.fmdb-player-avatar { object-fit: cover; display: inline-block; }
     font-weight: 700;
     letter-spacing: 0.05em;
 }
-.fmdb-consejo-card__body { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
-.fmdb-consejo-card__position {
+.fmdb-org-card__body { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.fmdb-org-card__position {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-size: 0.72rem;
     font-weight: 700;
     color: var(--fmdb-green);
 }
-.fmdb-consejo-card__name { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--fmdb-dark-green); line-height: 1.3; }
-.fmdb-consejo-card__bio { margin: 6px 0 0; font-size: 0.85rem; color: #555; line-height: 1.5; }
+.fmdb-org-card__name { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--fmdb-dark-green); line-height: 1.3; }
+.fmdb-org-card__bio { margin: 6px 0 0; font-size: 0.85rem; color: #555; line-height: 1.5; }
 
 @media (max-width: 600px) {
-    .fmdb-consejo__title { font-size: 1.7rem; }
-    .fmdb-consejo__grid { gap: 18px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    .fmdb-org__title { font-size: 1.7rem; }
+    .fmdb-org__grid { gap: 18px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 }
+
+/* --- 404 page --- */
+.fmdb-404 {
+    padding: 80px 20px 100px;
+    background:
+        radial-gradient(circle at 20% 20%, var(--fmdb-pale-green) 0%, transparent 55%),
+        radial-gradient(circle at 80% 80%, rgba(93,202,165,0.18) 0%, transparent 55%),
+        #fff;
+}
+.fmdb-404__wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+}
+.fmdb-404__title {
+    margin: 0 0 14px;
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    font-weight: 800;
+    color: var(--fmdb-dark-green);
+}
+.fmdb-404__lede {
+    margin: 0 auto 28px;
+    max-width: 520px;
+    color: #4a4a4a;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+.fmdb-404__actions {
+    margin-bottom: 32px;
+}
+.fmdb-404__links {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    justify-content: center;
+}
+.fmdb-404__links a {
+    color: var(--fmdb-dark-green);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1.5px solid var(--fmdb-neutral);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.fmdb-404__links a:hover,
+.fmdb-404__links a:focus {
+    background: var(--fmdb-pale-green);
+    border-color: var(--fmdb-green);
+    color: var(--fmdb-green);
+}
+.fmdb-404__search {
+    display: flex;
+    gap: 8px;
+    max-width: 460px;
+    margin: 0 auto;
+}
+.fmdb-404__search input[type="search"] {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1.5px solid var(--fmdb-neutral);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #fff;
+}
+.fmdb-404__search input[type="search"]:focus {
+    outline: none;
+    border-color: var(--fmdb-green);
+    box-shadow: 0 0 0 3px var(--fmdb-pale-green);
+}
+.fmdb-404__search .fmdb-btn { padding: 12px 20px; }
+
+@media (max-width: 540px) {
+    .fmdb-404 { padding: 56px 16px 72px; }
+    .fmdb-404__search { flex-direction: column; }
+    .fmdb-404__search .fmdb-btn { width: 100%; }
+}
+
+/* Footer — Kadence renders the footer with its own palette colors.
+   Override to the dark neutral used site-wide. */
+#colophon,
+#colophon .site-footer-row-container-inner,
+#colophon .site-footer-row {
+    background: #262626;
+}
+#colophon,
+#colophon a,
+#colophon p,
+#colophon li,
+#colophon h1, #colophon h2, #colophon h3, #colophon h4, #colophon h5, #colophon h6,
+#colophon .widget-title {
+    color: #f2f2f2;
+}
+
+/* Mobile menu — Kadence's slide-out drawer is capped at max-width:90% and
+   anchored right. Lift the cap so the menu covers the full screen when open,
+   and use an on-brand dark green background (overrides Kadence's #090c10). */
+#mobile-drawer.popup-drawer .drawer-inner {
+    width: 100%;
+    max-width: 100%;
+    background: #08302a;
+}
+
+/* Nunito for the navigation menus (desktop primary nav + mobile drawer nav),
+   including the custom-injected .fmdb-nav-* items. */
+.header-navigation,
+.header-navigation .menu-item a,
+.mobile-navigation,
+.mobile-navigation .menu-item a,
+.fmdb-nav-heading,
+.fmdb-nav-login__link,
+.fmdb-nav-profile__name,
+.fmdb-nav-profile__toggle,
+.fmdb-nav-profile__dropdown,
+.fmdb-nav-profile__dropdown li a {
+    font-family: "Nunito", var(--global-body-font-family, sans-serif);
+}
+
+/* Desktop nav font color. Kadence colors top-level links via
+   `.main-navigation .primary-menu-container > ul > li.menu-item > a`
+   (specificity 0,3,3), so we match that path to win. Scoped to the desktop
+   nav, so the dark mobile drawer keeps its light text. */
+/* `body` prefix raises specificity above Kadence's inline #head <style>, which
+   colors `…li.menu-item > a` and loads after this file (equal specificity would
+   otherwise lose on cascade order — same trap as #masthead). */
+body .main-navigation .primary-menu-container > ul > li.menu-item > a,
+body .main-navigation .primary-menu-container > ul > li.menu-item > .fmdb-nav-heading,
+body .main-navigation .primary-menu-container > ul > li.menu-item > .fmdb-nav-heading .fmdb-nav-caret {
+    color: #085041;
+}
+body .main-navigation .primary-menu-container > ul > li.menu-item > a:hover,
+body .main-navigation .primary-menu-container > ul > li.menu-item > a:focus,
+body .main-navigation .primary-menu-container > ul > li.menu-item:hover > .fmdb-nav-heading,
+body .main-navigation .primary-menu-container > ul > li.menu-item:hover > .fmdb-nav-heading .fmdb-nav-caret {
+    color: #117554;
+}
+
+/* Mobile hamburger toggle — the icon is an SVG with fill:currentColor, so set
+   the button color. Match the drawer background dark green. `body` prefix beats
+   Kadence's inline palette5 rule. */
+body .mobile-toggle-open-container .menu-toggle-open,
+body .mobile-toggle-open-container .menu-toggle-open:focus,
+body .mobile-toggle-open-container .menu-toggle-open:hover,
+body .mobile-toggle-open-container .menu-toggle-open:focus-visible {
+    color: #08302a;
+}
+
+/* Mobile drawer menu — 15px, light text (#f2f2f2) for every level incl.
+   submenus. #mobile-drawer is an id, so it outranks Kadence's inline rules
+   (font-size:14px, color:palette8). */
+#mobile-drawer .mobile-navigation ul li {
+    font-size: 15px;
+}
+#mobile-drawer .mobile-navigation ul li > a,
+#mobile-drawer .mobile-navigation ul li > .fmdb-nav-heading,
+#mobile-drawer .mobile-navigation ul li.menu-item-has-children > .drawer-nav-drop-wrap,
+#mobile-drawer .mobile-navigation ul li.current-menu-item > a {
+    color: #f2f2f2;
+}
+/* Login: render as a plain menu link (not the desktop pill) and move it to the
+   very end of the drawer. font-weight is intentionally left untouched. */
+#mobile-drawer #mobile-menu {
+    display: flex;
+    flex-direction: column;
+}
+#mobile-drawer #mobile-menu > .fmdb-nav-login {
+    order: 1;
+    display: block !important;
+    margin-left: 0 !important;
+}
+#mobile-drawer .fmdb-nav-login__link {
+    display: block;
+    border: none;
+    border-radius: 0;
+    background: none;
+    padding: 1em 0 1em .5em;
+    color: #f2f2f2 !important;
+    font-size: 15px;
+}
+
+/* Cart item: icon on desktop, "Mi carrito" text in the mobile drawer. */
+.fmdb-nav-cart__label { display: none; }
+#mobile-drawer .fmdb-nav-cart__link svg { display: none; }
+#mobile-drawer .fmdb-nav-cart__label { display: inline; }
+
+/* Mobile drawer: cart row. Strip the desktop pill styling so the cart looks
+   like a plain menu row (the desktop rules above set flex/padding/hover bg). */
+#mobile-drawer .fmdb-nav-cart {
+    display: block !important;
+    margin-left: 0 !important;
+}
+#mobile-drawer .fmdb-nav-cart__link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 1em 0 1em .5em;
+    border-radius: 0;
+    background: none;
+    color: #f2f2f2;
+    font-size: 15px;
+}
+#mobile-drawer .fmdb-nav-cart__link:hover { background: none; }
+#mobile-drawer .fmdb-nav-cart__count {
+    margin-left: auto;
+    background: rgba(255,255,255,0.15);
+    color: #f2f2f2;
+}
+
+/* Mobile drawer: logged-in profile pill. Same idea — render the toggle as a
+   plain row and stack the dropdown inline (the desktop dropdown is
+   position:absolute, which makes no sense inside the drawer). */
+#mobile-drawer .fmdb-nav-profile {
+    display: block !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    position: static;
+    /* Push profile below the cart (cart defaults to order:0). */
+    order: 2;
+}
+#mobile-drawer .fmdb-nav-profile__toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 1em 0 1em .5em;
+    border: none;
+    border-radius: 0;
+    background: none;
+    color: #f2f2f2;
+    font-size: 15px;
+}
+#mobile-drawer .fmdb-nav-profile__toggle:hover,
+#mobile-drawer .fmdb-nav-profile.is-open .fmdb-nav-profile__toggle {
+    background: none;
+    border: none;
+}
+#mobile-drawer .fmdb-nav-profile__name { color: #f2f2f2; max-width: none; }
+#mobile-drawer .fmdb-nav-profile__caret { color: #f2f2f2; margin-left: auto; }
+#mobile-drawer .fmdb-nav-profile__dropdown {
+    position: static;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0 0 0 16px;
+    min-width: 0;
+}
+#mobile-drawer .fmdb-nav-profile__dropdown::before { display: none; }
+/* Desktop opens the dropdown on :hover and via .is-open; that breaks on touch
+   in the drawer (first tap = hover). Force-hide unless .is-open is set by the
+   click handler in nav.php. !important beats both desktop rules + touch :hover. */
+#mobile-drawer .fmdb-nav-profile .fmdb-nav-profile__dropdown { display: none !important; }
+#mobile-drawer .fmdb-nav-profile.is-open .fmdb-nav-profile__dropdown { display: block !important; }
+#mobile-drawer .fmdb-nav-profile__dropdown li a {
+    color: #f2f2f2;
+    padding: .8em 0 .8em .5em;
+    font-size: 15px;
+}
+#mobile-drawer .fmdb-nav-profile__dropdown li a:hover { background: rgba(255,255,255,0.05); }
+/* In the drawer the previous menu item already has a bottom border, so the
+   explicit divider above "Cerrar Sesión" reads as a double line — hide it. */
+#mobile-drawer .fmdb-nav-profile__dropdown-divider { display: none; }
+#mobile-drawer .fmdb-nav-profile__dropdown-logout { color: #f2a5a5 !important; }
+#mobile-drawer .fmdb-nav-profile__dropdown-logout:hover { background: rgba(255,255,255,0.05) !important; }

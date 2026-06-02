@@ -1,6 +1,6 @@
 <?php
 /**
- * Custom post types: fmdb_team, fmdb_league, fmdb_seleccion.
+ * Custom post types: fmdb_team, fmdb_league, fmdb_asociacion, fmdb_seleccion.
  */
 
 add_action( 'init', function () {
@@ -42,6 +42,26 @@ add_action( 'init', function () {
         'menu_icon'    => 'dashicons-awards',
         'supports'     => [ 'title', 'thumbnail', 'custom-fields' ],
         'rewrite'      => [ 'slug' => 'ligas' ],
+    ] );
+
+    register_post_type( 'fmdb_asociacion', [
+        'labels' => [
+            'name'               => 'Asociaciones',
+            'singular_name'      => 'Asociación',
+            'add_new'            => 'Añadir asociación',
+            'add_new_item'       => 'Añadir nueva asociación',
+            'edit_item'          => 'Editar asociación',
+            'view_item'          => 'Ver asociación',
+            'search_items'       => 'Buscar asociaciones',
+            'not_found'          => 'No se encontraron asociaciones',
+            'not_found_in_trash' => 'No hay asociaciones en la papelera',
+        ],
+        'public'       => true,
+        'has_archive'  => false,
+        'show_in_rest' => true,
+        'menu_icon'    => 'dashicons-flag',
+        'supports'     => [ 'title', 'thumbnail', 'custom-fields' ],
+        'rewrite'      => [ 'slug' => 'asociaciones' ],
     ] );
 
     register_post_type( 'fmdb_seleccion', [

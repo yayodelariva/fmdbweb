@@ -13,9 +13,12 @@
 add_action( 'init', function () {
     if ( ! taxonomy_exists( 'tribe_events_cat' ) ) return;
     $cats = [
-        'torneo'     => 'Torneo',
-        'campamento' => 'Campamento',
-        'miscelaneo' => 'Misceláneo',
+        'torneo'        => 'Torneo',
+        'liga'          => 'Liga',
+        'campamento'    => 'Campamento',
+        'entrenamiento' => 'Entrenamiento',
+        'anuncio'       => 'Anuncio',
+        'miscelaneo'    => 'Misceláneo',
     ];
     foreach ( $cats as $slug => $name ) {
         if ( ! term_exists( $slug, 'tribe_events_cat' ) ) {
@@ -63,7 +66,7 @@ add_filter( 'wp_insert_post_data', function ( $data, $postarr ) {
         $missing[] = 'Título';
     }
     $type = isset( $_POST['event_type'] ) ? sanitize_key( $_POST['event_type'] ) : '';
-    if ( ! in_array( $type, [ 'torneo', 'campamento', 'miscelaneo' ], true ) ) {
+    if ( ! in_array( $type, [ 'torneo', 'liga', 'campamento', 'entrenamiento', 'anuncio', 'miscelaneo' ], true ) ) {
         $missing[] = 'Tipo de evento';
     }
     if ( empty( trim( $_POST['EventStartDate'] ?? '' ) ) ) {
@@ -111,9 +114,12 @@ add_action( 'add_meta_boxes', function () {
             $current = get_post_meta( $post->ID, 'event_type', true );
             wp_nonce_field( 'fmdb_event_type_save', 'fmdb_event_type_nonce' );
             $types = [
-                'torneo'     => [ 'label' => 'Torneo',     'color' => '#c0392b', 'bg' => '#fdecea' ],
-                'campamento' => [ 'label' => 'Campamento', 'color' => '#2980b9', 'bg' => '#e8f2fa' ],
-                'miscelaneo' => [ 'label' => 'Misceláneo', 'color' => '#7f8c8d', 'bg' => '#eef0f1' ],
+                'torneo'        => [ 'label' => 'Torneo',        'color' => '#c0392b', 'bg' => '#fdecea' ],
+                'liga'          => [ 'label' => 'Liga',          'color' => '#27ae60', 'bg' => '#e8f7ee' ],
+                'campamento'    => [ 'label' => 'Campamento',    'color' => '#2980b9', 'bg' => '#e8f2fa' ],
+                'entrenamiento' => [ 'label' => 'Entrenamiento', 'color' => '#8e44ad', 'bg' => '#f3e9f7' ],
+                'anuncio'       => [ 'label' => 'Anuncio',       'color' => '#d35400', 'bg' => '#fdece0' ],
+                'miscelaneo'    => [ 'label' => 'Misceláneo',    'color' => '#7f8c8d', 'bg' => '#eef0f1' ],
             ];
             echo '<div class="fmdb-event-type-picker">';
             foreach ( $types as $val => $t ) {
@@ -146,7 +152,7 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
          ! wp_verify_nonce( $_POST['fmdb_event_type_nonce'], 'fmdb_event_type_save' ) ) return;
     if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
-    $allowed = [ 'torneo', 'campamento', 'miscelaneo' ];
+    $allowed = [ 'torneo', 'liga', 'campamento', 'entrenamiento', 'anuncio', 'miscelaneo' ];
     $type    = isset( $_POST['event_type'] ) ? sanitize_key( $_POST['event_type'] ) : '';
 
     if ( in_array( $type, $allowed, true ) ) {

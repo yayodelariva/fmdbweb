@@ -2,23 +2,57 @@
   'use strict';
 
   // fmdbMapData is passed via wp_localize_script:
-  // { teams: { 'Jalisco': 12, ... }, leagues: { 'Jalisco': 2, ... } }
-  const teamCounts   = (window.fmdbMapData && window.fmdbMapData.teams)   || {};
-  const leagueCounts = (window.fmdbMapData && window.fmdbMapData.leagues) || {};
+  // { teams: {...}, leagues: {...}, asociaciones: {...} }   ('Estado' => count)
+  const teamCounts       = (window.fmdbMapData && window.fmdbMapData.teams)        || {};
+  const leagueCounts     = (window.fmdbMapData && window.fmdbMapData.leagues)      || {};
+  const asociacionCounts = (window.fmdbMapData && window.fmdbMapData.asociaciones) || {};
+
+  // "Todos" shading aggregates equipos + ligas + asociaciones per state.
+  const totalCounts = (function () {
+    const out = {};
+    [teamCounts, leagueCounts, asociacionCounts].forEach(function (src) {
+      Object.keys(src).forEach(function (state) {
+        out[state] = (out[state] || 0) + (src[state] || 0);
+      });
+    });
+    return out;
+  })();
 
   // Mode controls which dataset shades the map and what the tooltip says.
-  // Values: 'equipos' | 'ligas' | 'todos' (todos == equipos shading)
-  let mode = 'equipos';
+  // Values: 'equipos' | 'ligas' | 'asociaciones' | 'todos' (todos == equipos shading)
+  // Sync with the page's data-view on load so the map matches the active toggle
+  // (the page defaults to "todos" but the JS used to assume "equipos").
+  let mode = (function () {
+    const root = document.querySelector('.fmdb-equipos');
+    const v = root && root.getAttribute('data-view');
+    return (v === 'ligas' || v === 'asociaciones' || v === 'todos') ? v : 'equipos';
+  })();
 
   function activeCounts() {
-    return mode === 'ligas' ? leagueCounts : teamCounts;
+    if (mode === 'ligas')        return leagueCounts;
+    if (mode === 'asociaciones') return asociacionCounts;
+    if (mode === 'todos')        return totalCounts;
+    return teamCounts;
   }
 
   function activeLabel(count) {
     if (mode === 'ligas') {
       return count ? count + ' liga' + (count !== 1 ? 's' : '') : 'Sin ligas aún';
     }
+    if (mode === 'asociaciones') {
+      return count ? count + ' asociaci' + (count !== 1 ? 'ones' : 'ón') : 'Sin asociaciones aún';
+    }
     return count ? count + ' equipo' + (count !== 1 ? 's' : '') : 'Sin equipos aún';
+  }
+
+  // "Todos" mode: aggregate label like "1 asociación | 0 ligas | 2 equipos".
+  function todosLabel(state) {
+    var a = asociacionCounts[state] || 0;
+    var l = leagueCounts[state]     || 0;
+    var e = teamCounts[state]       || 0;
+    return a + ' asociaci' + (a !== 1 ? 'ones' : 'ón')
+         + ' | ' + l + ' liga' + (l !== 1 ? 's' : '')
+         + ' | ' + e + ' equipo' + (e !== 1 ? 's' : '');
   }
 
   function intensityClass(count) {
@@ -42,6 +76,16 @@
         path.classList.add(intensityClass(count));
       }
     });
+    updateLegendEmpty();
+  }
+
+  function updateLegendEmpty() {
+    const el = document.getElementById('fmdb-map-legend-empty');
+    if (!el) return;
+    if (mode === 'ligas')             el.textContent = 'Sin ligas';
+    else if (mode === 'asociaciones') el.textContent = 'Sin asociaciones';
+    else if (mode === 'equipos')      el.textContent = 'Sin equipos';
+    else                              el.textContent = 'Sin información';
   }
 
   function initMap() {
@@ -65,9 +109,12 @@
     // Tooltip helpers
     function showTooltip(path, evt) {
       const name  = path.getAttribute('data-state');
-      const count = activeCounts()[name] || 0;
-      tipName.textContent  = name;
-      tipTeams.textContent = activeLabel(count);
+      tipName.textContent = name;
+      if (mode === 'todos') {
+        tipTeams.textContent = todosLabel(name);
+      } else {
+        tipTeams.textContent = activeLabel(activeCounts()[name] || 0);
+      }
 
       // Position tooltip near cursor within SVG coordinate space
       const svgRect = svg.getBoundingClientRect();
@@ -77,7 +124,9 @@
       const mx = (evt.clientX - svgRect.left) * scaleX;
       const my = (evt.clientY - svgRect.top)  * scaleY;
 
-      const tipW = 160, tipH = 44, pad = 8;
+      // Wider box in "todos" to fit "N equipos | N ligas | N asociaciones".
+      const tipW = mode === 'todos' ? 340 : 200;
+      const tipH = 62, pad = 10;
       const tx = Math.min(mx + pad, vbW - tipW - pad);
       const ty = Math.max(my - tipH - pad, pad);
 
@@ -86,9 +135,9 @@
       tipBg.setAttribute('width', tipW);
       tipBg.setAttribute('height', tipH);
       tipName.setAttribute('x',  tx + tipW / 2);
-      tipName.setAttribute('y',  ty + 16);
+      tipName.setAttribute('y',  ty + 26);
       tipTeams.setAttribute('x', tx + tipW / 2);
-      tipTeams.setAttribute('y', ty + 32);
+      tipTeams.setAttribute('y', ty + 50);
 
       tooltip.setAttribute('visibility', 'visible');
     }
@@ -105,6 +154,8 @@
       path.addEventListener('mouseleave', hideTooltip);
 
       path.addEventListener('click', function () {
+        // In "todos" view the map is read-only — hover-only tooltips.
+        if (mode === 'todos') return;
         const stateName = path.getAttribute('data-state');
 
         if (activeState === path) {

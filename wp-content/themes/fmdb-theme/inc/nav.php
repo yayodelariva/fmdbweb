@@ -10,9 +10,10 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
     if ( ! isset( $args->theme_location ) || $args->theme_location !== 'primary' ) return $items;
 
     // Organigrama (with nested submenus) + Ranking
-    $org_url        = home_url( '/organigrama/' );
+    // Note: "Organigrama" and "Comisiones" themselves are non-clickable
+    // headings — only their children navigate. Pages /organigrama/ and
+    // /organigrama/comisiones/ aren't published.
     $consejo_url    = home_url( '/organigrama/consejo-directivo/' );
-    $comisiones_url = home_url( '/organigrama/comisiones/' );
     $com_sel_url    = home_url( '/organigrama/comisiones/comision-selecciones-nacionales/' );
     $com_arb_url    = home_url( '/organigrama/comisiones/comision-arbitraje-jueceo/' );
     $com_evt_url    = home_url( '/organigrama/comisiones/comision-eventos/' );
@@ -33,11 +34,11 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
         . '</li>';
 
     $items .= '<li class="menu-item menu-item-has-children fmdb-nav-organigrama">'
-        . '<a href="' . esc_url( $org_url ) . '">Organigrama <span class="fmdb-nav-caret" aria-hidden="true">&#9662;</span></a>'
+        . '<span class="fmdb-nav-heading" tabindex="0" role="button" aria-haspopup="true">Organigrama <span class="fmdb-nav-caret" aria-hidden="true">&#9662;</span></span>'
         . '<ul class="sub-menu fmdb-nav-submenu">'
             . '<li class="menu-item"><a href="' . esc_url( $consejo_url ) . '">Consejo directivo</a></li>'
             . '<li class="menu-item menu-item-has-children fmdb-nav-comisiones">'
-                . '<a href="' . esc_url( $comisiones_url ) . '">Comisiones <span class="fmdb-nav-caret fmdb-nav-caret--right" aria-hidden="true">&#9656;</span></a>'
+                . '<span class="fmdb-nav-heading" tabindex="0" role="button" aria-haspopup="true">Comisiones <span class="fmdb-nav-caret fmdb-nav-caret--right" aria-hidden="true">&#9656;</span></span>'
                 . '<ul class="sub-menu fmdb-nav-submenu fmdb-nav-submenu--nested">'
                     . '<li class="menu-item"><a href="' . esc_url( $com_sel_url ) . '">Comisión de selecciones nacionales</a></li>'
                     . '<li class="menu-item"><a href="' . esc_url( $com_arb_url ) . '">Comisión de arbitraje y jueceo</a></li>'
@@ -57,6 +58,7 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
         $cart_li    = '<li class="fmdb-nav-cart">'
             . '<a href="' . esc_url( $cart_url ) . '" class="fmdb-nav-cart__link" aria-label="Carrito de compras">'
             . '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'
+            . '<span class="fmdb-nav-cart__label">Mi carrito</span>'
             . '<span class="fmdb-nav-cart__count' . ( $cart_count ? ' has-items' : '' ) . '">' . $cart_count . '</span>'
             . '</a>'
             . '</li>';
@@ -105,19 +107,49 @@ add_action( 'wp_footer', function () {
     ?>
     <script>
     (function () {
+        // Both the desktop nav and the mobile drawer render their own
+        // .fmdb-nav-profile, so target the one we actually clicked (closest)
+        // and close *all* of them on outside clicks.
         document.addEventListener('click', function (e) {
-            var toggle  = e.target.closest('.fmdb-nav-profile__toggle');
-            var profile = document.querySelector('.fmdb-nav-profile');
-            if (!profile) return;
+            var toggle = e.target.closest('.fmdb-nav-profile__toggle');
             if (toggle) {
+                var profile = toggle.closest('.fmdb-nav-profile');
+                if (!profile) return;
                 var open = profile.classList.toggle('is-open');
                 toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
             } else if (!e.target.closest('.fmdb-nav-profile')) {
-                profile.classList.remove('is-open');
-                var t = profile.querySelector('.fmdb-nav-profile__toggle');
-                if (t) t.setAttribute('aria-expanded', 'false');
+                document.querySelectorAll('.fmdb-nav-profile').forEach(function (profile) {
+                    profile.classList.remove('is-open');
+                    var t = profile.querySelector('.fmdb-nav-profile__toggle');
+                    if (t) t.setAttribute('aria-expanded', 'false');
+                });
             }
         });
+    })();
+    </script>
+    <?php
+} );
+
+// Mobile drawer: tap an Organigrama/Comisiones heading to expand its submenu.
+// These items are injected as raw HTML, so Kadence's drawer toggle never wraps
+// them — we toggle an .is-open class ourselves (CSS reveals the submenu).
+add_action( 'wp_footer', function () {
+    ?>
+    <script>
+    (function () {
+        // Toggle on pointerup, not click. The headings match :hover rules (for
+        // the desktop dropdown), so touch browsers (and Firefox touch sim) treat
+        // the first tap as "activate hover" and suppress the first click —
+        // requiring a second tap. pointerup fires on the first tap regardless.
+        // Capture phase + stopPropagation keeps Kadence's drawer handlers from
+        // also reacting to the tap.
+        document.addEventListener('pointerup', function (e) {
+            var heading = e.target.closest('.fmdb-nav-heading');
+            if (!heading || !heading.closest('#mobile-drawer')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            heading.parentElement.classList.toggle('is-open');
+        }, true);
     })();
     </script>
     <?php

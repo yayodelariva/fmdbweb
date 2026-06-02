@@ -75,7 +75,10 @@
         // Legend
         html += '<div class="fmdb-cal__legend">';
         html += '  <span class="fmdb-cal__legend-item"><i class="fmdb-cat--torneo"></i>Torneo</span>';
+        html += '  <span class="fmdb-cal__legend-item"><i class="fmdb-cat--liga"></i>Liga</span>';
         html += '  <span class="fmdb-cal__legend-item"><i class="fmdb-cat--campamento"></i>Campamento</span>';
+        html += '  <span class="fmdb-cal__legend-item"><i class="fmdb-cat--entrenamiento"></i>Entrenamiento</span>';
+        html += '  <span class="fmdb-cal__legend-item"><i class="fmdb-cat--anuncio"></i>Anuncio</span>';
         html += '  <span class="fmdb-cal__legend-item"><i class="fmdb-cat--miscelaneo"></i>Misceláneo</span>';
         html += '</div>';
 

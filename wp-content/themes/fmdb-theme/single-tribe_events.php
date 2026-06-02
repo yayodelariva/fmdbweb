@@ -9,8 +9,21 @@ while ( have_posts() ) : the_post();
     $id         = get_the_ID();
     $start_raw  = get_post_meta( $id, '_EventStartDate', true );
     $end_raw    = get_post_meta( $id, '_EventEndDate',   true );
-    $start_ts   = strtotime( $start_raw );
-    $end_ts     = strtotime( $end_raw );
+
+    // Pick the active occurrence based on ?fecha=N (default: primary).
+    $occurrences  = fmdb_get_event_occurrences( $id );
+    $active_index = isset( $_GET['fecha'] ) ? (int) $_GET['fecha'] : 0;
+    $active_occ   = null;
+    foreach ( $occurrences as $_occ ) {
+        if ( (int) $_occ['index'] === $active_index ) { $active_occ = $_occ; break; }
+    }
+    if ( ! $active_occ ) {
+        $active_occ = $occurrences ? $occurrences[0] : null;
+        $active_index = $active_occ ? (int) $active_occ['index'] : 0;
+    }
+    $start_ts   = $active_occ ? $active_occ['start_ts'] : strtotime( $start_raw );
+    $end_ts     = $active_occ ? $active_occ['end_ts']   : strtotime( $end_raw );
+    $active_note = ( $active_occ && ! $active_occ['is_primary'] ) ? $active_occ['note'] : '';
     $venue_id   = get_post_meta( $id, '_EventVenueID', true );
     $venue      = $venue_id ? get_the_title( $venue_id ) : '';
     $address    = $venue_id ? get_post_meta( $venue_id, '_VenueAddress', true ) : '';
@@ -45,7 +58,10 @@ while ( have_posts() ) : the_post();
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
-                <h1 class="fmdb-evento-single__title"><?php the_title(); ?></h1>
+                <h1 class="fmdb-evento-single__title"><?php
+                    the_title();
+                    if ( $active_note !== '' ) echo ' <span class="fmdb-evento-single__title-note">— ' . esc_html( $active_note ) . '</span>';
+                ?></h1>
             </div>
         </div>
 
@@ -208,6 +224,37 @@ while ( have_posts() ) : the_post();
                             <div>
                                 <strong>Horario</strong>
                                 <span><?php echo date_i18n( 'g:i a', $start_ts ); ?> – <?php echo date_i18n( 'g:i a', $end_ts ); ?></span>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ( count( $occurrences ) > 1 ) : ?>
+                        <div class="fmdb-evento-single__meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <div>
+                                <strong>Todas las fechas</strong>
+                                <ul class="fmdb-evento-single__dates">
+                                    <?php foreach ( $occurrences as $occ ) :
+                                        $occ_idx    = (int) $occ['index'];
+                                        $occ_id     = 'fecha-' . $occ_idx;
+                                        $day_label  = date_i18n( 'j \d\e F', $occ['start_ts'] );
+                                        $time_label = date_i18n( 'g:i a', $occ['start_ts'] );
+                                        $is_active  = $occ_idx === $active_index;
+                                        $occ_href   = $occ['is_primary']
+                                            ? get_permalink( $id ) . '#' . $occ_id
+                                            : add_query_arg( 'fecha', $occ_idx, get_permalink( $id ) ) . '#' . $occ_id;
+                                    ?>
+                                        <li id="<?php echo esc_attr( $occ_id ); ?>" class="<?php echo $is_active ? 'is-active' : ''; ?>">
+                                            <a href="<?php echo esc_url( $occ_href ); ?>">
+                                                <span class="fmdb-evento-single__dates-date"><?php echo esc_html( $day_label ); ?></span>
+                                                <span class="fmdb-evento-single__dates-time"><?php echo esc_html( $time_label ); ?></span>
+                                                <?php if ( $occ['note'] !== '' ) : ?>
+                                                    <span class="fmdb-evento-single__dates-note"><?php echo esc_html( $occ['note'] ); ?></span>
+                                                <?php endif; ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
                             </div>
                         </div>
                     <?php endif; ?>

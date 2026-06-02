@@ -12,30 +12,38 @@
 /* Panels: show/hide based on the view attribute on .fmdb-equipos */
 .fmdb-equipos__panel { display: block; }
 .fmdb-equipos__panel + .fmdb-equipos__panel { margin-top: 48px; padding-top: 32px; border-top: 2px solid var(--fmdb-neutral); }
-.fmdb-equipos[data-view="equipos"] .fmdb-equipos__panel[data-panel="ligas"],
-.fmdb-equipos[data-view="ligas"]   .fmdb-equipos__panel[data-panel="equipos"] { display: none; }
+.fmdb-equipos[data-view="equipos"]      .fmdb-equipos__panel:not([data-panel="equipos"]),
+.fmdb-equipos[data-view="ligas"]        .fmdb-equipos__panel:not([data-panel="ligas"]),
+.fmdb-equipos[data-view="asociaciones"] .fmdb-equipos__panel:not([data-panel="asociaciones"]) { display: none; }
 /* When a single panel is active, drop the divider */
-.fmdb-equipos[data-view="equipos"] .fmdb-equipos__panel + .fmdb-equipos__panel,
-.fmdb-equipos[data-view="ligas"]   .fmdb-equipos__panel + .fmdb-equipos__panel { margin-top: 0; padding-top: 0; border-top: none; }
+.fmdb-equipos[data-view="equipos"]      .fmdb-equipos__panel + .fmdb-equipos__panel,
+.fmdb-equipos[data-view="ligas"]        .fmdb-equipos__panel + .fmdb-equipos__panel,
+.fmdb-equipos[data-view="asociaciones"] .fmdb-equipos__panel + .fmdb-equipos__panel { margin-top: 0; padding-top: 0; border-top: none; }
 
 .fmdb-equipos__panel-title { font-size: 1.05rem; color: var(--fmdb-dark-green); margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--fmdb-neutral); }
 
-/* League grid (Ligas tab) */
-.fmdb-league-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; padding: 8px 0; }
-.fmdb-league-card { display: flex; gap: 16px; padding: 18px; border: 1px solid var(--fmdb-neutral); border-radius: 10px; background: #fff; text-decoration: none; color: inherit; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; }
-.fmdb-league-card:hover { border-color: var(--fmdb-green); box-shadow: 0 4px 14px rgba(29,158,117,0.12); transform: translateY(-2px); }
-.fmdb-league-card__crest { flex-shrink: 0; width: 64px; height: 64px; border-radius: 50%; background: var(--fmdb-dark-green); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.fmdb-league-card__crest img { width: 100%; height: 100%; object-fit: cover; }
-.fmdb-league-card__crest span { color: #fff; font-weight: 700; font-size: 1.1rem; }
-.fmdb-league-card__body { flex: 1; min-width: 0; }
-.fmdb-league-card__body strong { display: block; font-size: 1rem; color: var(--fmdb-dark-green); margin-bottom: 2px; }
-.fmdb-league-card__body small { display: block; font-size: 0.78rem; color: #888; margin-bottom: 6px; }
-.fmdb-league-card__body p { margin: 0 0 8px; font-size: 0.85rem; color: #555; line-height: 1.4; }
+/* League / Asociación grids (shared layout) */
+.fmdb-league-grid,
+.fmdb-asociacion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; padding: 8px 0; }
+.fmdb-league-card,
+.fmdb-asociacion-card { display: flex; gap: 16px; padding: 18px; border: 1px solid var(--fmdb-neutral); border-radius: 10px; background: #fff; text-decoration: none; color: inherit; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; }
+.fmdb-league-card:hover,
+.fmdb-asociacion-card:hover { border-color: var(--fmdb-green); box-shadow: 0 4px 14px rgba(29,158,117,0.12); transform: translateY(-2px); }
+.fmdb-league-card__crest,
+.fmdb-asociacion-card__crest { flex-shrink: 0; width: 64px; height: 64px; border-radius: 50%; background: var(--fmdb-dark-green); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.fmdb-league-card__crest img,
+.fmdb-asociacion-card__crest img { width: 100%; height: 100%; object-fit: cover; }
+.fmdb-league-card__crest span,
+.fmdb-asociacion-card__crest span { color: #fff; font-weight: 700; font-size: 1.1rem; }
+.fmdb-league-card__body,
+.fmdb-asociacion-card__body { flex: 1; min-width: 0; }
+.fmdb-league-card__body strong,
+.fmdb-asociacion-card__body strong { display: block; font-size: 1rem; color: var(--fmdb-dark-green); margin-bottom: 2px; }
+.fmdb-league-card__body small,
+.fmdb-asociacion-card__body small { display: block; font-size: 0.78rem; color: #888; margin-bottom: 6px; }
+.fmdb-league-card__body p,
+.fmdb-asociacion-card__body p { margin: 0 0 8px; font-size: 0.85rem; color: #555; line-height: 1.4; }
 .fmdb-league-card__count { font-size: 0.75rem; font-weight: 600; color: var(--fmdb-green); text-transform: uppercase; letter-spacing: 0.05em; }
-
-/* League name link inside league header */
-.fmdb-league-name a { color: inherit; text-decoration: none; }
-.fmdb-league-name a:hover { color: var(--fmdb-green); }
 
 .fmdb-equipos__header { padding: 32px 0 16px; }
 .fmdb-equipos__header h1 { margin: 0 0 6px; font-size: 2rem; color: var(--fmdb-dark-green); }
@@ -76,9 +84,16 @@
 .fmdb-equipos[data-mode="lista"] .fmdb-equipos__map { display: none; }
 .fmdb-equipos[data-mode="mapa"] .fmdb-equipos__filters { display: none; }
 
-/* In "Todos" view, the Equipos panel's Estado dropdown already drives both
-   panels — hide the duplicate Ligas filter bar to avoid two state pickers. */
-.fmdb-equipos[data-view="todos"] .fmdb-equipos__panel[data-panel="ligas"] .fmdb-equipos__filters { display: none; }
+/* The shared Estado dropdown above the panels drives all three views —
+   hide the per-panel filter bars in every view to avoid duplicates. */
+.fmdb-equipos__panel .fmdb-equipos__filters { display: none; }
+
+/* "Mostrar todos" always shows every state across every panel — hide the
+   state filter so users can't narrow it down. */
+.fmdb-equipos[data-view="todos"] .fmdb-equipos__filters--shared { display: none; }
+
+/* In "Mostrar todos" the map is hover-only — drop the click cursor. */
+.fmdb-equipos[data-view="todos"] .fmdb-state { cursor: default; }
 
 /* Map */
 .fmdb-equipos__map { background: #f5f5f3; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
@@ -89,9 +104,6 @@
 .fmdb-filter-group { display: flex; flex-direction: column; gap: 6px; }
 .fmdb-filter-group label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: #555; }
 .fmdb-filter-group select { padding: 8px 12px; border: 1px solid var(--fmdb-neutral); border-radius: 6px; font-size: 0.9rem; min-width: 180px; background: #fff; }
-.fmdb-filter-checkboxes { display: flex; gap: 12px; flex-wrap: wrap; }
-.fmdb-check-label { display: flex; align-items: center; gap: 5px; font-size: 0.88rem; cursor: pointer; }
-.fmdb-check-label input { accent-color: var(--fmdb-green); }
 .fmdb-btn-ghost { background: none; border: 1px solid var(--fmdb-neutral); border-radius: 6px; padding: 8px 16px; font-size: 0.85rem; cursor: pointer; color: #555; align-self: flex-end; }
 .fmdb-btn-ghost:hover { border-color: var(--fmdb-green); color: var(--fmdb-green); }
 
@@ -100,13 +112,6 @@
 .fmdb-state-banner { background: var(--fmdb-dark-green); color: var(--fmdb-text-dark); padding: 14px 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; }
 .fmdb-state-banner h2 { margin: 0; font-size: 1.15rem; }
 .fmdb-state-banner span { font-size: 0.85rem; opacity: 0.8; }
-
-/* League block */
-.fmdb-league-block { border: 1px solid var(--fmdb-neutral); border-top: none; padding: 16px 20px; background: #fff; }
-.fmdb-league-block:last-child { border-radius: 0 0 8px 8px; }
-.fmdb-league-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.fmdb-league-name { margin: 0; font-size: 1rem; color: var(--fmdb-dark-green); }
-.fmdb-league-count { font-size: 0.8rem; color: #888; }
 
 /* Team grid */
 .fmdb-team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
@@ -126,7 +131,20 @@
 .fmdb-state-block.hidden { display: none; }
 .fmdb-team-card.hidden { display: none; }
 .fmdb-league-card.hidden { display: none; }
-.fmdb-league-block.all-hidden { display: none; }
+.fmdb-asociacion-card.hidden { display: none; }
 
 .fmdb-empty { color: #888; font-style: italic; padding: 32px 0; text-align: center; }
+
+/* === Mobile === */
+@media (max-width: 640px) {
+    /* Toggle pill: drop the "Mostrar solo " prefix and tighten everything so
+       the four buttons fit on one row at small widths. */
+    .fmdb-toggle-btn__prefix { display: none; }
+    .fmdb-equipos__toggle { padding: 3px; gap: 1px; flex-wrap: nowrap; max-width: 100%; }
+    .fmdb-equipos__toggle-btn { padding: 6px 10px; font-size: 0.78rem; white-space: nowrap; }
+    .fmdb-equipos__toggle-btn .fmdb-tab-count { margin-left: 4px; font-size: 0.65rem; padding: 1px 5px; }
+    .fmdb-equipos__controls { gap: 10px; }
+    /* When the controls row wraps, keep the lista/mapa group right-aligned. */
+    .fmdb-equipos__modes { margin-left: auto; padding-right: 5px; }
+}
 

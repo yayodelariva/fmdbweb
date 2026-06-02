@@ -118,7 +118,7 @@ while ( have_posts() ) :
             <?php endif; ?>
 
             <p class="fmdb-league-back">
-                <a href="<?php echo esc_url( home_url( '/equipos-y-ligas/' ) ); ?>" class="fmdb-link-more">← Ver todas las ligas y equipos</a>
+                <a href="<?php echo esc_url( home_url( '/mapa-interactivo/' ) ); ?>" class="fmdb-link-more">← Ver todas las ligas y equipos</a>
             </p>
 
         </div>

@@ -1,46 +1,6 @@
 /* === Representative Dashboard === */
 .fmdb-dashboard { min-height: 60vh; }
 
-/* --- Profile bar --- */
-.fmdb-dashboard__profile {
-    background: var(--fmdb-dark-green);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.fmdb-dashboard__profile-inner {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 10px 32px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.fmdb-profile-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: var(--fmdb-green);
-    color: #fff;
-    font-size: 0.8rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.fmdb-profile-name {
-    font-size: 0.88rem;
-    color: rgba(255,255,255,0.9);
-    font-weight: 500;
-}
-.fmdb-profile-logout {
-    margin-left: auto;
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.55);
-    text-decoration: none;
-    transition: color 0.2s;
-}
-.fmdb-profile-logout:hover { color: #fff; }
-
 /* --- Hero --- */
 .fmdb-dashboard-hero {
     background: var(--fmdb-dark-green);
@@ -286,6 +246,15 @@
 .fmdb-plantel-add__select:focus { border-color: var(--fmdb-green); outline: none; box-shadow: 0 0 0 3px rgba(29,158,117,.1); }
 .fmdb-plantel-footer { padding-top: 20px; }
 .fmdb-plantel-empty { margin-top: 16px; }
+
+/* --- Primary-button hover (scoped to dashboard) ---
+   Soft pale-green hover with dark-green text. Beats the global
+   .fmdb-btn--primary:hover from home.css via the extra .fmdb-dashboard class. */
+.fmdb-dashboard .fmdb-btn--primary:hover {
+    background: #CEF9D7;
+    color: #085041;
+    border-color: #fff;
+}
 
 /* --- Responsive --- */
 @media (max-width: 700px) {

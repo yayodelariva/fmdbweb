@@ -226,6 +226,64 @@ add_action( 'acf/init', function () {
         'location' => [ [ [ 'param' => 'post_type', 'operator' => '==', 'value' => 'fmdb_league' ] ] ],
     ] );
 
+    // --- Group: Información de la asociación ---
+    acf_add_local_field_group( [
+        'key'    => 'group_fmdb_asociacion_info',
+        'title'  => 'Información de la asociación',
+        'fields' => [
+            [
+                'key'         => 'field_asociacion_state',
+                'label'       => 'Estado',
+                'name'        => 'asociacion_state',
+                'type'        => 'select',
+                'choices'     => $state_choices,
+                'allow_null'  => 1,
+                'placeholder' => 'Selecciona un estado',
+                'required'    => 1,
+            ],
+            [
+                'key'   => 'field_asociacion_description',
+                'label' => 'Descripción',
+                'name'  => 'asociacion_description',
+                'type'  => 'textarea',
+                'rows'  => 5,
+            ],
+            [
+                'key'   => 'field_asociacion_founded',
+                'label' => 'Año de fundación',
+                'name'  => 'asociacion_founded',
+                'type'  => 'number',
+                'min'   => 1990,
+                'max'   => 2099,
+            ],
+            [
+                'key'   => 'field_asociacion_email',
+                'label' => 'Email de contacto',
+                'name'  => 'asociacion_email',
+                'type'  => 'email',
+            ],
+            [
+                'key'   => 'field_asociacion_website',
+                'label' => 'Sitio web',
+                'name'  => 'asociacion_website',
+                'type'  => 'url',
+            ],
+            [
+                'key'   => 'field_asociacion_instagram',
+                'label' => 'Instagram',
+                'name'  => 'asociacion_instagram',
+                'type'  => 'url',
+            ],
+            [
+                'key'   => 'field_asociacion_facebook',
+                'label' => 'Facebook',
+                'name'  => 'asociacion_facebook',
+                'type'  => 'url',
+            ],
+        ],
+        'location' => [ [ [ 'param' => 'post_type', 'operator' => '==', 'value' => 'fmdb_asociacion' ] ] ],
+    ] );
+
     // --- Group: Miembro de selección nacional ---
     acf_add_local_field_group( [
         'key'    => 'group_fmdb_seleccion_member',
@@ -413,64 +471,6 @@ add_action( 'acf/validate_save_post', function () {
     }
 } );
 
-// ACF field group: Consejo Directivo members (repeater on the Consejo Directivo page)
-add_action( 'acf/init', function () {
-    if ( ! function_exists( 'acf_add_local_field_group' ) ) return;
-
-    // Resolve the Consejo Directivo page by path so the binding survives
-    // re-imports or environments where the page has a different ID.
-    $consejo_page = get_page_by_path( 'organigrama/consejo-directivo' );
-    if ( ! $consejo_page ) return;
-
-    acf_add_local_field_group( [
-        'key'    => 'group_fmdb_consejo_directivo',
-        'title'  => 'Miembros del Consejo Directivo',
-        'fields' => [
-            [
-                'key'          => 'field_consejo_members',
-                'label'        => 'Miembros',
-                'name'         => 'consejo_members',
-                'type'         => 'repeater',
-                'button_label' => 'Añadir miembro',
-                'min'          => 0,
-                'layout'       => 'block',
-                'sub_fields'   => [
-                    [
-                        'key'   => 'field_consejo_member_name',
-                        'label' => 'Nombre',
-                        'name'  => 'member_name',
-                        'type'  => 'text',
-                        'required' => 1,
-                    ],
-                    [
-                        'key'   => 'field_consejo_member_position',
-                        'label' => 'Cargo',
-                        'name'  => 'member_position',
-                        'type'  => 'text',
-                        'instructions' => 'Ej. Presidente, Vicepresidente, Secretario...',
-                    ],
-                    [
-                        'key'           => 'field_consejo_member_photo',
-                        'label'         => 'Foto',
-                        'name'          => 'member_photo',
-                        'type'          => 'image',
-                        'return_format' => 'array',
-                        'preview_size'  => 'medium',
-                    ],
-                    [
-                        'key'   => 'field_consejo_member_bio',
-                        'label' => 'Biografía corta',
-                        'name'  => 'member_bio',
-                        'type'  => 'textarea',
-                        'rows'  => 3,
-                    ],
-                ],
-            ],
-        ],
-        'location' => [
-            [
-                [ 'param' => 'page', 'operator' => '==', 'value' => (string) $consejo_page->ID ],
-            ],
-        ],
-    ] );
-} );
+// NOTE: The "Miembros" (org_members) field group for Organigrama pages
+// lives in inc/cmb2-fields.php — ACF Free doesn't include the Repeater
+// field, so CMB2 powers it instead.

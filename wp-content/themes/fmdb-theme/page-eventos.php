@@ -6,47 +6,55 @@
 
 $tab   = ( isset( $_GET['tab'] ) && $_GET['tab'] === 'pasados' ) ? 'pasados' : 'proximos';
 $today = current_time( 'mysql' );
+$today_ts = strtotime( $today );
 
 global $wpdb;
-$compare = $tab === 'proximos' ? '>=' : '<';
-$order   = $tab === 'proximos' ? 'ASC' : 'DESC';
 
-// IDs for the list view (filtered by tab)
-$event_ids = $wpdb->get_col( $wpdb->prepare(
-    "SELECT p.ID
-     FROM {$wpdb->posts} p
-     INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_EventStartDate'
-     WHERE p.post_type   = 'tribe_events'
-       AND p.post_status = 'publish'
-       AND pm.meta_value {$compare} %s
-     ORDER BY pm.meta_value {$order}",
-    $today
-) );
-
-
-// All events (for calendar view, regardless of tab)
+// Pull every published event once and expand into per-occurrence rows.
 $all_event_ids = $wpdb->get_col(
     "SELECT p.ID FROM {$wpdb->posts} p
      INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_EventStartDate'
-     WHERE p.post_type='tribe_events' AND p.post_status='publish'
-     ORDER BY pm.meta_value ASC"
+     WHERE p.post_type='tribe_events' AND p.post_status='publish'"
 );
 
+$all_occurrences = [];
 $calendar_events = [];
 foreach ( $all_event_ids as $eid ) {
-    $start = get_post_meta( $eid, '_EventStartDate', true );
-    $end   = get_post_meta( $eid, '_EventEndDate',   true );
-    $cats  = get_the_terms( $eid, 'tribe_events_cat' );
+    $cats     = get_the_terms( $eid, 'tribe_events_cat' );
     $cat_slug = ( $cats && ! is_wp_error( $cats ) ) ? $cats[0]->slug : 'miscelaneo';
-    $calendar_events[] = [
-        'id'       => (int) $eid,
-        'title'    => html_entity_decode( get_the_title( $eid ), ENT_QUOTES, 'UTF-8' ),
-        'start'    => str_replace( ' ', 'T', $start ),
-        'end'      => str_replace( ' ', 'T', $end ),
-        'category' => $cat_slug,
-        'url'      => get_permalink( $eid ),
-    ];
+    $title    = html_entity_decode( get_the_title( $eid ), ENT_QUOTES, 'UTF-8' );
+    $permalink = get_permalink( $eid );
+
+    foreach ( fmdb_get_event_occurrences( $eid ) as $occ ) {
+        $all_occurrences[] = $occ;
+
+        $calendar_title = $title;
+        if ( ! $occ['is_primary'] && $occ['note'] !== '' ) {
+            $calendar_title .= ' — ' . $occ['note'];
+        }
+        $occ_url = $occ['is_primary']
+            ? $permalink
+            : add_query_arg( 'fecha', $occ['index'], $permalink ) . '#fecha-' . $occ['index'];
+        $calendar_events[] = [
+            'id'       => $occ['post_id'],
+            'title'    => $calendar_title,
+            'start'    => date( 'Y-m-d\TH:i:s', $occ['start_ts'] ),
+            'end'      => date( 'Y-m-d\TH:i:s', $occ['end_ts'] ),
+            'category' => $cat_slug,
+            'url'      => $occ_url,
+        ];
+    }
 }
+
+// Filter + sort occurrences for the list view by the active tab.
+$list_occurrences = array_values( array_filter( $all_occurrences, function ( $occ ) use ( $tab, $today_ts ) {
+    return $tab === 'proximos' ? $occ['start_ts'] >= $today_ts : $occ['start_ts'] < $today_ts;
+} ) );
+usort( $list_occurrences, function ( $a, $b ) use ( $tab ) {
+    return $tab === 'proximos'
+        ? $a['start_ts'] <=> $b['start_ts']
+        : $b['start_ts'] <=> $a['start_ts'];
+} );
 
 get_header();
 ?>
@@ -77,19 +85,20 @@ get_header();
                 <a href="?tab=pasados"  class="fmdb-eventos__tab <?php echo $tab === 'pasados'  ? 'is-active' : ''; ?>">Pasados</a>
             </div>
 
-            <?php if ( $event_ids ) : ?>
+            <?php if ( $list_occurrences ) : ?>
                 <div class="fmdb-eventos__grid">
-                    <?php foreach ( $event_ids as $id ) :
+                    <?php foreach ( $list_occurrences as $occ ) :
+                        $id       = $occ['post_id'];
                         $post_obj = get_post( $id );
                         if ( ! $post_obj ) continue;
                         global $post;
                         $post = $post_obj;
                         setup_postdata( $post );
-                        $start_raw  = get_post_meta( $id, '_EventStartDate', true );
-                        $end_raw    = get_post_meta( $id, '_EventEndDate',   true );
-                        $start_ts   = strtotime( $start_raw );
-                        $end_ts     = strtotime( $end_raw );
-                        $dp         = fmdb_event_date_parts( $start_ts, $end_ts );
+                        $start_ts   = $occ['start_ts'];
+                        $end_ts     = $occ['end_ts'];
+                        $dp         = $occ['is_primary']
+                            ? fmdb_event_date_parts( $start_ts, $end_ts )
+                            : fmdb_event_date_parts( $start_ts, $start_ts );
                         $time_start = date_i18n( 'g:i a', $start_ts );
                         $time_end   = date_i18n( 'g:i a', $end_ts );
                         $venue_id   = get_post_meta( $id, '_EventVenueID', true );
@@ -99,6 +108,9 @@ get_header();
                         $location   = implode( ', ', array_filter( [ $venue, $city, $state ] ) );
                         $cats       = get_the_terms( $id, 'tribe_events_cat' );
                         $cat_slug   = ( $cats && ! is_wp_error( $cats ) ) ? $cats[0]->slug : 'miscelaneo';
+                        $permalink  = $occ['is_primary']
+                            ? get_permalink( $id )
+                            : add_query_arg( 'fecha', $occ['index'], get_permalink( $id ) ) . '#fecha-' . $occ['index'];
                     ?>
                     <article class="fmdb-evento-card fmdb-evento-card--<?php echo esc_attr( $cat_slug ); ?>">
                         <div class="fmdb-evento-card__date fmdb-cat--<?php echo esc_attr( $cat_slug ); ?><?php echo $dp['is_range'] ? ' is-range' : ''; ?>">
@@ -112,10 +124,13 @@ get_header();
                                     <?php foreach ( $cats as $cat ) : ?>
                                         <span class="fmdb-evento-card__cat fmdb-cat--<?php echo esc_attr( $cat->slug ); ?>"><?php echo esc_html( $cat->name ); ?></span>
                                     <?php endforeach; ?>
+                                    <?php if ( ! $occ['is_primary'] && $occ['note'] !== '' ) : ?>
+                                        <span class="fmdb-evento-card__cat fmdb-evento-card__cat--note"><?php echo esc_html( $occ['note'] ); ?></span>
+                                    <?php endif; ?>
                                 </div>
                             <?php endif; ?>
                             <h2 class="fmdb-evento-card__title">
-                                <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+                                <a href="<?php echo esc_url( $permalink ); ?>"><?php the_title(); ?></a>
                             </h2>
                             <?php if ( $location ) : ?>
                                 <p class="fmdb-evento-card__location">
@@ -130,7 +145,7 @@ get_header();
                             <?php if ( has_excerpt() ) : ?>
                                 <p class="fmdb-evento-card__excerpt"><?php echo esc_html( wp_trim_words( get_the_excerpt(), 18 ) ); ?></p>
                             <?php endif; ?>
-                            <a href="<?php the_permalink(); ?>" class="fmdb-evento-card__link">Ver detalles →</a>
+                            <a href="<?php echo esc_url( $permalink ); ?>" class="fmdb-evento-card__link">Ver detalles →</a>
                         </div>
                     </article>
                     <?php endforeach; wp_reset_postdata(); ?>
