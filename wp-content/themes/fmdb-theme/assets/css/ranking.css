@@ -1,0 +1,246 @@
+/* === Ranking page === */
+.fmdb-ranking { background: #f6f7f5; min-height: 70vh; padding-bottom: 80px; }
+
+/* --- Hero --- */
+.fmdb-ranking__hero {
+    background: var(--fmdb-dark-green, #085041);
+    color: #fff;
+    padding: 56px 24px 48px;
+}
+.fmdb-ranking__hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    text-align: center;
+}
+.fmdb-ranking__eyebrow {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #CEF9D7;
+    margin: 0 0 12px;
+}
+.fmdb-ranking__title {
+    margin: 0 0 10px;
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    color: #fff;
+    line-height: 1.15;
+}
+.fmdb-ranking__subtitle {
+    margin: 0;
+    color: rgba(225, 245, 238, 0.85);
+    font-size: 1rem;
+}
+
+/* --- Points-system strip --- */
+.fmdb-ranking__system {
+    background: #fff;
+    border-bottom: 1px solid var(--fmdb-neutral, #e6e6e0);
+}
+.fmdb-ranking__system-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px;
+}
+.fmdb-ranking__system h2 {
+    margin: 0 0 4px;
+    color: var(--fmdb-dark-green, #085041);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.fmdb-ranking__system-lead {
+    margin: 0 0 18px;
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    max-width: 720px;
+}
+.fmdb-ranking__points {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.fmdb-ranking__point {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    background: var(--fmdb-pale-green, #E1F5EE);
+    color: var(--fmdb-dark-green, #085041);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-weight: 700;
+}
+.fmdb-ranking__point-pos { font-size: 0.95rem; }
+.fmdb-ranking__point-val { font-size: 1.25rem; }
+.fmdb-ranking__point-label { font-size: 0.72rem; font-weight: 600; opacity: 0.75; }
+
+/* --- Body / tabs --- */
+.fmdb-ranking__body {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 0;
+}
+.fmdb-ranking__tabs {
+    display: flex;
+    border-bottom: 2px solid var(--fmdb-neutral, #e6e6e0);
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+.fmdb-ranking__tab {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+}
+.fmdb-ranking__tab:hover { color: var(--fmdb-dark-green, #085041); }
+.fmdb-ranking__tab.is-active {
+    color: var(--fmdb-green, #17876a);
+    border-bottom-color: var(--fmdb-green, #17876a);
+}
+
+/* --- Category panel --- */
+.fmdb-ranking__cat { display: none; }
+.fmdb-ranking__cat.is-active { display: block; }
+
+.fmdb-ranking__cat-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: baseline;
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: #666;
+}
+.fmdb-ranking__cat-range {
+    background: var(--fmdb-dark-green, #085041);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-weight: 600;
+}
+.fmdb-ranking__cat-mods { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.fmdb-ranking__combined { margin-bottom: 36px; }
+.fmdb-ranking__section { margin-bottom: 32px; }
+
+.fmdb-ranking__h2 {
+    margin: 0 0 14px;
+    font-size: 1.2rem;
+    color: var(--fmdb-dark-green, #085041);
+}
+
+/* --- Podium --- */
+.fmdb-ranking__podium {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.fmdb-ranking__podium-card {
+    background: #fff;
+    border: 1px solid var(--fmdb-neutral, #e6e6e0);
+    border-radius: 12px;
+    padding: 16px 14px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.fmdb-ranking__podium-card--1 {
+    background: linear-gradient(180deg, #fff7d1 0%, #fffaf0 100%);
+    border-color: #e6cc55;
+}
+.fmdb-ranking__podium-card--2 {
+    background: linear-gradient(180deg, #f0f0f0 0%, #fafafa 100%);
+    border-color: #c0c0c0;
+}
+.fmdb-ranking__podium-card--3 {
+    background: linear-gradient(180deg, #f7e3cf 0%, #fdf5ec 100%);
+    border-color: #c98c4d;
+}
+.fmdb-ranking__podium-medal { font-size: 1.6rem; line-height: 1; }
+.fmdb-ranking__podium-state {
+    font-weight: 700;
+    color: var(--fmdb-dark-green, #085041);
+    font-size: 1rem;
+}
+.fmdb-ranking__podium-pts {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--fmdb-green, #17876a);
+}
+.fmdb-ranking__podium-pts small { font-size: 0.7rem; font-weight: 600; color: #888; }
+
+/* --- Table --- */
+.fmdb-ranking__table-wrap {
+    background: #fff;
+    border: 1px solid var(--fmdb-neutral, #e6e6e0);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.fmdb-ranking__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+.fmdb-ranking__table thead th {
+    background: var(--fmdb-dark-green, #085041);
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+}
+.fmdb-ranking__table th.num,
+.fmdb-ranking__table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.fmdb-ranking__table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0ea;
+    color: #333;
+}
+.fmdb-ranking__table tbody tr:last-child td { border-bottom: 0; }
+.fmdb-ranking__table tbody tr.is-zero td { color: #aaa; }
+.fmdb-ranking__table tbody tr.is-top td { background: #f6fbf8; font-weight: 600; }
+
+.fmdb-ranking__pos {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--fmdb-pale-green, #E1F5EE);
+    color: var(--fmdb-dark-green, #085041);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.fmdb-ranking__empty {
+    color: #888;
+    font-style: italic;
+    padding: 12px 0 0;
+}
+
+/* --- Responsive --- */
+@media (max-width: 700px) {
+    .fmdb-ranking__hero { padding: 40px 20px 36px; }
+    .fmdb-ranking__system-inner { padding: 20px; }
+    .fmdb-ranking__body { padding: 24px 16px 0; }
+    .fmdb-ranking__tab { padding: 10px 14px; font-size: 0.85rem; }
+    .fmdb-ranking__podium { grid-template-columns: 1fr; }
+    .fmdb-ranking__table { font-size: 0.85rem; }
+    .fmdb-ranking__table thead th,
+    .fmdb-ranking__table tbody td { padding: 8px 10px; }
+    .fmdb-ranking__points { gap: 6px; }
+    .fmdb-ranking__point { padding: 6px 10px; }
+}

@@ -5,6 +5,20 @@
  * Also: the footer JS that toggles the profile dropdown.
  */
 
+// Strip "Mapa Interactivo" and "Selecciones" from the WP-Admin-managed primary
+// menu — they now live inside the injected "El Dodgeball en México" dropdown.
+add_filter( 'wp_nav_menu_objects', function ( $items, $args ) {
+    if ( ! isset( $args->theme_location ) || $args->theme_location !== 'primary' ) return $items;
+    $strip = [ home_url( '/mapa-interactivo/' ), home_url( '/selecciones/' ) ];
+    $strip = array_map( 'untrailingslashit', $strip );
+    foreach ( $items as $k => $item ) {
+        if ( in_array( untrailingslashit( $item->url ), $strip, true ) ) {
+            unset( $items[ $k ] );
+        }
+    }
+    return $items;
+}, 10, 2 );
+
 // Inject profile pill into primary nav when logged in
 add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
     if ( ! isset( $args->theme_location ) || $args->theme_location !== 'primary' ) return $items;
@@ -20,10 +34,8 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
     $asoc_url       = home_url( '/organigrama/asociaciones/' );
     $clubes_url     = home_url( '/organigrama/clubes/' );
     $ranking_url    = home_url( '/ranking/' );
-
-    $items .= '<li class="menu-item fmdb-nav-ranking">'
-        . '<a href="' . esc_url( $ranking_url ) . '">Ranking</a>'
-        . '</li>';
+    $mapa_url       = home_url( '/mapa-interactivo/' );
+    $selecciones_url = home_url( '/selecciones/' );
 
     $tienda_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/tienda/' );
     $items .= '<li class="menu-item fmdb-nav-tienda">'
@@ -47,6 +59,15 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
             . '</li>'
             . '<li class="menu-item"><a href="' . esc_url( $asoc_url ) . '">Asociaciones</a></li>'
             . '<li class="menu-item"><a href="' . esc_url( $clubes_url ) . '">Clubes</a></li>'
+        . '</ul>'
+        . '</li>';
+
+    $items .= '<li class="menu-item menu-item-has-children fmdb-nav-mexico">'
+        . '<span class="fmdb-nav-heading" tabindex="0" role="button" aria-haspopup="true">El Dodgeball en México <span class="fmdb-nav-caret" aria-hidden="true">&#9662;</span></span>'
+        . '<ul class="sub-menu fmdb-nav-submenu">'
+            . '<li class="menu-item"><a href="' . esc_url( $mapa_url ) . '">Mapa Interactivo</a></li>'
+            . '<li class="menu-item"><a href="' . esc_url( $selecciones_url ) . '">Selecciones</a></li>'
+            . '<li class="menu-item"><a href="' . esc_url( $ranking_url ) . '">Ranking</a></li>'
         . '</ul>'
         . '</li>';
 

@@ -34,6 +34,9 @@ add_action( 'wp_enqueue_scripts', function () {
         wp_enqueue_style(  'fmdb-equipos', get_stylesheet_directory_uri() . '/assets/css/equipos.css', [], $ver( 'assets/css/equipos.css' ) );
         wp_enqueue_script( 'fmdb-equipos', get_stylesheet_directory_uri() . '/assets/js/equipos.js', [ 'fmdb-map' ], $ver( 'assets/js/equipos.js' ), true );
     }
+    if ( is_page( 'ranking' ) ) {
+        wp_enqueue_style( 'fmdb-ranking', get_stylesheet_directory_uri() . '/assets/css/ranking.css', [], $ver( 'assets/css/ranking.css' ) );
+    }
     if ( is_front_page() ) {
         wp_enqueue_style(  'fmdb-home', get_stylesheet_directory_uri() . '/assets/css/home.css', [], $ver( 'assets/css/home.css' ) );
         wp_enqueue_script( 'fmdb-home', get_stylesheet_directory_uri() . '/assets/js/home.js', [ 'fmdb-map' ], $ver( 'assets/js/home.js' ), true );

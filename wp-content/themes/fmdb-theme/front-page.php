@@ -49,7 +49,7 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
             <p class="fmdb-hero__subtitle">Conectamos equipos, ligas y jugadores en todo el país.</p>
             <div class="fmdb-hero__ctas">
                 <a href="<?php echo esc_url( home_url( '/mapa-interactivo/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Encuentra tu equipo</a>
-                <a href="#" class="fmdb-btn fmdb-btn--outline">Únete a la FMDB</a>
+                <a href="<?php echo esc_url( wp_login_url( home_url( '/mi-equipo/' ) ) ); ?>" class="fmdb-btn fmdb-btn--outline">Únete a la FMDB</a>
             </div>
         </div>
         <div class="fmdb-hero__deco" aria-hidden="true"></div>

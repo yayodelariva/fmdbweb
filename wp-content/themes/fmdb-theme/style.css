@@ -375,7 +375,8 @@ body .header-navigation .header-menu-container ul ul li.menu-item:focus-within >
 }
 /* Match each heading's left padding to the links it sits beside: top-level
    links use Kadence's .5em, submenu links use our 18px. */
-#mobile-drawer .fmdb-nav-organigrama > .fmdb-nav-heading { padding-left: .5em; }
+#mobile-drawer .fmdb-nav-organigrama > .fmdb-nav-heading,
+#mobile-drawer .fmdb-nav-mexico > .fmdb-nav-heading { padding-left: .5em; }
 #mobile-drawer .fmdb-nav-submenu .fmdb-nav-heading { padding-left: 18px; }
 /* Indent each submenu level so the hierarchy reads clearly: Organigrama's
    children step in once, Comisiones' children step in again. */
@@ -394,11 +395,14 @@ body .header-navigation .header-menu-container ul ul li.menu-item:focus-within >
 #mobile-drawer .fmdb-nav-comisiones:hover > .fmdb-nav-heading,
 #mobile-drawer .fmdb-nav-comisiones:focus-within > .fmdb-nav-heading { background: transparent; }
 #mobile-drawer .fmdb-nav-organigrama > .fmdb-nav-submenu,
+#mobile-drawer .fmdb-nav-mexico > .fmdb-nav-submenu,
 #mobile-drawer .fmdb-nav-comisiones > .fmdb-nav-submenu--nested { display: none; }
 #mobile-drawer .fmdb-nav-organigrama.is-open > .fmdb-nav-submenu,
+#mobile-drawer .fmdb-nav-mexico.is-open > .fmdb-nav-submenu,
 #mobile-drawer .fmdb-nav-comisiones.is-open > .fmdb-nav-submenu--nested { display: block; }
 /* Caret flips when its section is open */
 #mobile-drawer .fmdb-nav-organigrama.is-open > .fmdb-nav-heading .fmdb-nav-caret,
+#mobile-drawer .fmdb-nav-mexico.is-open > .fmdb-nav-heading .fmdb-nav-caret,
 #mobile-drawer .fmdb-nav-comisiones.is-open > .fmdb-nav-heading .fmdb-nav-caret { transform: rotate(180deg); }
 
 /* === Organigrama people-grid pages (Consejo Directivo, Comisiones, Asociaciones) === */

@@ -10,6 +10,7 @@ foreach ( [
     'helpers',
     'assets',
     'cpt',
+    'ranking-data',
     'roles',
     'templates',
     'acf-fields',
