@@ -236,7 +236,7 @@ add_action( 'acf/init', function () {
                 'label'       => 'Estado',
                 'name'        => 'asociacion_state',
                 'type'        => 'select',
-                'choices'     => $state_choices,
+                'choices'     => $state_choices + [ 'Internacional' => 'Internacional' ],
                 'allow_null'  => 1,
                 'placeholder' => 'Selecciona un estado',
                 'required'    => 1,
@@ -458,6 +458,55 @@ add_action( 'acf/save_post', function ( $post_id ) {
         }
     }
 }, 20 );
+
+/* Scope the Liga (team_league) post_object dropdown to ligas whose
+ * league_state matches the currently-selected team_state.
+ *
+ * - Initial render reads team_state from postmeta.
+ * - The Select2 AJAX search passes the live value via $_POST['team_state']
+ *   (see the JS below, which mirrors ACF's stock select2_ajax_data hook).
+ * - If no state is selected yet, return an impossible meta_query so the
+ *   dropdown stays empty (and the user knows to pick a state first).
+ */
+add_filter( 'acf/fields/post_object/query/key=field_team_league', function ( $args, $field, $post_id ) {
+    $state = isset( $_POST['team_state'] ) ? sanitize_text_field( wp_unslash( $_POST['team_state'] ) ) : '';
+    if ( $state === '' && $post_id ) {
+        $state = (string) get_post_meta( (int) $post_id, 'team_state', true );
+    }
+    if ( $state === '' ) {
+        $args['meta_query'] = [ [ 'key' => 'league_state', 'value' => '__no_state_selected__' ] ];
+        return $args;
+    }
+    $args['meta_query'] = [ [ 'key' => 'league_state', 'value' => $state ] ];
+    return $args;
+}, 10, 3 );
+
+/* JS: when team_state changes, clear team_league and pass the new state on
+ * the next Select2 AJAX request. Loads on wp-admin team edit screen and on
+ * any front-end page that renders the field group (acf_form on /mi-equipo/). */
+add_action( 'acf/input/admin_footer', function () { ?>
+<script>
+(function(){
+    if (typeof acf === 'undefined') return;
+    acf.add_filter('select2_ajax_data', function (data, args, $input, field, instance) {
+        if (field && field.get('key') === 'field_team_league') {
+            var $form = $input.closest('form');
+            var $state = $form.find('[data-key="field_team_state"] select, [name="acf[field_team_state]"]');
+            if ($state.length) data.team_state = $state.val();
+        }
+        return data;
+    });
+    acf.addAction('ready', function () {
+        var stateField  = acf.getField('field_team_state');
+        var leagueField = acf.getField('field_team_league');
+        if (!stateField || !leagueField) return;
+        stateField.on('change', function () {
+            leagueField.setValue(null);
+        });
+    });
+})();
+</script>
+<?php } );
 
 // Block front-end ACF saves for teams the current user doesn't manage
 add_action( 'acf/validate_save_post', function () {

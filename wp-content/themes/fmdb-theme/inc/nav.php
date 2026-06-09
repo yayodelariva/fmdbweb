@@ -31,8 +31,9 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
     $com_sel_url    = home_url( '/organigrama/comisiones/comision-selecciones-nacionales/' );
     $com_arb_url    = home_url( '/organigrama/comisiones/comision-arbitraje-jueceo/' );
     $com_evt_url    = home_url( '/organigrama/comisiones/comision-eventos/' );
-    $asoc_url       = home_url( '/organigrama/asociaciones/' );
-    $clubes_url     = home_url( '/organigrama/clubes/' );
+    $asoc_url       = home_url( '/mapa-interactivo/?view=asociaciones' );
+    $clubes_url     = home_url( '/mapa-interactivo/?view=equipos' );
+    $ligas_url      = home_url( '/mapa-interactivo/?view=ligas' );
     $ranking_url    = home_url( '/ranking/' );
     $mapa_url       = home_url( '/mapa-interactivo/' );
     $selecciones_url = home_url( '/selecciones/' );
@@ -57,15 +58,20 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
                     . '<li class="menu-item"><a href="' . esc_url( $com_evt_url ) . '">Comisión de eventos</a></li>'
                 . '</ul>'
             . '</li>'
-            . '<li class="menu-item"><a href="' . esc_url( $asoc_url ) . '">Asociaciones</a></li>'
-            . '<li class="menu-item"><a href="' . esc_url( $clubes_url ) . '">Clubes</a></li>'
         . '</ul>'
         . '</li>';
 
     $items .= '<li class="menu-item menu-item-has-children fmdb-nav-mexico">'
         . '<span class="fmdb-nav-heading" tabindex="0" role="button" aria-haspopup="true">El Dodgeball en México <span class="fmdb-nav-caret" aria-hidden="true">&#9662;</span></span>'
         . '<ul class="sub-menu fmdb-nav-submenu">'
-            . '<li class="menu-item"><a href="' . esc_url( $mapa_url ) . '">Mapa Interactivo</a></li>'
+            . '<li class="menu-item menu-item-has-children fmdb-nav-mapa">'
+                . '<span class="fmdb-nav-heading" tabindex="0" role="button" aria-haspopup="true">Mapa Interactivo <span class="fmdb-nav-caret fmdb-nav-caret--right" aria-hidden="true">&#9656;</span></span>'
+                . '<ul class="sub-menu fmdb-nav-submenu fmdb-nav-submenu--nested">'
+                    . '<li class="menu-item"><a href="' . esc_url( $asoc_url ) . '">Asociaciones</a></li>'
+                    . '<li class="menu-item"><a href="' . esc_url( $ligas_url ) . '">Ligas</a></li>'
+                    . '<li class="menu-item"><a href="' . esc_url( $clubes_url ) . '">Equipos</a></li>'
+                . '</ul>'
+            . '</li>'
             . '<li class="menu-item"><a href="' . esc_url( $selecciones_url ) . '">Selecciones</a></li>'
             . '<li class="menu-item"><a href="' . esc_url( $ranking_url ) . '">Ranking</a></li>'
         . '</ul>'

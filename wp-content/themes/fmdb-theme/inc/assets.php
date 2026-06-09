@@ -20,7 +20,7 @@ add_action( 'wp_enqueue_scripts', function () {
     if ( is_singular( 'fmdb_team' ) ) {
         wp_enqueue_style( 'fmdb-team-single', get_stylesheet_directory_uri() . '/assets/css/team-single.css', [], $ver( 'assets/css/team-single.css' ) );
     }
-    if ( is_singular( 'fmdb_league' ) ) {
+    if ( is_singular( 'fmdb_league' ) || is_singular( 'fmdb_asociacion' ) ) {
         wp_enqueue_style( 'fmdb-team-single',   get_stylesheet_directory_uri() . '/assets/css/team-single.css',   [], $ver( 'assets/css/team-single.css' ) );
         wp_enqueue_style( 'fmdb-league-single', get_stylesheet_directory_uri() . '/assets/css/league-single.css', [ 'fmdb-team-single' ], $ver( 'assets/css/league-single.css' ) );
     }

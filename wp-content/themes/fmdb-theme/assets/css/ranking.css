@@ -125,7 +125,7 @@
     border-radius: 14px;
     font-weight: 600;
 }
-.fmdb-ranking__cat-mods { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.fmdb-ranking__cat-mods { display: none; }
 
 .fmdb-ranking__combined { margin-bottom: 36px; }
 .fmdb-ranking__section { margin-bottom: 32px; }

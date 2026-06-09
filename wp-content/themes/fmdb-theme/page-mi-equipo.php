@@ -9,6 +9,9 @@ if ( function_exists( 'acf_form_head' ) ) {
     acf_form_head();
 }
 
+// Hide Alcaldía/Municipio from the team-info form on this page only.
+add_filter( 'acf/prepare_field/key=field_team_city', '__return_false' );
+
 if ( ! is_user_logged_in() ) {
     wp_safe_redirect( wp_login_url( home_url( '/mi-equipo/' ) ) );
     exit;

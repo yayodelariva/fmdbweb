@@ -75,6 +75,34 @@ add_filter( 'render_block', function ( $block_content ) {
     );
 } );
 
+// Cart/Checkout block overrides: PHP gettext doesn't reach JS-rendered block strings,
+// so inject custom translations into the `woocommerce` JS text domain via wp.i18n.setLocaleData.
+// Add new strings to the array below; key = exact English source string.
+add_action( 'wp_enqueue_scripts', function () {
+    if ( ! wp_script_is( 'wp-i18n', 'registered' ) && ! wp_script_is( 'wp-i18n', 'enqueued' ) ) {
+        return;
+    }
+    $overrides = [
+        'Shipping will be calculated at checkout' => 'El total de envío será calculado al final',
+        'Ship'                                    => 'Envío',
+        'Calculated at checkout'                  => 'Ingresar dirección para calcular estimado',
+        'Enter address to calculate'              => 'Ingresar dirección para calcular estimado',
+    ];
+    $messages = [ '' => [ 'domain' => 'woocommerce', 'lang' => 'es' ] ];
+    foreach ( $overrides as $en => $es ) {
+        $messages[ $en ] = [ $es ];
+    }
+    wp_enqueue_script( 'wp-i18n' );
+    wp_add_inline_script(
+        'wp-i18n',
+        '( function () {'
+        . "if ( window.wp && wp.i18n && typeof wp.i18n.setLocaleData === 'function' ) {"
+        . 'wp.i18n.setLocaleData(' . wp_json_encode( $messages ) . ", 'woocommerce' );"
+        . '}'
+        . '} )();'
+    );
+}, 20 );
+
 // Empty cart message with shop link
 add_filter( 'wc_empty_cart_message', function () {
     $shop = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' );
