@@ -9,10 +9,27 @@ if ( is_user_logged_in() ) {
     exit;
 }
 
-$errors      = [];
+$errors      = []; // simple strings, escaped at output
+$errors_html = []; // pre-trusted HTML (e.g., unverified link), output as-is
 $redirect_to = isset( $_GET['redirect_to'] ) ? esc_url_raw( $_GET['redirect_to'] ) : home_url( '/mi-equipo/' );
+$resend_mode = isset( $_GET['resend'] );
+$resend_done = false;
 
-if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_login_nonce'] ) ) {
+if ( $resend_mode && $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_resend_nonce'] ) ) {
+    if ( ! wp_verify_nonce( $_POST['fmdb_resend_nonce'], 'fmdb_resend' ) ) {
+        $errors[] = 'Solicitud inválida. Por favor intenta de nuevo.';
+    } else {
+        $email = sanitize_email( $_POST['email'] ?? '' );
+        if ( is_email( $email ) ) {
+            $user = get_user_by( 'email', $email );
+            if ( $user && fmdb_user_is_unverified( $user ) ) {
+                fmdb_send_verification_email( $user->ID );
+            }
+        }
+        // Always show the same message — don't leak whether the email exists.
+        $resend_done = true;
+    }
+} elseif ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_login_nonce'] ) ) {
     if ( ! wp_verify_nonce( $_POST['fmdb_login_nonce'], 'fmdb_login' ) ) {
         $errors[] = 'Solicitud inválida. Por favor intenta de nuevo.';
     } else {
@@ -23,7 +40,11 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_login_nonce'] 
         ], false );
 
         if ( is_wp_error( $user ) ) {
-            $errors[] = 'Usuario o contraseña incorrectos.';
+            if ( $user->get_error_code() === 'fmdb_email_unverified' ) {
+                $errors_html[] = $user->get_error_message();
+            } else {
+                $errors[] = 'Usuario o contraseña incorrectos.';
+            }
         } else {
             $dest = isset( $_POST['redirect_to'] ) ? esc_url_raw( $_POST['redirect_to'] ) : home_url( '/mi-equipo/' );
             wp_safe_redirect( $dest );
@@ -48,6 +69,37 @@ get_header();
             <?php endif; ?>
         </div>
 
+        <?php if ( $resend_mode ) : ?>
+
+            <h1 class="fmdb-registro__title">Reenviar verificación</h1>
+            <p class="fmdb-registro__subtitle">Te enviaremos un nuevo enlace por correo</p>
+
+            <?php if ( $resend_done ) : ?>
+                <div class="fmdb-registro__notice fmdb-registro__notice--success">
+                    <p>Si existe una cuenta sin verificar con ese correo, te enviamos un nuevo enlace. Revisa tu bandeja de entrada y la carpeta de spam.</p>
+                </div>
+                <a href="<?php echo esc_url( home_url( '/login/' ) ); ?>" class="fmdb-btn fmdb-btn--primary fmdb-registro__btn">← Volver al inicio de sesión</a>
+            <?php else : ?>
+                <?php if ( $errors ) : ?>
+                    <div class="fmdb-registro__notice fmdb-registro__notice--error">
+                        <?php foreach ( $errors as $e ) : ?>
+                            <p><?php echo esc_html( $e ); ?></p>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                <form class="fmdb-registro__form" method="post">
+                    <?php wp_nonce_field( 'fmdb_resend', 'fmdb_resend_nonce' ); ?>
+                    <div class="fmdb-registro__field">
+                        <label for="email">Correo electrónico</label>
+                        <input type="email" id="email" name="email" value="<?php echo esc_attr( $_POST['email'] ?? '' ); ?>" required autocomplete="email">
+                    </div>
+                    <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-registro__btn">Reenviar correo</button>
+                </form>
+                <p class="fmdb-registro__login-link"><a href="<?php echo esc_url( home_url( '/login/' ) ); ?>">← Volver al inicio de sesión</a></p>
+            <?php endif; ?>
+
+        <?php else : ?>
+
         <h1 class="fmdb-registro__title">Iniciar sesión</h1>
         <p class="fmdb-registro__subtitle">Federación Mexicana de Dodgeball</p>
 
@@ -57,10 +109,13 @@ get_header();
             </div>
         <?php endif; ?>
 
-        <?php if ( $errors ) : ?>
+        <?php if ( $errors || $errors_html ) : ?>
             <div class="fmdb-registro__notice fmdb-registro__notice--error">
                 <?php foreach ( $errors as $e ) : ?>
                     <p><?php echo esc_html( $e ); ?></p>
+                <?php endforeach; ?>
+                <?php foreach ( $errors_html as $e ) : ?>
+                    <p><?php echo wp_kses( $e, [ 'a' => [ 'href' => true ] ] ); ?></p>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
@@ -91,6 +146,8 @@ get_header();
         </p>
 
         <p class="fmdb-registro__login-link">¿No tienes cuenta? <a href="<?php echo esc_url( home_url( '/registro/' ) ); ?>">Regístrate aquí</a></p>
+
+        <?php endif; ?>
 
     </div>
 </main>

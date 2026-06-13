@@ -19,6 +19,7 @@ foreach ( [
     'woocommerce',
     'nav',
     'login',
+    'email-verification',
     'shortcodes',
     'misc',
 ] as $fmdb_file ) {

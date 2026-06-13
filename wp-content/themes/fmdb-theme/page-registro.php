@@ -46,6 +46,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_register_nonce
                     'last_name'    => $last_name,
                     'display_name' => "$first_name $last_name",
                 ] );
+                fmdb_send_verification_email( $user_id );
                 $success = true;
             }
         }
@@ -73,9 +74,9 @@ get_header();
 
         <?php if ( $success ) : ?>
             <div class="fmdb-registro__notice fmdb-registro__notice--success">
-                <strong>¡Cuenta creada!</strong> Ahora puedes iniciar sesión.
+                <strong>¡Cuenta creada!</strong> Te enviamos un correo a <?php echo esc_html( $email ); ?> con un enlace para verificarla. Asegúrate de revisar la carpeta de spam/correo no deseado. El enlace expira en 24 horas.
             </div>
-            <a href="<?php echo esc_url( wp_login_url( home_url( '/mi-equipo/' ) ) ); ?>" class="fmdb-btn fmdb-btn--primary fmdb-registro__btn">Iniciar sesión</a>
+            <a href="<?php echo esc_url( home_url( '/login/' ) ); ?>" class="fmdb-btn fmdb-btn--primary fmdb-registro__btn">Volver a iniciar sesión</a>
         <?php else : ?>
 
             <?php if ( $errors ) : ?>
