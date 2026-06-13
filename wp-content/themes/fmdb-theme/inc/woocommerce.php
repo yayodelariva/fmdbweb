@@ -32,12 +32,16 @@ add_filter( 'woocommerce_catalog_orderby', function ( $options ) {
     unset( $options['popularity'], $options['rating'] );
     if ( isset( $options['menu_order'] ) ) $options['menu_order'] = 'Predeterminado';
     if ( isset( $options['date'] ) )       $options['date']       = 'Agregados recientemente';
+    if ( isset( $options['price'] ) )      $options['price']      = 'Precio: menor a mayor';
+    if ( isset( $options['price-desc'] ) ) $options['price-desc'] = 'Precio: mayor a menor';
     return $options;
 } );
 add_filter( 'woocommerce_default_catalog_orderby_options', function ( $options ) {
     unset( $options['popularity'], $options['rating'] );
     if ( isset( $options['menu_order'] ) ) $options['menu_order'] = 'Predeterminado';
     if ( isset( $options['date'] ) )       $options['date']       = 'Agregados recientemente';
+    if ( isset( $options['price'] ) )      $options['price']      = 'Precio: menor a mayor';
+    if ( isset( $options['price-desc'] ) ) $options['price-desc'] = 'Precio: mayor a menor';
     return $options;
 } );
 
