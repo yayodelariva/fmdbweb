@@ -72,6 +72,8 @@
 .fmdb-empty { color: #888; font-style: italic; padding: 32px 0; text-align: center; }
 
 @media (max-width: 768px) {
+    .fmdb-selecciones__hub { grid-template-columns: 1fr; gap: 16px; }
+    .fmdb-seleccion-hub-card { padding: 32px 20px; }
     .fmdb-seleccion-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
     .fmdb-selecciones__tabs { border-radius: 12px; padding: 6px; width: fit-content; justify-content: center; }
     .fmdb-selecciones__tab { padding: 8px 14px; font-size: 0.85rem; }
