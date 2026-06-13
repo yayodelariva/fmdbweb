@@ -75,8 +75,10 @@ add_filter( 'render_block', function ( $block_content ) {
     );
 } );
 
-// Cart/Checkout block overrides: PHP gettext doesn't reach JS-rendered block strings,
-// so inject custom translations into the `woocommerce` JS text domain via wp.i18n.setLocaleData.
+// Cart/Checkout block overrides: PHP gettext doesn't reach JS-rendered block strings.
+// We hook into wp.i18n's runtime gettext filter so our overrides always win,
+// even after WC's official .json language file (which sometimes ships untranslated
+// English entries that overwrite setLocaleData) finishes loading.
 // Add new strings to the array below; key = exact English source string.
 add_action( 'wp_enqueue_scripts', function () {
     if ( ! wp_script_is( 'wp-i18n', 'registered' ) && ! wp_script_is( 'wp-i18n', 'enqueued' ) ) {
@@ -110,16 +112,19 @@ add_action( 'wp_enqueue_scripts', function () {
         'Total'                                                                                => 'Total',
         'By proceeding with your purchase you agree to our <a>Terms and Conditions</a> and <a>Privacy Policy</a>' => 'Al realizar tu compra aceptas nuestros <a>Términos y Condiciones</a> y la <a>Política de Privacidad</a>',
     ];
-    $messages = [ '' => [ 'domain' => 'woocommerce', 'lang' => 'es' ] ];
-    foreach ( $overrides as $en => $es ) {
-        $messages[ $en ] = [ $es ];
-    }
     wp_enqueue_script( 'wp-i18n' );
+    wp_enqueue_script( 'wp-hooks' );
     wp_add_inline_script(
         'wp-i18n',
         '( function () {'
-        . "if ( window.wp && wp.i18n && typeof wp.i18n.setLocaleData === 'function' ) {"
-        . 'wp.i18n.setLocaleData(' . wp_json_encode( $messages ) . ", 'woocommerce' );"
+        . "if ( window.wp && wp.hooks && wp.i18n ) {"
+        . 'var fmdbOverrides = ' . wp_json_encode( $overrides ) . ';'
+        . "wp.hooks.addFilter( 'i18n.gettext_woocommerce', 'fmdb/checkout-i18n', function ( translation, text ) {"
+        . 'return Object.prototype.hasOwnProperty.call(fmdbOverrides, text) ? fmdbOverrides[text] : translation;'
+        . '} );'
+        . "wp.hooks.addFilter( 'i18n.gettext_with_context_woocommerce', 'fmdb/checkout-i18n-ctx', function ( translation, text ) {"
+        . 'return Object.prototype.hasOwnProperty.call(fmdbOverrides, text) ? fmdbOverrides[text] : translation;'
+        . '} );'
         . '}'
         . '} )();'
     );
