@@ -112,7 +112,7 @@ get_header();
         <?php if ( $done ) : ?>
             <h1 class="fmdb-registro__title">Revisa tu correo</h1>
             <div class="fmdb-registro__notice fmdb-registro__notice--success">
-                <p>Si existe una cuenta con esos datos, recibirás un correo con las instrucciones para restablecer tu contraseña.</p>
+                <p>Si existe una cuenta con esos datos, recibirás un correo con las instrucciones para restablecer tu contraseña. Asegúrate de revisar la carpeta de spam/correo no deseado.</p>
             </div>
             <p class="fmdb-registro__login-link"><a href="<?php echo esc_url( home_url( '/login/' ) ); ?>">← Volver al inicio de sesión</a></p>
 
