@@ -1,0 +1,28 @@
+/* === Reglamentos page === */
+.fmdb-reglamentos { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+.fmdb-reglamentos__wrap { padding: 32px 0; }
+
+.fmdb-reglamentos__header { text-align: center; padding: 24px 0 32px; }
+.fmdb-reglamentos__header h1 { margin: 0 0 8px; font-size: 2rem; color: var(--fmdb-dark-green); }
+.fmdb-reglamentos__header p { color: #666; margin: 0; max-width: 560px; margin: 0 auto; line-height: 1.5; }
+
+.fmdb-reglamentos__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 16px 0; }
+
+.fmdb-reglamentos__card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 28px; border: 2px solid var(--fmdb-neutral); border-radius: 16px; background: #fff; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; }
+.fmdb-reglamentos__card:hover { border-color: var(--fmdb-green); box-shadow: 0 8px 32px rgba(29,158,117,0.13); transform: translateY(-3px); }
+
+.fmdb-reglamentos__icon { width: 72px; height: 72px; border-radius: 50%; background: var(--fmdb-pale-green); color: var(--fmdb-dark-green); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+
+.fmdb-reglamentos__title { margin: 0 0 10px; font-size: 1.45rem; font-weight: 800; color: var(--fmdb-dark-green); }
+.fmdb-reglamentos__desc { margin: 0 0 24px; color: #666; font-size: 0.95rem; line-height: 1.5; }
+
+.fmdb-reglamentos__btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--fmdb-green); color: #fff; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: background 0.15s, transform 0.15s; }
+.fmdb-reglamentos__btn:hover { background: var(--fmdb-dark-green); color: #fff; transform: translateY(-1px); }
+.fmdb-reglamentos__btn--disabled { background: var(--fmdb-neutral); color: #999; cursor: not-allowed; }
+.fmdb-reglamentos__btn--disabled:hover { background: var(--fmdb-neutral); color: #999; transform: none; }
+
+@media (max-width: 768px) {
+    .fmdb-reglamentos__grid { grid-template-columns: 1fr; gap: 16px; }
+    .fmdb-reglamentos__card { padding: 32px 20px; }
+    .fmdb-reglamentos__header h1 { font-size: 1.6rem; }
+}

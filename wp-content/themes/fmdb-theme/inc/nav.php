@@ -37,6 +37,7 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
     $ranking_url    = home_url( '/ranking/' );
     $mapa_url       = home_url( '/mapa-interactivo/' );
     $selecciones_url = home_url( '/selecciones/' );
+    $reglamentos_url = home_url( '/reglamentos/' );
 
     $tienda_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/tienda/' );
     $items .= '<li class="menu-item fmdb-nav-tienda">'
@@ -74,6 +75,7 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
             . '</li>'
             . '<li class="menu-item"><a href="' . esc_url( $selecciones_url ) . '">Selecciones</a></li>'
             . '<li class="menu-item"><a href="' . esc_url( $ranking_url ) . '">Ranking</a></li>'
+            . '<li class="menu-item"><a href="' . esc_url( $reglamentos_url ) . '">Reglamentos</a></li>'
         . '</ul>'
         . '</li>';
 
