@@ -154,6 +154,11 @@ function fmdb_cart_checkout_overrides() {
         'View cart'                                        => 'Ver carrito',
         '%s has been added to your cart.'                  => '%s se ha agregado a tu carrito.',
         '%s have been added to your cart.'                 => '%s se han agregado a tu carrito.',
+        // Shop archive result count
+        'Showing the single result'                        => 'Mostrando el único resultado',
+        'Showing all %d results'                           => 'Mostrando los %d resultados',
+        'Showing %1$d&#8211;%2$d of %3$d results'          => 'Mostrando %1$d&#8211;%2$d de %3$d resultados',
+        'Showing %1$d–%2$d of %3$d results'                => 'Mostrando %1$d–%2$d de %3$d resultados',
     ];
 }
 
@@ -169,6 +174,11 @@ add_filter( 'gettext_with_context_woocommerce', function ( $translation, $text )
     return $overrides[ $text ] ?? $translation;
 }, 20, 2 );
 add_filter( 'ngettext_woocommerce', function ( $translation, $single, $plural, $number ) {
+    $overrides = fmdb_cart_checkout_overrides();
+    $key = ( $number == 1 ) ? $single : $plural;
+    return $overrides[ $key ] ?? $translation;
+}, 20, 4 );
+add_filter( 'ngettext_with_context_woocommerce', function ( $translation, $single, $plural, $number ) {
     $overrides = fmdb_cart_checkout_overrides();
     $key = ( $number == 1 ) ? $single : $plural;
     return $overrides[ $key ] ?? $translation;
