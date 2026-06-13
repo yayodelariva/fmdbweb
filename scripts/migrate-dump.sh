@@ -2,8 +2,8 @@
 # Dump the local docker WordPress install (DB + uploads) into ./migration/
 # so it can be uploaded to a hosting provider (e.g. Bluehost).
 #
-# Usage:  ./scripts/migrate-dump.sh [container-name]
-#         Defaults to fmdbweb-wordpress-1.
+# Usage:  ./scripts/migrate-dump.sh [wp-container] [db-container]
+#         Defaults to fmdbweb-wordpress-1 and fmdbweb-db-1.
 #
 # Output:
 #   migration/fmdb-<timestamp>.sql       — full DB dump
@@ -15,7 +15,8 @@
 
 set -euo pipefail
 
-CONTAINER="${1:-fmdbweb-wordpress-1}"
+WP_CONTAINER="${1:-fmdbweb-wordpress-1}"
+DB_CONTAINER="${2:-fmdbweb-db-1}"
 REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 OUT_DIR="$REPO_ROOT/migration"
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -23,29 +24,36 @@ SQL_FILE="fmdb-$STAMP.sql"
 UPLOADS_FILE="uploads-$STAMP.tar.gz"
 MANIFEST="MANIFEST-$STAMP.txt"
 
-WP="docker exec $CONTAINER php -d memory_limit=512M /usr/local/bin/wp"
+WP="docker exec $WP_CONTAINER php -d memory_limit=512M /usr/local/bin/wp"
 
-if ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-    echo "error: container '$CONTAINER' is not running." >&2
-    echo "       start it with: docker compose up -d" >&2
-    exit 1
-fi
+for c in "$WP_CONTAINER" "$DB_CONTAINER"; do
+    if ! docker ps --format '{{.Names}}' | grep -qx "$c"; then
+        echo "error: container '$c' is not running." >&2
+        echo "       start it with: docker compose up -d" >&2
+        exit 1
+    fi
+done
 
 mkdir -p "$OUT_DIR"
 
-echo "==> Dumping database from $CONTAINER"
-$WP db export "/tmp/$SQL_FILE" --allow-root --add-drop-table
-docker cp "$CONTAINER:/tmp/$SQL_FILE" "$OUT_DIR/$SQL_FILE"
-docker exec "$CONTAINER" rm -f "/tmp/$SQL_FILE"
+# Read DB creds from the wp container env so the dump matches the live install.
+DB_NAME="$( docker exec "$WP_CONTAINER" printenv WORDPRESS_DB_NAME )"
+DB_USER="$( docker exec "$WP_CONTAINER" printenv WORDPRESS_DB_USER )"
+DB_PASS="$( docker exec "$WP_CONTAINER" printenv WORDPRESS_DB_PASSWORD )"
+
+echo "==> Dumping database '$DB_NAME' from $DB_CONTAINER"
+docker exec -e MYSQL_PWD="$DB_PASS" "$DB_CONTAINER" \
+    mysqldump --no-tablespaces --add-drop-table --single-transaction \
+    -u "$DB_USER" "$DB_NAME" > "$OUT_DIR/$SQL_FILE"
 
 echo "==> Archiving wp-content/uploads"
 if [ -d "$REPO_ROOT/wp-content/uploads" ]; then
     tar -czf "$OUT_DIR/$UPLOADS_FILE" -C "$REPO_ROOT/wp-content" uploads
 else
     echo "    (no wp-content/uploads on host — pulling from container instead)"
-    docker exec "$CONTAINER" tar -czf "/tmp/$UPLOADS_FILE" -C /var/www/html/wp-content uploads
-    docker cp "$CONTAINER:/tmp/$UPLOADS_FILE" "$OUT_DIR/$UPLOADS_FILE"
-    docker exec "$CONTAINER" rm -f "/tmp/$UPLOADS_FILE"
+    docker exec "$WP_CONTAINER" tar -czf "/tmp/$UPLOADS_FILE" -C /var/www/html/wp-content uploads
+    docker cp "$WP_CONTAINER:/tmp/$UPLOADS_FILE" "$OUT_DIR/$UPLOADS_FILE"
+    docker exec "$WP_CONTAINER" rm -f "/tmp/$UPLOADS_FILE"
 fi
 
 SOURCE_URL="$( $WP option get siteurl --allow-root 2>/dev/null | tr -d '\r' )"
@@ -53,7 +61,8 @@ SOURCE_URL="$( $WP option get siteurl --allow-root 2>/dev/null | tr -d '\r' )"
 {
     echo "FMDB migration bundle"
     echo "Created: $(date -Iseconds)"
-    echo "Container: $CONTAINER"
+    echo "WP container: $WP_CONTAINER"
+    echo "DB container: $DB_CONTAINER"
     echo "Source siteurl: $SOURCE_URL"
     echo
     echo "Files:"

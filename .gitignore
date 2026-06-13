@@ -5,6 +5,9 @@ node_modules/
 # Local environment
 .env
 
+# Migration bundles (DB dumps + uploads — never commit, contain user data)
+migration/
+
 # Editor / OS
 .DS_Store
 .idea/
