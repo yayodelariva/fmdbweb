@@ -118,10 +118,12 @@ function fmdb_cart_checkout_overrides() {
         'Apartment, suite, etc. (optional)'                => 'Departamento, suite, etc. (opcional)',
         'Add apartment, suite, unit, etc.'                 => 'Agregar departamento, suite, unidad, etc.',
         'Apartment, suite, unit, etc.'                     => 'Departamento, suite, unidad, etc.',
-        // WC composes "Add" + lowercase label, so override both halves.
+        // WC composes "Add" + lowercase label via sprintf, so override both forms.
         'apartment, suite, unit, etc.'                     => 'departamento, suite, unidad, etc.',
         'Add'                                              => 'Agregar',
         '+ Add'                                            => '+ Agregar',
+        'Add %s'                                           => 'Agregar %s',
+        '+ Add %s'                                         => '+ Agregar %s',
         'City'                                             => 'Ciudad',
         'Town / City'                                      => 'Ciudad',
         'Town/City'                                        => 'Ciudad',
