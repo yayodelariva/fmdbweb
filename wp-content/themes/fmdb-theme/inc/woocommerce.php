@@ -149,6 +149,11 @@ function fmdb_cart_checkout_overrides() {
         'Notes about your order, e.g. special notes for delivery.' => 'Notas sobre tu pedido, ej. instrucciones especiales para la entrega.',
         // Single product page
         'Related products'                                 => 'Productos relacionados',
+        // Add-to-cart success notice + View Cart button
+        'View Cart'                                        => 'Ver carrito',
+        'View cart'                                        => 'Ver carrito',
+        '%s has been added to your cart.'                  => '%s se ha agregado a tu carrito.',
+        '%s have been added to your cart.'                 => '%s se han agregado a tu carrito.',
     ];
 }
 
@@ -163,6 +168,11 @@ add_filter( 'gettext_with_context_woocommerce', function ( $translation, $text )
     $overrides = fmdb_cart_checkout_overrides();
     return $overrides[ $text ] ?? $translation;
 }, 20, 2 );
+add_filter( 'ngettext_woocommerce', function ( $translation, $single, $plural, $number ) {
+    $overrides = fmdb_cart_checkout_overrides();
+    $key = ( $number == 1 ) ? $single : $plural;
+    return $overrides[ $key ] ?? $translation;
+}, 20, 4 );
 
 // JS-side: catch strings rendered through wp.i18n.__() in block JS.
 // Scoped to cart/checkout pages — the filter is domain-agnostic and could
