@@ -75,24 +75,12 @@ add_filter( 'render_block', function ( $block_content ) {
     );
 } );
 
-// Cart/Checkout block overrides: PHP gettext doesn't reach JS-rendered block strings.
-// We hook into wp.i18n's runtime gettext filter so our overrides always win,
-// even after WC's official .json language file (which sometimes ships untranslated
-// English entries that overwrite setLocaleData) finishes loading.
-// Scoped to cart/checkout pages because the override is domain-agnostic and could
-// otherwise affect unrelated strings (e.g. "City") elsewhere on the site.
-// Add new strings to the array below; key = exact English source string.
-add_action( 'wp_enqueue_scripts', function () {
-    if ( ! wp_script_is( 'wp-i18n', 'registered' ) && ! wp_script_is( 'wp-i18n', 'enqueued' ) ) {
-        return;
-    }
-    if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) ) {
-        return;
-    }
-    if ( ! is_cart() && ! is_checkout() ) {
-        return;
-    }
-    $overrides = [
+// Cart/Checkout block overrides: WC blocks load some strings via wp.i18n (caught
+// by the JS filter below) and others via PHP __() rendered into wcSettings JSON
+// (caught by the PHP gettext_woocommerce filter further down). We override both.
+// Add new strings here; key = exact English source string.
+function fmdb_cart_checkout_overrides() {
+    return [
         // Cart page
         'Shipping will be calculated at checkout' => 'El total de envío será calculado al final',
         'Ship'                                    => 'Envío',
@@ -143,6 +131,34 @@ add_action( 'wp_enqueue_scripts', function () {
         'Order notes'                                      => 'Notas del pedido',
         'Notes about your order, e.g. special notes for delivery.' => 'Notas sobre tu pedido, ej. instrucciones especiales para la entrega.',
     ];
+}
+
+// PHP-side: override WC strings server-side. Catches labels rendered into
+// wcSettings JSON (address form fields like First name, Country/Region, etc.)
+// that bypass wp.i18n on the JS side.
+add_filter( 'gettext_woocommerce', function ( $translation, $text ) {
+    $overrides = fmdb_cart_checkout_overrides();
+    return $overrides[ $text ] ?? $translation;
+}, 20, 2 );
+add_filter( 'gettext_with_context_woocommerce', function ( $translation, $text ) {
+    $overrides = fmdb_cart_checkout_overrides();
+    return $overrides[ $text ] ?? $translation;
+}, 20, 2 );
+
+// JS-side: catch strings rendered through wp.i18n.__() in block JS.
+// Scoped to cart/checkout pages — the filter is domain-agnostic and could
+// otherwise affect unrelated strings (e.g. "City") elsewhere on the site.
+add_action( 'wp_enqueue_scripts', function () {
+    if ( ! wp_script_is( 'wp-i18n', 'registered' ) && ! wp_script_is( 'wp-i18n', 'enqueued' ) ) {
+        return;
+    }
+    if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) ) {
+        return;
+    }
+    if ( ! is_cart() && ! is_checkout() ) {
+        return;
+    }
+    $overrides = fmdb_cart_checkout_overrides();
     wp_enqueue_script( 'wp-i18n' );
     wp_enqueue_script( 'wp-hooks' );
     wp_add_inline_script(
