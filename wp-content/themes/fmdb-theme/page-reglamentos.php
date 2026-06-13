@@ -9,21 +9,19 @@
 
 get_header();
 
-// TODO: replace these with the actual uploaded media URLs once available.
-// Easiest way: upload via wp-admin → Media → Add New, copy the file URL,
-// paste into the corresponding $url field below.
+$pdf_base    = get_stylesheet_directory_uri() . '/assets/pdfs';
 $reglamentos = [
     [
         'tipo'        => 'foam',
         'titulo'      => 'Reglamento Foam',
         'descripcion' => 'Reglas oficiales para la modalidad Foam de dodgeball reconocidas por la FMDB.',
-        'url'         => '#', // TODO: replace with PDF URL
+        'url'         => $pdf_base . '/reglamento-foam-2026.pdf',
     ],
     [
         'tipo'        => 'cloth',
         'titulo'      => 'Reglamento Cloth',
         'descripcion' => 'Reglas oficiales para la modalidad Cloth de dodgeball reconocidas por la FMDB.',
-        'url'         => '#', // TODO: replace with PDF URL
+        'url'         => $pdf_base . '/reglamento-cloth-2026.pdf',
     ],
 ];
 ?>
