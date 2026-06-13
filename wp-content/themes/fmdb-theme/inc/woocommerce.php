@@ -83,10 +83,32 @@ add_action( 'wp_enqueue_scripts', function () {
         return;
     }
     $overrides = [
+        // Cart page
         'Shipping will be calculated at checkout' => 'El total de envío será calculado al final',
         'Ship'                                    => 'Envío',
         'Calculated at checkout'                  => 'Ingresar dirección para calcular estimado',
         'Enter address to calculate'              => 'Ingresar dirección para calcular estimado',
+        'Product'                                 => 'Producto',
+        'Cart totals'                             => 'Totales',
+        'Free'                                    => 'Gratis',
+        'Proceed to Checkout'                     => 'Continuar al pago',
+        // Checkout page
+        'Contact information'                                                                  => 'Información de contacto',
+        'Email address'                                                                        => 'Correo electrónico',
+        'I would like to receive exclusive emails with discounts and product information'      => 'Quiero recibir correos exclusivos con descuentos e información de productos',
+        'Delivery'                                                                             => 'Entrega',
+        'Pickup locations'                                                                     => 'Sucursales',
+        'Billing address'                                                                      => 'Dirección de facturación',
+        'Edit'                                                                                 => 'Editar',
+        'Payment options'                                                                      => 'Opciones de pago',
+        'There are no payment methods available. Please contact us for help placing your order.' => 'No hay métodos de pago disponibles. Contáctanos para ayudarte con tu pedido.',
+        'Add a note to your order'                                                             => 'Agregar una nota a tu pedido',
+        'Place Order'                                                                          => 'Realizar pedido',
+        'Order summary'                                                                        => 'Resumen del pedido',
+        'Add coupons'                                                                          => 'Agregar cupones',
+        'Subtotal'                                                                             => 'Subtotal',
+        'Total'                                                                                => 'Total',
+        'By proceeding with your purchase you agree to our <a>Terms and Conditions</a> and <a>Privacy Policy</a>' => 'Al realizar tu compra aceptas nuestros <a>Términos y Condiciones</a> y la <a>Política de Privacidad</a>',
     ];
     $messages = [ '' => [ 'domain' => 'woocommerce', 'lang' => 'es' ] ];
     foreach ( $overrides as $en => $es ) {
