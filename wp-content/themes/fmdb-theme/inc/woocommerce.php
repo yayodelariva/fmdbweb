@@ -79,9 +79,17 @@ add_filter( 'render_block', function ( $block_content ) {
 // We hook into wp.i18n's runtime gettext filter so our overrides always win,
 // even after WC's official .json language file (which sometimes ships untranslated
 // English entries that overwrite setLocaleData) finishes loading.
+// Scoped to cart/checkout pages because the override is domain-agnostic and could
+// otherwise affect unrelated strings (e.g. "City") elsewhere on the site.
 // Add new strings to the array below; key = exact English source string.
 add_action( 'wp_enqueue_scripts', function () {
     if ( ! wp_script_is( 'wp-i18n', 'registered' ) && ! wp_script_is( 'wp-i18n', 'enqueued' ) ) {
+        return;
+    }
+    if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) ) {
+        return;
+    }
+    if ( ! is_cart() && ! is_checkout() ) {
         return;
     }
     $overrides = [
@@ -142,12 +150,11 @@ add_action( 'wp_enqueue_scripts', function () {
         '( function () {'
         . "if ( window.wp && wp.hooks && wp.i18n ) {"
         . 'var fmdbOverrides = ' . wp_json_encode( $overrides ) . ';'
-        . "wp.hooks.addFilter( 'i18n.gettext_woocommerce', 'fmdb/checkout-i18n', function ( translation, text ) {"
+        . 'var fmdbApply = function ( translation, text ) {'
         . 'return Object.prototype.hasOwnProperty.call(fmdbOverrides, text) ? fmdbOverrides[text] : translation;'
-        . '} );'
-        . "wp.hooks.addFilter( 'i18n.gettext_with_context_woocommerce', 'fmdb/checkout-i18n-ctx', function ( translation, text ) {"
-        . 'return Object.prototype.hasOwnProperty.call(fmdbOverrides, text) ? fmdbOverrides[text] : translation;'
-        . '} );'
+        . '};'
+        . "wp.hooks.addFilter( 'i18n.gettext', 'fmdb/checkout-i18n', fmdbApply );"
+        . "wp.hooks.addFilter( 'i18n.gettext_with_context', 'fmdb/checkout-i18n-ctx', fmdbApply );"
         . '}'
         . '} )();'
     );
