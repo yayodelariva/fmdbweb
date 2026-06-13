@@ -147,6 +147,8 @@ function fmdb_cart_checkout_overrides() {
         'Coupon code'                                      => 'Código de cupón',
         'Order notes'                                      => 'Notas del pedido',
         'Notes about your order, e.g. special notes for delivery.' => 'Notas sobre tu pedido, ej. instrucciones especiales para la entrega.',
+        // Single product page
+        'Related products'                                 => 'Productos relacionados',
     ];
 }
 
