@@ -69,8 +69,8 @@ add_filter( 'kadence_post_layout', function ( $layout ) {
 // Replace static English strings baked into the Cart block's saved post content
 add_filter( 'render_block', function ( $block_content ) {
     return str_replace(
-        [ 'Your cart is currently empty!', 'New in store' ],
-        [ 'Tu carrito de compras está vacío', 'Podría interesarte:' ],
+        [ 'Your cart is currently empty!', 'New in store', 'Add to cart', 'Add to Cart' ],
+        [ 'Tu carrito de compras está vacío', 'Podría interesarte:', 'Agregar al carrito', 'Agregar al carrito' ],
         $block_content
     );
 } );
@@ -124,6 +124,8 @@ function fmdb_cart_checkout_overrides() {
         '+ Add'                                            => '+ Agregar',
         'Add %s'                                           => 'Agregar %s',
         '+ Add %s'                                         => '+ Agregar %s',
+        'Add to cart'                                      => 'Agregar al carrito',
+        'Add to Cart'                                      => 'Agregar al carrito',
         'City'                                             => 'Ciudad',
         'Town / City'                                      => 'Ciudad',
         'Town/City'                                        => 'Ciudad',
