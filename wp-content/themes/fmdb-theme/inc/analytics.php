@@ -24,7 +24,9 @@ add_action( 'wp_head', function () {
     if ( ! preg_match( '/^G-[A-Z0-9]+$/i', $ga_id ) ) return;
 
     $id            = esc_js( $ga_id );
-    $has_complianz = defined( 'cmplz_version' ) || function_exists( 'cmplz_init' );
+    $has_complianz = function_exists( 'cmplz_get_value' )
+        || defined( 'cmplz_version' )
+        || function_exists( 'cmplz_init' );
 
     if ( $has_complianz ) {
         ?>
