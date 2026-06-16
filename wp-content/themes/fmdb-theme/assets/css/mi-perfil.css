@@ -12,7 +12,7 @@
     border-radius: 12px;
     padding: 48px 40px;
     width: 100%;
-    max-width: 520px;
+    max-width: 720px;
     box-shadow: 0 4px 24px rgba(8,80,65,0.10);
 }
 .fmdb-perfil__title {
@@ -76,6 +76,67 @@
     margin: 0;
 }
 
+/* --- Avatar save button --- */
+.fmdb-perfil__avatar-save { margin-top: 12px; padding: 0 22px; }
+
+/* --- Username (read-only) --- */
+.fmdb-perfil__username input[disabled] {
+    background: #f1f1f1;
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* --- Name + Guardar row (button sits to the right) --- */
+.fmdb-perfil__name-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.fmdb-perfil__name-row .fmdb-registro__field { flex: 1 1 180px; min-width: 0; }
+.fmdb-perfil__name-save { flex: 0 0 auto; padding: 0 22px; white-space: nowrap; }
+
+.fmdb-perfil__form--affiliation { margin-top: 22px; }
+
+/* --- Affiliation ID field + verify badge --- */
+.fmdb-perfil__affiliation { margin-top: 4px; }
+.fmdb-perfil__affiliation label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.fmdb-perfil__affiliation-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+.fmdb-perfil__affiliation-badge--verified { background: #d1f4e3; color: #0f6b48; }
+.fmdb-perfil__affiliation-badge--pending  { background: #fff3cd; color: #856404; }
+.fmdb-perfil__affiliation-badge--rejected { background: #f8d7da; color: #842029; }
+.fmdb-perfil__affiliation-badge--none     { background: #e6e6e6; color: #555; }
+
+.fmdb-perfil__affiliation-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    margin-top: 6px;
+}
+.fmdb-perfil__affiliation-row input { flex: 1; min-width: 0; }
+.fmdb-perfil__affiliation-btn { flex: 0 0 auto; padding: 0 18px; white-space: nowrap; }
+.fmdb-perfil__affiliation-hint {
+    margin: 8px 0 0;
+    color: #666;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
 @media (max-width: 520px) {
     .fmdb-perfil__card { padding: 32px 20px; }
+    .fmdb-perfil__affiliation-row { flex-direction: column; }
+    .fmdb-perfil__affiliation-btn { width: 100%; }
 }

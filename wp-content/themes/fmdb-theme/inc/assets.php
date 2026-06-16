@@ -53,7 +53,7 @@ add_action( 'wp_enqueue_scripts', function () {
     if ( is_404() ) {
         wp_enqueue_style( 'fmdb-home', get_stylesheet_directory_uri() . '/assets/css/home.css', [], $ver( 'assets/css/home.css' ) );
     }
-    if ( is_page( 'registro' ) || is_page( 'login' ) || is_page( 'olvide-mi-contrasena' ) ) {
+    if ( is_page( 'registro' ) || is_page( 'login' ) || is_page( 'olvide-mi-contrasena' ) || is_page( 'verificar' ) || is_page( 'verificar-afiliacion' ) ) {
         wp_enqueue_style( 'fmdb-registro', get_stylesheet_directory_uri() . '/assets/css/registro.css', [], $ver( 'assets/css/registro.css' ) );
     }
     if ( is_page( 'mi-perfil' ) ) {

@@ -20,6 +20,7 @@ foreach ( [
     'nav',
     'login',
     'email-verification',
+    'affiliation-verification',
     'shortcodes',
     'misc',
 ] as $fmdb_file ) {
