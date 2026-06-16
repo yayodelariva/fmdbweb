@@ -22,6 +22,7 @@ foreach ( [
     'email-verification',
     'affiliation-verification',
     'analytics',
+    'ga4-api',
     'cli-monthly-report',
     'shortcodes',
     'misc',
