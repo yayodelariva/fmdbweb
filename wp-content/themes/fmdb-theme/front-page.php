@@ -4,14 +4,6 @@
  */
 get_header();
 
-$state_set = [];
-$all_teams = get_posts( [ 'post_type' => 'fmdb_team', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
-foreach ( $all_teams as $t ) {
-    $s = get_field( 'team_state', $t->ID );
-    if ( $s ) $state_set[ $s ] = true;
-}
-$state_count = count( $state_set );
-
 $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ] );
 ?>
 
@@ -45,7 +37,7 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
         <?php endif; ?>
         <div class="fmdb-hero__inner">
             <p class="fmdb-hero__eyebrow">Federación Mexicana de Dodgeball</p>
-            <h1 class="fmdb-hero__title">El dodgeball<br>organizado de México</h1>
+            <h1 class="fmdb-hero__title">La casa del dodgeball de alto rendimiento de México</h1>
             <p class="fmdb-hero__subtitle">Conectamos equipos, ligas y jugadores en todo el país.</p>
             <div class="fmdb-hero__ctas">
                 <a href="<?php echo esc_url( home_url( '/mapa-interactivo/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Encuentra tu equipo</a>
@@ -66,9 +58,9 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
             </div>
             <div class="fmdb-home-map__text">
                 <span class="fmdb-section-eyebrow">Directorio de equipos</span>
-                <h2>Encuentra equipos cerca de ti</h2>
-                <p>Tenemos equipos en <?php echo esc_html( $state_count ); ?> estados de la República. Haz clic en el mapa para explorar los equipos de cada estado.</p>
-                <a href="<?php echo esc_url( home_url( '/mapa-interactivo/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Ver todos los equipos</a>
+                <h2>Encuentra asociaciones, ligas y equipos cerca de ti</h2>
+                <p>Haz click en el mapa para explorar cada estado.</p>
+                <a href="<?php echo esc_url( home_url( '/mapa-interactivo/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Ver mapa</a>
             </div>
         </div>
     </section>
