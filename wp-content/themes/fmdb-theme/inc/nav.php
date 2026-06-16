@@ -101,8 +101,8 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
     }
 
     $user    = wp_get_current_user();
-    $initial = esc_html( strtoupper( substr( $user->display_name, 0, 1 ) ) );
-    $name    = esc_html( $user->display_name );
+    $initial = esc_html( strtoupper( substr( $user->user_login, 0, 1 ) ) );
+    $name    = esc_html( $user->user_login );
     $logout  = esc_url( wp_logout_url( home_url( '/' ) ) );
     $dash    = esc_url( home_url( '/mi-equipo/' ) );
     $perfil  = esc_url( home_url( '/mi-perfil/' ) );
