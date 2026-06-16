@@ -47,11 +47,18 @@ add_action( 'wp_head', function () {
                 gtag('js', new Date());
                 gtag('config', GA_ID);
             }
-            if (typeof cmplz_has_consent === 'function' && cmplz_has_consent('statistics')) {
-                fmdbLoadGA4();
-            }
-            document.addEventListener('cmplz_event_statistics', function (e) {
-                if (e.detail && e.detail.value === 'allow') fmdbLoadGA4();
+            // Live consent grant (fired by Complianz banner click).
+            document.addEventListener('cmplz_event', function (e) {
+                if (e.detail && e.detail.category === 'statistics' && e.detail.value === 'allow') {
+                    fmdbLoadGA4();
+                }
+            });
+            // Already-consented visitors: Complianz is not yet defined in <head>,
+            // so defer the check until all scripts have loaded.
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof cmplz_has_consent === 'function' && cmplz_has_consent('statistics')) {
+                    fmdbLoadGA4();
+                }
             });
         })();
         </script>
