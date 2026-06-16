@@ -231,6 +231,79 @@
     padding: 12px 0 0;
 }
 
+/* --- Selecciones cards (3-up landing above tabs) --- */
+.fmdb-ranking__selecciones { padding: 32px 24px 8px; }
+.fmdb-ranking__selecciones-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+.fmdb-ranking__sel-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 28px;
+    border-radius: 16px;
+    background: #fff;
+    border: 2px solid var(--fmdb-neutral, #e6e6e6);
+    color: var(--fmdb-dark-green, #085041);
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 1.15rem;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.fmdb-ranking__sel-card:hover {
+    border-color: var(--fmdb-green, #1d9e75);
+    box-shadow: 0 8px 32px rgba(29,158,117,0.13);
+    transform: translateY(-3px);
+    color: var(--fmdb-dark-green, #085041);
+}
+.fmdb-ranking__sel-arrow {
+    font-size: 1.4rem;
+    color: var(--fmdb-green, #1d9e75);
+}
+@media (max-width: 800px) {
+    .fmdb-ranking__selecciones-inner { grid-template-columns: 1fr; gap: 14px; }
+    .fmdb-ranking__sel-card { padding: 22px; font-size: 1.05rem; }
+}
+
+/* --- "Ver tablas completas" button + back link --- */
+.fmdb-ranking__more {
+    text-align: center;
+    padding: 24px 0 8px;
+}
+.fmdb-ranking__more .fmdb-btn,
+.fmdb-ranking__more a {
+    display: inline-block;
+    padding: 12px 28px;
+    background: var(--fmdb-green, #1d9e75);
+    color: #fff;
+    border-radius: 999px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.15s;
+}
+.fmdb-ranking__more a:hover {
+    background: var(--fmdb-dark-green, #085041);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.fmdb-ranking__back {
+    margin: 12px 0 0;
+    font-size: 0.95rem;
+}
+.fmdb-ranking__back a {
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,0.4);
+}
+.fmdb-ranking__back a:hover {
+    color: #fff;
+    border-bottom-color: #fff;
+}
+
 /* --- Responsive --- */
 @media (max-width: 700px) {
     .fmdb-ranking__hero { padding: 40px 20px 36px; }

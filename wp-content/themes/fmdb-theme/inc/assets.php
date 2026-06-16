@@ -34,7 +34,13 @@ add_action( 'wp_enqueue_scripts', function () {
         wp_enqueue_style(  'fmdb-equipos', get_stylesheet_directory_uri() . '/assets/css/equipos.css', [], $ver( 'assets/css/equipos.css' ) );
         wp_enqueue_script( 'fmdb-equipos', get_stylesheet_directory_uri() . '/assets/js/equipos.js', [ 'fmdb-map' ], $ver( 'assets/js/equipos.js' ), true );
     }
-    if ( is_page( 'ranking' ) ) {
+    if ( is_page( 'ranking' )
+        || is_page_template( 'template-ranking-tablas.php' )
+        || is_page_template( 'template-ranking-mayor.php' )
+        || is_page_template( 'template-ranking-infantil.php' )
+        || is_page_template( 'template-ranking-infantil-tablas.php' )
+        || is_page_template( 'template-ranking-juvenil.php' )
+    ) {
         wp_enqueue_style( 'fmdb-ranking', get_stylesheet_directory_uri() . '/assets/css/ranking.css', [], $ver( 'assets/css/ranking.css' ) );
     }
     if ( is_page( 'reglamentos' ) ) {
