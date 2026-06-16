@@ -424,7 +424,7 @@ class FMDB_Monthly_Report_Command {
     private function section_implementations( string $start_date, string $end_date ): void {
         WP_CLI::log( "## 7. Implementaciones del mes\n" );
 
-        $dir = get_stylesheet_directory();
+        $dir = realpath( get_stylesheet_directory() ) ?: get_stylesheet_directory();
         while ( $dir !== '/' && ! is_dir( $dir . '/.git' ) ) {
             $dir = dirname( $dir );
         }
