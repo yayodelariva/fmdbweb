@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>FMDB · Reporte mensual</title>
+<style>
+  body { font-family: 'Calibri', sans-serif; color: #1a1a1a; line-height: 1.45; }
+  h1 { font-size: 22pt; color: #085041; margin-bottom: 0; }
+  h1 + p { color: #777; margin-top: 4px; font-size: 10pt; }
+  h2 { font-size: 14pt; color: #085041; border-bottom: 2px solid #1d9e75; padding-bottom: 3px; margin-top: 28px; }
+  h3 { font-size: 11pt; color: #085041; margin-top: 16px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; font-size: 10pt; }
+  th { background: #f3f7f5; color: #085041; font-weight: 700; }
+  td.num { text-align: right; }
+  ul, ol { margin: 6px 0 12px 18px; }
+  blockquote { border-left: 3px solid #1d9e75; padding-left: 12px; color: #444; font-style: italic; margin: 6px 0; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .meta { color: #777; font-size: 9pt; font-style: italic; }
+  code { background: #f3f3f3; padding: 1px 5px; border-radius: 3px; font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<h1>FMDB &mdash; Reporte mensual &middot; {Mes A&ntilde;o}</h1>
+<p>Federaci&oacute;n Mexicana de Dodgeball &middot; dodgeballmexico.com</p>
+
+<hr>
+
+<h2>1. Alcance y tr&aacute;fico</h2>
+<table>
+  <tr><th>M&eacute;trica</th><th>Mes actual</th><th>vs. mes anterior</th></tr>
+  <tr><td>Visitas totales</td><td class="num">{n}</td><td class="num">{&plusmn;%}</td></tr>
+  <tr><td>Visitantes &uacute;nicos</td><td class="num">{n}</td><td class="num">{&plusmn;%}</td></tr>
+  <tr><td>Mobile / Desktop</td><td>{x%} / {y%}</td><td>&mdash;</td></tr>
+  <tr><td>Nuevos / Recurrentes</td><td>{x%} / {y%}</td><td>&mdash;</td></tr>
+</table>
+
+<h3>Top 5 p&aacute;ginas m&aacute;s vistas</h3>
+<ol>
+  <li>{/ruta} &mdash; {n} vistas</li>
+  <li>{/ruta} &mdash; {n} vistas</li>
+  <li>{/ruta} &mdash; {n} vistas</li>
+  <li>{/ruta} &mdash; {n} vistas</li>
+  <li>{/ruta} &mdash; {n} vistas</li>
+</ol>
+
+<h3>Fuentes de tr&aacute;fico</h3>
+<ul>
+  <li>Directo: {x%}</li>
+  <li>B&uacute;squeda org&aacute;nica: {x%}</li>
+  <li>Redes sociales: {x%}</li>
+  <li>Referidos: {x%}</li>
+</ul>
+
+<hr>
+
+<h2>2. Membres&iacute;a federativa</h2>
+<table>
+  <tr><th>M&eacute;trica</th><th>Mes actual</th><th>Acumulado</th></tr>
+  <tr><td>Cuentas nuevas</td><td class="num">{n}</td><td class="num">{n}</td></tr>
+  <tr><td>Verificaciones de correo completadas</td><td>{n} / {n} ({%})</td><td>&mdash;</td></tr>
+  <tr><td>Solicitudes de ID de afiliaci&oacute;n</td><td class="num">{n}</td><td>&mdash;</td></tr>
+  <tr><td>&middot; Verificadas</td><td class="num">{n}</td><td class="num">{n}</td></tr>
+  <tr><td>&middot; Rechazadas</td><td class="num">{n}</td><td class="num">{n}</td></tr>
+  <tr><td>&middot; En revisi&oacute;n (al cierre)</td><td class="num">{n}</td><td>&mdash;</td></tr>
+</table>
+
+<h3>Nuevos registros geogr&aacute;ficos</h3>
+<ul>
+  <li>Equipos: {n} &mdash; estados: {lista}</li>
+  <li>Ligas: {n}</li>
+  <li>Asociaciones: {n}</li>
+</ul>
+
+<hr>
+
+<h2>3. Contenido editorial</h2>
+<table>
+  <tr><th>M&eacute;trica</th><th>Mes actual</th></tr>
+  <tr><td>Vistas totales a noticias</td><td class="num">{n}</td></tr>
+  <tr><td>Posts publicados</td><td class="num">{n}</td></tr>
+</table>
+
+<h3>Post m&aacute;s le&iacute;do</h3>
+<blockquote>&ldquo;{T&iacute;tulo}&rdquo; &mdash; {n} vistas &mdash; <code>{url}</code></blockquote>
+
+<hr>
+
+<h2>4. Tienda</h2>
+<table>
+  <tr><th>M&eacute;trica</th><th>Mes actual</th><th>vs. mes anterior</th></tr>
+  <tr><td>&Oacute;rdenes</td><td class="num">{n}</td><td class="num">{&plusmn;%}</td></tr>
+  <tr><td>Ingresos</td><td class="num">$ {monto} MXN</td><td class="num">{&plusmn;%}</td></tr>
+  <tr><td>Ticket promedio</td><td class="num">$ {monto}</td><td class="num">{&plusmn;%}</td></tr>
+  <tr><td>Tasa de carritos abandonados</td><td class="num">{x%}</td><td class="num">{&plusmn;pp}</td></tr>
+</table>
+
+<h3>Top 3 productos</h3>
+<ol>
+  <li>{Producto} &mdash; {n} unidades &mdash; $ {monto}</li>
+  <li>{Producto} &mdash; {n} unidades &mdash; $ {monto}</li>
+  <li>{Producto} &mdash; {n} unidades &mdash; $ {monto}</li>
+</ol>
+
+<hr>
+
+<h2>5. Eventos</h2>
+<table>
+  <tr><th>M&eacute;trica</th><th>Mes actual</th></tr>
+  <tr><td>Eventos creados / actualizados</td><td>{n} / {n}</td></tr>
+  <tr><td>Eventos activos al cierre</td><td class="num">{n}</td></tr>
+</table>
+
+<h3>Evento m&aacute;s visto</h3>
+<blockquote>&ldquo;{Nombre}&rdquo; &mdash; {n} vistas &mdash; {fecha}</blockquote>
+
+<hr>
+
+<h2>6. Estabilidad</h2>
+<table>
+  <tr><th>M&eacute;trica</th><th>Mes actual</th></tr>
+  <tr><td>Bugs reportados</td><td class="num">{n}</td></tr>
+  <tr><td>Bugs resueltos</td><td class="num">{n}</td></tr>
+  <tr><td>Pendientes al cierre</td><td class="num">{n}</td></tr>
+</table>
+
+<h3>Resueltos destacados</h3>
+<ul>
+  <li>{Descripci&oacute;n breve}</li>
+  <li>{Descripci&oacute;n breve}</li>
+</ul>
+
+<hr>
+
+<h2>7. Implementaciones del mes</h2>
+<ul>
+  <li><b>{Feature 1}</b> &mdash; {1&ndash;2 l&iacute;neas}</li>
+  <li><b>{Feature 2}</b> &mdash; {1&ndash;2 l&iacute;neas}</li>
+  <li><b>{Feature 3}</b> &mdash; {1&ndash;2 l&iacute;neas}</li>
+</ul>
+
+<hr>
+
+<p class="meta">Reporte preparado por {nombre} &middot; {fecha de cierre}</p>
+
+</body>
+</html>

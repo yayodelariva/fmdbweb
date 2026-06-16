@@ -1,0 +1,31 @@
+<?php
+/**
+ * Google Analytics 4 — gtag.js injection.
+ *
+ * The Measurement ID lives in the WP option `fmdb_ga4_id` (e.g. G-XXXXXXXXXX).
+ * To enable, set it once on the server:
+ *
+ *     wp option update fmdb_ga4_id G-XXXXXXXXXX
+ *
+ * Admins/editors are excluded from tracking so internal traffic doesn't skew
+ * the numbers; logged-out visitors and members get the snippet.
+ */
+
+add_action( 'wp_head', function () {
+    $ga_id = trim( (string) get_option( 'fmdb_ga4_id', '' ) );
+    if ( $ga_id === '' ) return;
+    if ( is_user_logged_in() && current_user_can( 'edit_posts' ) ) return;
+    if ( ! preg_match( '/^G-[A-Z0-9]+$/i', $ga_id ) ) return;
+
+    $id = esc_js( $ga_id );
+    ?>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?php echo esc_attr( $ga_id ); ?>"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '<?php echo $id; ?>');
+    </script>
+    <?php
+}, 1 );

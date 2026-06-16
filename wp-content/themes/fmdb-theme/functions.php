@@ -21,6 +21,8 @@ foreach ( [
     'login',
     'email-verification',
     'affiliation-verification',
+    'analytics',
+    'cli-monthly-report',
     'shortcodes',
     'misc',
 ] as $fmdb_file ) {
