@@ -31,8 +31,8 @@ add_action( 'wp_head', function () {
     if ( $has_complianz ) {
         ?>
         <!-- Google tag (gtag.js) — gated by Complianz (statistics consent) -->
-        <script async type="text/plain" data-category="statistics" data-service="google-analytics" data-src="https://www.googletagmanager.com/gtag/js?id=<?php echo esc_attr( $ga_id ); ?>"></script>
-        <script type="text/plain" data-category="statistics" data-service="google-analytics">
+        <script async type="text/plain" data-category="statistics" data-src="https://www.googletagmanager.com/gtag/js?id=<?php echo esc_attr( $ga_id ); ?>"></script>
+        <script type="text/plain" data-category="statistics">
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
