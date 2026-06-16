@@ -3,18 +3,19 @@
  * Google Analytics 4 — gtag.js injection.
  *
  * The Measurement ID lives in the WP option `fmdb_ga4_id` (e.g. G-XXXXXXXXXX).
- * To enable, set it once on the server:
+ * Set it once on the server:
  *
  *     wp option update fmdb_ga4_id G-XXXXXXXXXX
  *
- * Admins/editors are excluded from tracking so internal traffic doesn't skew
- * the numbers; logged-out visitors and members get the snippet.
+ * Admins/editors are excluded so internal traffic doesn't skew the numbers.
  *
- * When Complianz is active we emit the gtag tags pre-blocked
- * (`type="text/plain"` + `data-category="statistics"` + `data-src=`) so the
- * cookie consent banner gates them. Complianz rewrites them to executable
- * <script src=...> tags after the visitor opts into statistics cookies.
- * If Complianz is ever disabled the tags fall back to raw script execution.
+ * Consent gating: when Complianz is active we DO NOT pre-block the script via
+ * type="text/plain" + data-src — Complianz only rewrites those tags reliably
+ * for services registered in its Integrations panel, and GA isn't one of them.
+ * Instead we inject gtag.js ourselves once Complianz signals statistics
+ * consent (either already granted at page load or granted live via the
+ * `cmplz_event_statistics` DOM event). If Complianz isn't installed we
+ * inject unconditionally.
  */
 
 add_action( 'wp_head', function () {
@@ -30,13 +31,29 @@ add_action( 'wp_head', function () {
 
     if ( $has_complianz ) {
         ?>
-        <!-- Google tag (gtag.js) — gated by Complianz (statistics consent) -->
-        <script async type="text/plain" data-category="statistics" data-src="https://www.googletagmanager.com/gtag/js?id=<?php echo esc_attr( $ga_id ); ?>"></script>
-        <script type="text/plain" data-category="statistics">
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '<?php echo $id; ?>');
+        <!-- Google tag (gtag.js) — loaded after Complianz statistics consent -->
+        <script>
+        (function () {
+            var GA_ID = '<?php echo $id; ?>';
+            function fmdbLoadGA4() {
+                if (window.__fmdb_ga4_loaded) return;
+                window.__fmdb_ga4_loaded = true;
+                var s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+                document.head.appendChild(s);
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = function () { dataLayer.push(arguments); };
+                gtag('js', new Date());
+                gtag('config', GA_ID);
+            }
+            if (typeof cmplz_has_consent === 'function' && cmplz_has_consent('statistics')) {
+                fmdbLoadGA4();
+            }
+            document.addEventListener('cmplz_event_statistics', function (e) {
+                if (e.detail && e.detail.value === 'allow') fmdbLoadGA4();
+            });
+        })();
         </script>
         <?php
     } else {
