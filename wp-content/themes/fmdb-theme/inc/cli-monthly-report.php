@@ -1,15 +1,9 @@
 <?php
 /**
- * WP-CLI command: `wp fmdb-report monthly [--month=YYYY-MM]`
+ * WP-CLI command: `wp fmdb-report monthly [--month=YYYY-MM] [--output=<path>]`
  *
- * Aggregates all report sections automatically:
- *   1. Traffic        — GA4 Data API (requires service account credentials)
- *   2. Membership     — WP user data
- *   3. Editorial      — WP posts + GA4 page views
- *   4. Shop           — WooCommerce orders
- *   5. Events         — Events CPT
- *   6. Stability      — placeholder (manual)
- *   7. Implementations — git log
+ * Aggregates all report sections automatically and prints to terminal.
+ * With --output, also writes a styled HTML file ready for print/PDF/Google Docs.
  *
  * Setup (run once on the server):
  *
@@ -31,7 +25,10 @@ class FMDB_Monthly_Report_Command {
      * ## OPTIONS
      *
      * [--month=<yyyy-mm>]
-     * : Month to report on, e.g. 2026-05. Defaults to the previous calendar month.
+     * : Month to report on. Defaults to previous calendar month.
+     *
+     * [--output=<path>]
+     * : Write a styled HTML report to this path.
      *
      * @when after_wp_load
      */
@@ -40,36 +37,49 @@ class FMDB_Monthly_Report_Command {
         if ( ! preg_match( '/^\d{4}-\d{2}$/', $month_arg ) ) {
             WP_CLI::error( 'Invalid --month. Use YYYY-MM (e.g. 2026-05).' );
         }
-        $start = $month_arg . '-01 00:00:00';
-        $end   = gmdate( 'Y-m-d 23:59:59', strtotime( 'last day of ' . $month_arg . '-01' ) );
-        $label = ucfirst( strftime( '%B %Y', strtotime( $start ) ) ?: $month_arg );
-
+        $start      = $month_arg . '-01 00:00:00';
+        $end        = gmdate( 'Y-m-d 23:59:59', strtotime( 'last day of ' . $month_arg . '-01' ) );
         $start_date = $month_arg . '-01';
         $end_date   = gmdate( 'Y-m-d', strtotime( 'last day of ' . $month_arg . '-01' ) );
 
-        $prev_month      = gmdate( 'Y-m', strtotime( $start . ' -1 month' ) );
-        $prev_start_date = $prev_month . '-01';
-        $prev_end_date   = gmdate( 'Y-m-d', strtotime( 'last day of ' . $prev_month . '-01' ) );
+        $prev_month = gmdate( 'Y-m', strtotime( $start . ' -1 month' ) );
+        $prev_start = $prev_month . '-01';
+        $prev_end   = gmdate( 'Y-m-d', strtotime( 'last day of ' . $prev_month . '-01' ) );
+
+        $meses = [
+            '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
+            '05' => 'Mayo',  '06' => 'Junio',   '07' => 'Julio', '08' => 'Agosto',
+            '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre',
+        ];
+        $parts = explode( '-', $month_arg );
+        $label = ( $meses[ $parts[1] ] ?? $parts[1] ) . ' ' . $parts[0];
 
         $this->init_ga4();
 
-        WP_CLI::log( "\n=== FMDB · Reporte mensual · {$label} ===\n" );
+        $d = [
+            'label'           => $label,
+            'date'            => $end_date,
+            'traffic'         => $this->collect_traffic( $start_date, $end_date, $prev_start, $prev_end ),
+            'membership'      => $this->collect_membership( $start, $end ),
+            'geographic'      => $this->collect_geographic( $start, $end ),
+            'editorial'       => $this->collect_editorial( $start, $end, $start_date, $end_date ),
+            'shop'            => $this->collect_shop( $start, $end ),
+            'events'          => $this->collect_events( $start, $end ),
+            'implementations' => $this->collect_implementations( $start_date, $end_date ),
+        ];
 
-        $this->section_traffic( $start_date, $end_date, $prev_start_date, $prev_end_date );
-        $this->section_membership( $start, $end );
-        $this->section_geographic( $start, $end );
-        $this->section_editorial( $start, $end, $start_date, $end_date );
-        $this->section_shop( $start, $end );
-        $this->section_events( $start, $end );
-        $this->section_stability();
-        $this->section_implementations( $start_date, $end_date );
+        $this->render_text( $d );
 
-        WP_CLI::log( "\n(Solo la sección 6 · Estabilidad necesita datos manuales.)\n" );
+        $output = $assoc_args['output'] ?? '';
+        if ( $output !== '' ) {
+            file_put_contents( $output, $this->render_html( $d ) );
+            WP_CLI::success( "Reporte guardado en: {$output}" );
+        }
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  GA4                                                                */
-    /* ------------------------------------------------------------------ */
+    /* ================================================================== */
+    /*  GA4 init                                                           */
+    /* ================================================================== */
 
     private function init_ga4(): void {
         if ( ! class_exists( 'FMDB_GA4_API' ) ) {
@@ -78,404 +88,482 @@ class FMDB_Monthly_Report_Command {
         }
         $this->ga4 = FMDB_GA4_API::from_options();
         if ( ! $this->ga4 ) {
-            WP_CLI::warning( 'GA4 credentials not configured. Run: wp option update fmdb_ga4_credentials_path /path/to/json && wp option update fmdb_ga4_property_id YOUR_ID' );
+            WP_CLI::warning( 'GA4 not configured. wp option update fmdb_ga4_credentials_path … && wp option update fmdb_ga4_property_id …' );
             return;
         }
         if ( ! $this->ga4->authenticate() ) {
-            WP_CLI::warning( 'GA4 authentication failed — check credentials file and openssl extension.' );
+            WP_CLI::warning( 'GA4 auth failed — check credentials + openssl.' );
             $this->ga4 = null;
         }
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  1. Traffic                                                         */
-    /* ------------------------------------------------------------------ */
+    /* ================================================================== */
+    /*  Data collectors                                                    */
+    /* ================================================================== */
 
-    private function section_traffic( string $start, string $end, string $prev_start, string $prev_end ): void {
-        WP_CLI::log( "## 1. Alcance y tráfico\n" );
+    private function collect_traffic( string $s, string $e, string $ps, string $pe ): array {
+        $out = [ 'has_ga4' => (bool) $this->ga4 ];
+        if ( ! $this->ga4 ) return $out;
 
-        if ( ! $this->ga4 ) {
-            WP_CLI::log( '(GA4 no configurado — completar manualmente desde analytics.google.com.)' );
-            WP_CLI::log( '' );
-            return;
-        }
-
-        $date_ranges = [
-            [ 'startDate' => $start, 'endDate' => $end ],
-            [ 'startDate' => $prev_start, 'endDate' => $prev_end ],
+        $ranges = [
+            [ 'startDate' => $s, 'endDate' => $e ],
+            [ 'startDate' => $ps, 'endDate' => $pe ],
         ];
 
-        $overview = $this->ga4->run_report( [
-            'dateRanges' => $date_ranges,
-            'metrics'    => [
-                [ 'name' => 'sessions' ],
-                [ 'name' => 'totalUsers' ],
-            ],
-        ] );
-        $cur_totals  = $this->ga4->totals( $overview );
-        $prev_totals = $this->totals_range( $overview, 1 );
+        $ov = $this->ga4->run_report( [ 'dateRanges' => $ranges, 'metrics' => [
+            [ 'name' => 'sessions' ], [ 'name' => 'totalUsers' ],
+        ] ] );
+        $cur  = $this->ga4->totals( $ov );
+        $prev = $this->totals_range( $ov, 1 );
 
-        $sessions_cur  = $cur_totals[0]  ?? 0;
-        $sessions_prev = $prev_totals[0] ?? 0;
-        $users_cur     = $cur_totals[1]  ?? 0;
-        $users_prev    = $prev_totals[1] ?? 0;
+        $out['sessions']      = [ 'cur' => $cur[0] ?? 0, 'prev' => $prev[0] ?? 0 ];
+        $out['users']         = [ 'cur' => $cur[1] ?? 0, 'prev' => $prev[1] ?? 0 ];
+        $out['sessions']['change'] = $this->pct_change( $out['sessions']['cur'], $out['sessions']['prev'] );
+        $out['users']['change']    = $this->pct_change( $out['users']['cur'], $out['users']['prev'] );
 
-        WP_CLI::log( sprintf( '- Visitas totales:      %s  (%s)', number_format( $sessions_cur ), $this->pct_change( $sessions_cur, $sessions_prev ) ) );
-        WP_CLI::log( sprintf( '- Visitantes únicos:    %s  (%s)', number_format( $users_cur ), $this->pct_change( $users_cur, $users_prev ) ) );
-
-        $devices = $this->ga4->pluck( $this->ga4->run_report( [
-            'dateRanges' => [ $date_ranges[0] ],
+        $devs = $this->ga4->pluck( $this->ga4->run_report( [
+            'dateRanges' => [ $ranges[0] ],
             'dimensions' => [ [ 'name' => 'deviceCategory' ] ],
             'metrics'    => [ [ 'name' => 'sessions' ] ],
         ] ) );
-        $total_dev = array_sum( $devices ) ?: 1;
-        $mobile  = ( $devices['mobile'] ?? 0 ) + ( $devices['tablet'] ?? 0 );
-        $desktop = $devices['desktop'] ?? 0;
-        WP_CLI::log( sprintf( '- Mobile / Desktop:     %.0f%% / %.0f%%', $mobile / $total_dev * 100, $desktop / $total_dev * 100 ) );
+        $td = array_sum( $devs ) ?: 1;
+        $out['mobile_pct']  = round( ( ( $devs['mobile'] ?? 0 ) + ( $devs['tablet'] ?? 0 ) ) / $td * 100 );
+        $out['desktop_pct'] = round( ( $devs['desktop'] ?? 0 ) / $td * 100 );
 
         $nvr = $this->ga4->pluck( $this->ga4->run_report( [
-            'dateRanges' => [ $date_ranges[0] ],
+            'dateRanges' => [ $ranges[0] ],
             'dimensions' => [ [ 'name' => 'newVsReturning' ] ],
             'metrics'    => [ [ 'name' => 'totalUsers' ] ],
         ] ) );
-        $total_nvr = array_sum( $nvr ) ?: 1;
-        WP_CLI::log( sprintf( '- Nuevos / Recurrentes: %.0f%% / %.0f%%', ( $nvr['new'] ?? 0 ) / $total_nvr * 100, ( $nvr['returning'] ?? 0 ) / $total_nvr * 100 ) );
+        $tn = array_sum( $nvr ) ?: 1;
+        $out['new_pct']       = round( ( $nvr['new'] ?? 0 ) / $tn * 100 );
+        $out['returning_pct'] = round( ( $nvr['returning'] ?? 0 ) / $tn * 100 );
 
-        $top_pages = $this->ga4->run_report( [
-            'dateRanges' => [ $date_ranges[0] ],
+        $tp = $this->ga4->run_report( [
+            'dateRanges' => [ $ranges[0] ],
             'dimensions' => [ [ 'name' => 'pagePath' ] ],
             'metrics'    => [ [ 'name' => 'screenPageViews' ] ],
             'limit'      => 5,
             'orderBys'   => [ [ 'metric' => [ 'metricName' => 'screenPageViews' ], 'desc' => true ] ],
         ] );
-        WP_CLI::log( "\n### Top 5 páginas más vistas" );
-        $i = 1;
-        foreach ( ( $top_pages['rows'] ?? [] ) as $row ) {
-            $path  = $row['dimensionValues'][0]['value'] ?? '';
-            $views = number_format( (float) ( $row['metricValues'][0]['value'] ?? 0 ) );
-            WP_CLI::log( sprintf( '%d. %s — %s vistas', $i++, $path, $views ) );
+        $out['top_pages'] = [];
+        foreach ( ( $tp['rows'] ?? [] ) as $r ) {
+            $out['top_pages'][] = [
+                'path'  => $r['dimensionValues'][0]['value'] ?? '',
+                'views' => (int) ( $r['metricValues'][0]['value'] ?? 0 ),
+            ];
         }
 
-        $sources = $this->ga4->pluck( $this->ga4->run_report( [
-            'dateRanges' => [ $date_ranges[0] ],
+        $src = $this->ga4->pluck( $this->ga4->run_report( [
+            'dateRanges' => [ $ranges[0] ],
             'dimensions' => [ [ 'name' => 'sessionDefaultChannelGrouping' ] ],
             'metrics'    => [ [ 'name' => 'sessions' ] ],
         ] ) );
-        arsort( $sources );
-        $total_src = array_sum( $sources ) ?: 1;
-        WP_CLI::log( "\n### Fuentes de tráfico" );
-        foreach ( $sources as $channel => $count ) {
-            WP_CLI::log( sprintf( '- %s: %.1f%% (%s)', $channel, $count / $total_src * 100, number_format( $count ) ) );
+        arsort( $src );
+        $ts = array_sum( $src ) ?: 1;
+        $out['sources'] = [];
+        foreach ( $src as $ch => $cnt ) {
+            $out['sources'][] = [ 'channel' => $ch, 'pct' => round( $cnt / $ts * 100, 1 ), 'count' => (int) $cnt ];
         }
-        WP_CLI::log( '' );
+        return $out;
     }
 
-    private function totals_range( ?array $result, int $range_index ): array {
-        $vals = [];
-        foreach ( ( $result['totals'][ $range_index ]['metricValues'] ?? [] ) as $mv ) {
-            $vals[] = (float) ( $mv['value'] ?? 0 );
-        }
-        return $vals;
-    }
-
-    private function pct_change( float $current, float $previous ): string {
-        if ( $previous == 0 ) return $current > 0 ? '+∞' : '—';
-        $pct = ( $current - $previous ) / $previous * 100;
-        $sign = $pct >= 0 ? '+' : '';
-        return sprintf( '%s%.1f%%', $sign, $pct );
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  2. Membership                                                      */
-    /* ------------------------------------------------------------------ */
-
-    private function section_membership( string $start, string $end ): void {
+    private function collect_membership( string $start, string $end ): array {
         global $wpdb;
-        WP_CLI::log( "## 2. Membresía federativa\n" );
-
-        $new_users   = (int) $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) FROM $wpdb->users WHERE user_registered BETWEEN %s AND %s",
-            $start, $end
-        ) );
-        $total_users = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->users" );
-
-        $emails_verified = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM $wpdb->usermeta WHERE meta_key = 'fmdb_email_verified' AND meta_value = '1'"
-        );
-        $emails_pending  = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM $wpdb->usermeta WHERE meta_key = 'fmdb_email_verified' AND meta_value = '0'"
-        );
-
-        $affil_total    = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM $wpdb->usermeta WHERE meta_key = 'fmdb_affiliation_id' AND meta_value <> ''"
-        );
-        $affil_verified = $this->count_affiliation_status( 'verified' );
-        $affil_rejected = $this->count_affiliation_status( 'rejected' );
-        $affil_pending  = $this->count_affiliation_status( 'pending' );
-
-        WP_CLI::log( "- Cuentas nuevas en el mes:           {$new_users}" );
-        WP_CLI::log( "- Cuentas totales al cierre:          {$total_users}" );
-        WP_CLI::log( "- Correos verificados (acumulado):    {$emails_verified}" );
-        WP_CLI::log( "- Correos sin verificar:              {$emails_pending}" );
-        WP_CLI::log( "- IDs de afiliación capturados:       {$affil_total}" );
-        WP_CLI::log( "  · Verificados:                       {$affil_verified}" );
-        WP_CLI::log( "  · Rechazados:                        {$affil_rejected}" );
-        WP_CLI::log( "  · En revisión:                       {$affil_pending}" );
-        WP_CLI::log( '' );
+        return [
+            'new'       => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $wpdb->users WHERE user_registered BETWEEN %s AND %s", $start, $end ) ),
+            'total'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->users" ),
+            'email_ok'  => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->usermeta WHERE meta_key='fmdb_email_verified' AND meta_value='1'" ),
+            'email_no'  => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->usermeta WHERE meta_key='fmdb_email_verified' AND meta_value='0'" ),
+            'affil'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->usermeta WHERE meta_key='fmdb_affiliation_id' AND meta_value<>''" ),
+            'a_ok'      => $this->count_affil( 'verified' ),
+            'a_no'      => $this->count_affil( 'rejected' ),
+            'a_pending' => $this->count_affil( 'pending' ),
+        ];
     }
 
-    private function count_affiliation_status( string $status ): int {
+    private function count_affil( string $s ): int {
         global $wpdb;
-        return (int) $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) FROM $wpdb->usermeta WHERE meta_key = 'fmdb_affiliation_status' AND meta_value = %s",
-            $status
-        ) );
+        return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $wpdb->usermeta WHERE meta_key='fmdb_affiliation_status' AND meta_value=%s", $s ) );
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Geographic                                                         */
-    /* ------------------------------------------------------------------ */
-
-    private function section_geographic( string $start, string $end ): void {
-        WP_CLI::log( "### Nuevos registros geográficos\n" );
+    private function collect_geographic( string $start, string $end ): array {
+        $out = [];
         foreach ( [
             'fmdb_team'       => [ 'Equipos',      'team_state' ],
-            'fmdb_league'     => [ 'Ligas',        'league_state' ],
-            'fmdb_asociacion' => [ 'Asociaciones', 'asociacion_state' ],
-        ] as $cpt => [ $label, $state_field ] ) {
-            $posts = get_posts( [
-                'post_type'      => $cpt,
-                'posts_per_page' => -1,
-                'post_status'    => 'publish',
-                'date_query'     => [ [ 'after' => $start, 'before' => $end, 'inclusive' => true ] ],
-                'fields'         => 'ids',
-            ] );
+            'fmdb_league'     => [ 'Ligas',         'league_state' ],
+            'fmdb_asociacion' => [ 'Asociaciones',  'asociacion_state' ],
+        ] as $cpt => [ $label, $sf ] ) {
+            $ids = get_posts( [ 'post_type' => $cpt, 'posts_per_page' => -1, 'post_status' => 'publish',
+                'date_query' => [ [ 'after' => $start, 'before' => $end, 'inclusive' => true ] ], 'fields' => 'ids' ] );
             $states = [];
-            foreach ( $posts as $pid ) {
-                $s = get_field( $state_field, $pid );
-                if ( $s ) $states[ $s ] = true;
-            }
-            $state_list = $states ? implode( ', ', array_keys( $states ) ) : '—';
-            WP_CLI::log( sprintf( '- %s: %d (estados: %s)', $label, count( $posts ), $state_list ) );
+            foreach ( $ids as $id ) { $v = get_field( $sf, $id ); if ( $v ) $states[] = $v; }
+            $out[] = [ 'label' => $label, 'count' => count( $ids ), 'states' => $states ? implode( ', ', array_unique( $states ) ) : '—' ];
         }
-        WP_CLI::log( '' );
+        return $out;
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  3. Editorial                                                       */
-    /* ------------------------------------------------------------------ */
+    private function collect_editorial( string $start, string $end, string $sd, string $ed ): array {
+        $posts = get_posts( [ 'post_type' => 'post', 'posts_per_page' => -1, 'post_status' => 'publish',
+            'date_query' => [ [ 'after' => $start, 'before' => $end, 'inclusive' => true ] ] ] );
+        $list = [];
+        foreach ( $posts as $p ) $list[] = [ 'title' => get_the_title( $p ), 'url' => get_permalink( $p ) ];
 
-    private function section_editorial( string $start, string $end, string $start_date, string $end_date ): void {
-        WP_CLI::log( "## 3. Contenido editorial\n" );
-        $posts = get_posts( [
-            'post_type'      => 'post',
-            'posts_per_page' => -1,
-            'post_status'    => 'publish',
-            'date_query'     => [ [ 'after' => $start, 'before' => $end, 'inclusive' => true ] ],
-        ] );
-        WP_CLI::log( '- Posts publicados en el mes: ' . count( $posts ) );
-        if ( $posts ) {
-            WP_CLI::log( '  Lista:' );
-            foreach ( $posts as $p ) {
-                WP_CLI::log( '   · ' . get_the_title( $p ) . ' — ' . get_permalink( $p ) );
+        $out = [ 'count' => count( $posts ), 'posts' => $list, 'has_ga4' => (bool) $this->ga4, 'total_views' => 0, 'top_post' => null ];
+        if ( ! $this->ga4 ) return $out;
+
+        $views = $this->ga4->pluck( $this->ga4->run_report( [
+            'dateRanges' => [ [ 'startDate' => $sd, 'endDate' => $ed ] ],
+            'dimensions' => [ [ 'name' => 'pagePath' ] ],
+            'metrics'    => [ [ 'name' => 'screenPageViews' ] ],
+            'limit' => 100, 'orderBys' => [ [ 'metric' => [ 'metricName' => 'screenPageViews' ], 'desc' => true ] ],
+        ] ) );
+
+        $urls = [];
+        foreach ( get_posts( [ 'post_type' => 'post', 'posts_per_page' => -1, 'post_status' => 'publish' ] ) as $p ) {
+            $urls[ wp_parse_url( get_permalink( $p ), PHP_URL_PATH ) ] = get_the_title( $p );
+        }
+        $best = null; $best_v = 0;
+        foreach ( $views as $path => $cnt ) {
+            if ( isset( $urls[ $path ] ) ) {
+                $out['total_views'] += $cnt;
+                if ( $cnt > $best_v ) { $best = $urls[ $path ]; $best_v = $cnt; }
             }
         }
-
-        if ( $this->ga4 ) {
-            $views = $this->ga4->run_report( [
-                'dateRanges' => [ [ 'startDate' => $start_date, 'endDate' => $end_date ] ],
-                'dimensions' => [ [ 'name' => 'pagePath' ] ],
-                'metrics'    => [ [ 'name' => 'screenPageViews' ] ],
-                'limit'      => 100,
-                'orderBys'   => [ [ 'metric' => [ 'metricName' => 'screenPageViews' ], 'desc' => true ] ],
-            ] );
-            $page_views = $this->ga4->pluck( $views );
-
-            $post_urls = [];
-            $all_posts = get_posts( [
-                'post_type'      => 'post',
-                'posts_per_page' => -1,
-                'post_status'    => 'publish',
-            ] );
-            foreach ( $all_posts as $p ) {
-                $path = wp_parse_url( get_permalink( $p ), PHP_URL_PATH );
-                $post_urls[ $path ] = get_the_title( $p );
-            }
-
-            $post_views  = [];
-            $total_views = 0;
-            foreach ( $page_views as $path => $count ) {
-                if ( isset( $post_urls[ $path ] ) ) {
-                    $post_views[ $path ] = [ 'title' => $post_urls[ $path ], 'views' => $count ];
-                    $total_views += $count;
-                }
-            }
-            uasort( $post_views, fn( $a, $b ) => $b['views'] <=> $a['views'] );
-
-            WP_CLI::log( sprintf( "\n- Vistas totales a noticias: %s", number_format( $total_views ) ) );
-            if ( $post_views ) {
-                $top = array_values( $post_views )[0];
-                WP_CLI::log( sprintf( '- Post más leído: "%s" — %s vistas', $top['title'], number_format( $top['views'] ) ) );
-            }
-        } else {
-            WP_CLI::log( "\n> Vistas y 'post más leído' se completan desde GA4." );
-        }
-        WP_CLI::log( '' );
+        if ( $best ) $out['top_post'] = [ 'title' => $best, 'views' => (int) $best_v ];
+        return $out;
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  4. Shop                                                            */
-    /* ------------------------------------------------------------------ */
-
-    private function section_shop( string $start, string $end ): void {
-        WP_CLI::log( "## 4. Tienda\n" );
-        if ( ! function_exists( 'wc_get_orders' ) ) {
-            WP_CLI::log( '(WooCommerce no está activo en este sitio.)' );
-            return;
-        }
-        $orders = wc_get_orders( [
-            'limit'        => -1,
-            'date_created' => $start . '...' . $end,
-            'status'       => [ 'wc-completed', 'wc-processing', 'wc-on-hold' ],
-        ] );
-
-        $count    = count( $orders );
-        $revenue  = 0.0;
-        $products = [];
+    private function collect_shop( string $start, string $end ): array {
+        if ( ! function_exists( 'wc_get_orders' ) ) return [ 'active' => false ];
+        $orders = wc_get_orders( [ 'limit' => -1, 'date_created' => $start . '...' . $end,
+            'status' => [ 'wc-completed', 'wc-processing', 'wc-on-hold' ] ] );
+        $rev = 0.0; $prods = [];
         foreach ( $orders as $o ) {
-            $revenue += (float) $o->get_total();
-            foreach ( $o->get_items() as $item ) {
-                $pid = $item->get_product_id();
-                if ( ! isset( $products[ $pid ] ) ) {
-                    $products[ $pid ] = [ 'name' => $item->get_name(), 'qty' => 0, 'rev' => 0.0 ];
-                }
-                $products[ $pid ]['qty'] += (int)   $item->get_quantity();
-                $products[ $pid ]['rev'] += (float) $item->get_total();
+            $rev += (float) $o->get_total();
+            foreach ( $o->get_items() as $it ) {
+                $pid = $it->get_product_id();
+                if ( ! isset( $prods[$pid] ) ) $prods[$pid] = [ 'name' => $it->get_name(), 'qty' => 0, 'rev' => 0.0 ];
+                $prods[$pid]['qty'] += (int)   $it->get_quantity();
+                $prods[$pid]['rev'] += (float) $it->get_total();
             }
         }
-        $avg = $count > 0 ? $revenue / $count : 0;
-        WP_CLI::log( sprintf( '- Órdenes:          %d', $count ) );
-        WP_CLI::log( sprintf( '- Ingresos totales: $%s MXN', number_format( $revenue, 2 ) ) );
-        WP_CLI::log( sprintf( '- Ticket promedio:  $%s MXN', number_format( $avg, 2 ) ) );
-
-        uasort( $products, fn( $a, $b ) => $b['qty'] <=> $a['qty'] );
-        $top = array_slice( $products, 0, 3, true );
-        if ( $top ) {
-            WP_CLI::log( "\n### Top 3 productos" );
-            $i = 1;
-            foreach ( $top as $row ) {
-                WP_CLI::log( sprintf( '%d. %s — %d uds — $%s', $i++, $row['name'], $row['qty'], number_format( $row['rev'], 2 ) ) );
-            }
-        }
-        WP_CLI::log( '' );
+        uasort( $prods, fn( $a, $b ) => $b['qty'] <=> $a['qty'] );
+        $cnt = count( $orders );
+        return [
+            'active'   => true,
+            'orders'   => $cnt,
+            'revenue'  => $rev,
+            'avg'      => $cnt > 0 ? $rev / $cnt : 0,
+            'top'      => array_values( array_slice( $prods, 0, 3, true ) ),
+        ];
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  5. Events                                                          */
-    /* ------------------------------------------------------------------ */
-
-    private function section_events( string $start, string $end ): void {
-        WP_CLI::log( "## 5. Eventos\n" );
+    private function collect_events( string $start, string $end ): array {
         $cpt = post_type_exists( 'tribe_events' ) ? 'tribe_events' : 'fmdb_event';
-        if ( ! post_type_exists( $cpt ) ) {
-            WP_CLI::log( '(No hay CPT de eventos registrado.)' );
-            return;
-        }
-        $created = get_posts( [
-            'post_type'      => $cpt,
-            'posts_per_page' => -1,
-            'post_status'    => 'publish',
-            'date_query'     => [ [ 'after' => $start, 'before' => $end, 'inclusive' => true ] ],
-            'fields'         => 'ids',
-        ] );
-        $updated = get_posts( [
-            'post_type'      => $cpt,
-            'posts_per_page' => -1,
-            'post_status'    => 'publish',
-            'date_query'     => [ [ 'column' => 'post_modified', 'after' => $start, 'before' => $end, 'inclusive' => true ] ],
-            'fields'         => 'ids',
-        ] );
-        $active = get_posts( [
-            'post_type'      => $cpt,
-            'posts_per_page' => -1,
-            'post_status'    => 'publish',
-            'fields'         => 'ids',
-        ] );
-        WP_CLI::log( sprintf( '- Eventos creados:      %d', count( $created ) ) );
-        WP_CLI::log( sprintf( '- Eventos actualizados: %d', count( $updated ) ) );
-        WP_CLI::log( sprintf( '- Activos al cierre:    %d', count( $active ) ) );
-        WP_CLI::log( '' );
+        if ( ! post_type_exists( $cpt ) ) return [ 'active' => false ];
+        $q = fn( $extra ) => count( get_posts( array_merge( [ 'post_type' => $cpt, 'posts_per_page' => -1, 'post_status' => 'publish', 'fields' => 'ids' ], $extra ) ) );
+        return [
+            'active'  => true,
+            'created' => $q( [ 'date_query' => [ [ 'after' => $start, 'before' => $end, 'inclusive' => true ] ] ] ),
+            'updated' => $q( [ 'date_query' => [ [ 'column' => 'post_modified', 'after' => $start, 'before' => $end, 'inclusive' => true ] ] ] ),
+            'total'   => $q( [] ),
+        ];
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  6. Stability (manual)                                              */
-    /* ------------------------------------------------------------------ */
-
-    private function section_stability(): void {
-        WP_CLI::log( "## 6. Estabilidad\n" );
-        WP_CLI::log( '(Completar manualmente: bugs reportados, resueltos, pendientes al cierre.)' );
-        WP_CLI::log( '' );
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  7. Implementations (git log)                                       */
-    /* ------------------------------------------------------------------ */
-
-    private function section_implementations( string $start_date, string $end_date ): void {
-        WP_CLI::log( "## 7. Implementaciones del mes\n" );
-
+    private function collect_implementations( string $sd, string $ed ): array {
         $dir = realpath( get_stylesheet_directory() ) ?: get_stylesheet_directory();
-        while ( $dir !== '/' && ! is_dir( $dir . '/.git' ) ) {
-            $dir = dirname( $dir );
-        }
-        if ( ! is_dir( $dir . '/.git' ) ) {
-            WP_CLI::log( '(No se encontró repositorio git.)' );
-            return;
-        }
+        while ( $dir !== '/' && ! is_dir( $dir . '/.git' ) ) $dir = dirname( $dir );
+        if ( ! is_dir( $dir . '/.git' ) ) return [ 'found' => false ];
 
-        $next_day = gmdate( 'Y-m-d', strtotime( $end_date . ' +1 day' ) );
-        $cmd      = sprintf(
-            'git -C %s log --since=%s --until=%s --oneline --no-merges 2>/dev/null',
-            escapeshellarg( $dir ),
-            escapeshellarg( $start_date ),
-            escapeshellarg( $next_day )
-        );
-        $output = shell_exec( $cmd );
-
-        if ( ! $output || trim( $output ) === '' ) {
-            WP_CLI::log( '- Sin commits en el período.' );
-            WP_CLI::log( '' );
-            return;
-        }
-
-        $feats  = [];
-        $fixes  = [];
-        $others = [];
-        foreach ( explode( "\n", trim( $output ) ) as $line ) {
+        $next = gmdate( 'Y-m-d', strtotime( $ed . ' +1 day' ) );
+        $raw  = shell_exec( sprintf( 'git -C %s log --since=%s --until=%s --oneline --no-merges 2>/dev/null',
+            escapeshellarg( $dir ), escapeshellarg( $sd ), escapeshellarg( $next ) ) );
+        $feats = []; $fixes = []; $others = [];
+        foreach ( explode( "\n", trim( $raw ?: '' ) ) as $line ) {
             if ( ! $line ) continue;
             $msg = preg_replace( '/^[a-f0-9]+\s+/', '', $line );
-            if ( preg_match( '/^feat/i', $msg ) ) {
-                $feats[] = $msg;
-            } elseif ( preg_match( '/^fix/i', $msg ) ) {
-                $fixes[] = $msg;
-            } else {
-                $others[] = $msg;
+            if ( preg_match( '/^feat/i', $msg ) )      $feats[]  = $msg;
+            elseif ( preg_match( '/^fix/i', $msg ) )    $fixes[]  = $msg;
+            else                                        $others[] = $msg;
+        }
+        return [ 'found' => true, 'feats' => $feats, 'fixes' => $fixes, 'others' => $others ];
+    }
+
+    /* ================================================================== */
+    /*  Text renderer (terminal)                                           */
+    /* ================================================================== */
+
+    private function render_text( array $d ): void {
+        WP_CLI::log( "\n=== FMDB · Reporte mensual · {$d['label']} ===\n" );
+
+        // 1. Traffic
+        WP_CLI::log( "## 1. Alcance y tráfico\n" );
+        $t = $d['traffic'];
+        if ( ! $t['has_ga4'] ) {
+            WP_CLI::log( "(GA4 no configurado.)\n" );
+        } else {
+            WP_CLI::log( sprintf( '- Visitas totales:      %s  (%s)', number_format( $t['sessions']['cur'] ), $t['sessions']['change'] ) );
+            WP_CLI::log( sprintf( '- Visitantes únicos:    %s  (%s)', number_format( $t['users']['cur'] ), $t['users']['change'] ) );
+            WP_CLI::log( sprintf( '- Mobile / Desktop:     %d%% / %d%%', $t['mobile_pct'], $t['desktop_pct'] ) );
+            WP_CLI::log( sprintf( '- Nuevos / Recurrentes: %d%% / %d%%', $t['new_pct'], $t['returning_pct'] ) );
+            if ( $t['top_pages'] ) {
+                WP_CLI::log( "\n### Top 5 páginas" );
+                foreach ( $t['top_pages'] as $i => $pg ) WP_CLI::log( sprintf( '%d. %s — %s vistas', $i + 1, $pg['path'], number_format( $pg['views'] ) ) );
             }
+            if ( $t['sources'] ) {
+                WP_CLI::log( "\n### Fuentes de tráfico" );
+                foreach ( $t['sources'] as $src ) WP_CLI::log( sprintf( '- %s: %.1f%% (%s)', $src['channel'], $src['pct'], number_format( $src['count'] ) ) );
+            }
+            WP_CLI::log( '' );
         }
 
-        if ( $feats ) {
-            WP_CLI::log( '### Nuevas funcionalidades' );
-            foreach ( $feats as $f ) WP_CLI::log( '- ' . $f );
-        }
-        if ( $fixes ) {
-            WP_CLI::log( '### Correcciones' );
-            foreach ( $fixes as $f ) WP_CLI::log( '- ' . $f );
-        }
-        if ( $others ) {
-            WP_CLI::log( '### Otros' );
-            foreach ( $others as $f ) WP_CLI::log( '- ' . $f );
+        // 2. Membership
+        $m = $d['membership'];
+        WP_CLI::log( "## 2. Membresía federativa\n" );
+        WP_CLI::log( "- Cuentas nuevas:                     {$m['new']}" );
+        WP_CLI::log( "- Cuentas totales al cierre:          {$m['total']}" );
+        WP_CLI::log( "- Correos verificados (acumulado):    {$m['email_ok']}" );
+        WP_CLI::log( "- Correos sin verificar:              {$m['email_no']}" );
+        WP_CLI::log( "- IDs de afiliación capturados:       {$m['affil']}" );
+        WP_CLI::log( "  · Verificados:                       {$m['a_ok']}" );
+        WP_CLI::log( "  · Rechazados:                        {$m['a_no']}" );
+        WP_CLI::log( "  · En revisión:                       {$m['a_pending']}\n" );
+
+        // Geographic
+        WP_CLI::log( "### Nuevos registros geográficos\n" );
+        foreach ( $d['geographic'] as $g ) WP_CLI::log( sprintf( '- %s: %d (estados: %s)', $g['label'], $g['count'], $g['states'] ) );
+        WP_CLI::log( '' );
+
+        // 3. Editorial
+        $e = $d['editorial'];
+        WP_CLI::log( "## 3. Contenido editorial\n" );
+        WP_CLI::log( '- Posts publicados: ' . $e['count'] );
+        foreach ( $e['posts'] as $p ) WP_CLI::log( '   · ' . $p['title'] . ' — ' . $p['url'] );
+        if ( $e['has_ga4'] ) {
+            WP_CLI::log( sprintf( '- Vistas totales a noticias: %s', number_format( $e['total_views'] ) ) );
+            if ( $e['top_post'] ) WP_CLI::log( sprintf( '- Post más leído: "%s" — %s vistas', $e['top_post']['title'], number_format( $e['top_post']['views'] ) ) );
         }
         WP_CLI::log( '' );
+
+        // 4. Shop
+        $s = $d['shop'];
+        WP_CLI::log( "## 4. Tienda\n" );
+        if ( ! $s['active'] ) { WP_CLI::log( "(WooCommerce no activo.)\n" ); }
+        else {
+            WP_CLI::log( sprintf( '- Órdenes:          %d', $s['orders'] ) );
+            WP_CLI::log( sprintf( '- Ingresos totales: $%s MXN', number_format( $s['revenue'], 2 ) ) );
+            WP_CLI::log( sprintf( '- Ticket promedio:  $%s MXN', number_format( $s['avg'], 2 ) ) );
+            if ( $s['top'] ) {
+                WP_CLI::log( "\n### Top 3 productos" );
+                foreach ( $s['top'] as $i => $p ) WP_CLI::log( sprintf( '%d. %s — %d uds — $%s', $i + 1, $p['name'], $p['qty'], number_format( $p['rev'], 2 ) ) );
+            }
+            WP_CLI::log( '' );
+        }
+
+        // 5. Events
+        $ev = $d['events'];
+        WP_CLI::log( "## 5. Eventos\n" );
+        if ( ! $ev['active'] ) { WP_CLI::log( "(Sin CPT de eventos.)\n" ); }
+        else {
+            WP_CLI::log( sprintf( '- Creados:      %d', $ev['created'] ) );
+            WP_CLI::log( sprintf( '- Actualizados: %d', $ev['updated'] ) );
+            WP_CLI::log( sprintf( '- Activos:      %d', $ev['total'] ) );
+            WP_CLI::log( '' );
+        }
+
+        // 6. Stability
+        WP_CLI::log( "## 6. Estabilidad\n" );
+        WP_CLI::log( "(Completar manualmente.)\n" );
+
+        // 7. Implementations
+        $im = $d['implementations'];
+        WP_CLI::log( "## 7. Implementaciones del mes\n" );
+        if ( ! $im['found'] || ( ! $im['feats'] && ! $im['fixes'] && ! $im['others'] ) ) {
+            WP_CLI::log( "- Sin commits en el período.\n" );
+        } else {
+            if ( $im['feats'] )  { WP_CLI::log( '### Nuevas funcionalidades' ); foreach ( $im['feats']  as $f ) WP_CLI::log( '- ' . $f ); }
+            if ( $im['fixes'] )  { WP_CLI::log( '### Correcciones' );           foreach ( $im['fixes']  as $f ) WP_CLI::log( '- ' . $f ); }
+            if ( $im['others'] ) { WP_CLI::log( '### Otros' );                  foreach ( $im['others'] as $f ) WP_CLI::log( '- ' . $f ); }
+            WP_CLI::log( '' );
+        }
+
+        WP_CLI::log( "(Solo la sección 6 necesita datos manuales.)\n" );
+    }
+
+    /* ================================================================== */
+    /*  HTML renderer                                                      */
+    /* ================================================================== */
+
+    private function render_html( array $d ): string {
+        $h = function ( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); };
+        $n = fn( $v, $dec = 0 ) => number_format( (float) $v, $dec );
+
+        $html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+            . '<title>FMDB &middot; Reporte mensual &middot; ' . $h( $d['label'] ) . '</title>'
+            . '<style>'
+            . 'body{font-family:Calibri,sans-serif;color:#1a1a1a;line-height:1.5;max-width:820px;margin:40px auto;padding:0 24px}'
+            . 'h1{font-size:22pt;color:#085041;margin-bottom:0}'
+            . 'h1+p{color:#777;margin-top:4px;font-size:10pt}'
+            . 'h2{font-size:14pt;color:#085041;border-bottom:2px solid #1d9e75;padding-bottom:3px;margin-top:32px}'
+            . 'h3{font-size:11pt;color:#085041;margin-top:18px}'
+            . 'table{border-collapse:collapse;width:100%;margin:8px 0}'
+            . 'th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;font-size:10pt}'
+            . 'th{background:#f3f7f5;color:#085041;font-weight:700}'
+            . '.num{text-align:right}'
+            . 'ul,ol{margin:6px 0 12px 18px}'
+            . 'blockquote{border-left:3px solid #1d9e75;padding-left:12px;color:#444;font-style:italic;margin:6px 0}'
+            . 'hr{border:none;border-top:1px solid #ddd;margin:24px 0}'
+            . '.meta{color:#777;font-size:9pt;font-style:italic}'
+            . '.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9pt;font-weight:600}'
+            . '.up{color:#1b7d3a}.down{color:#c0392b}'
+            . '</style></head><body>';
+
+        $html .= '<h1>FMDB &mdash; Reporte mensual &middot; ' . $h( $d['label'] ) . '</h1>';
+        $html .= '<p>Federaci&oacute;n Mexicana de Dodgeball &middot; dodgeballmexico.com</p><hr>';
+
+        // 1. Traffic
+        $html .= '<h2>1. Alcance y tr&aacute;fico</h2>';
+        $t = $d['traffic'];
+        if ( $t['has_ga4'] ) {
+            $html .= '<table><tr><th>M&eacute;trica</th><th>Mes actual</th><th>vs. mes anterior</th></tr>';
+            $html .= '<tr><td>Visitas totales</td><td class="num">' . $n( $t['sessions']['cur'] ) . '</td><td class="num">' . $h( $t['sessions']['change'] ) . '</td></tr>';
+            $html .= '<tr><td>Visitantes &uacute;nicos</td><td class="num">' . $n( $t['users']['cur'] ) . '</td><td class="num">' . $h( $t['users']['change'] ) . '</td></tr>';
+            $html .= '<tr><td>Mobile / Desktop</td><td>' . $t['mobile_pct'] . '% / ' . $t['desktop_pct'] . '%</td><td>&mdash;</td></tr>';
+            $html .= '<tr><td>Nuevos / Recurrentes</td><td>' . $t['new_pct'] . '% / ' . $t['returning_pct'] . '%</td><td>&mdash;</td></tr>';
+            $html .= '</table>';
+            if ( $t['top_pages'] ) {
+                $html .= '<h3>Top 5 p&aacute;ginas m&aacute;s vistas</h3><ol>';
+                foreach ( $t['top_pages'] as $pg ) $html .= '<li>' . $h( $pg['path'] ) . ' &mdash; ' . $n( $pg['views'] ) . ' vistas</li>';
+                $html .= '</ol>';
+            }
+            if ( $t['sources'] ) {
+                $html .= '<h3>Fuentes de tr&aacute;fico</h3><ul>';
+                foreach ( $t['sources'] as $src ) $html .= '<li>' . $h( $src['channel'] ) . ': ' . $src['pct'] . '% (' . $n( $src['count'] ) . ')</li>';
+                $html .= '</ul>';
+            }
+        } else {
+            $html .= '<p><em>(GA4 no configurado.)</em></p>';
+        }
+
+        // 2. Membership
+        $html .= '<hr><h2>2. Membres&iacute;a federativa</h2>';
+        $m = $d['membership'];
+        $html .= '<table><tr><th>M&eacute;trica</th><th>Valor</th></tr>';
+        $html .= '<tr><td>Cuentas nuevas en el mes</td><td class="num">' . $m['new'] . '</td></tr>';
+        $html .= '<tr><td>Cuentas totales al cierre</td><td class="num">' . $m['total'] . '</td></tr>';
+        $html .= '<tr><td>Correos verificados (acumulado)</td><td class="num">' . $m['email_ok'] . '</td></tr>';
+        $html .= '<tr><td>Correos sin verificar</td><td class="num">' . $m['email_no'] . '</td></tr>';
+        $html .= '<tr><td>IDs de afiliaci&oacute;n capturados</td><td class="num">' . $m['affil'] . '</td></tr>';
+        $html .= '<tr><td>&nbsp;&nbsp;&middot; Verificados</td><td class="num">' . $m['a_ok'] . '</td></tr>';
+        $html .= '<tr><td>&nbsp;&nbsp;&middot; Rechazados</td><td class="num">' . $m['a_no'] . '</td></tr>';
+        $html .= '<tr><td>&nbsp;&nbsp;&middot; En revisi&oacute;n</td><td class="num">' . $m['a_pending'] . '</td></tr>';
+        $html .= '</table>';
+
+        $html .= '<h3>Nuevos registros geogr&aacute;ficos</h3><ul>';
+        foreach ( $d['geographic'] as $g ) $html .= '<li>' . $h( $g['label'] ) . ': ' . $g['count'] . ' (estados: ' . $h( $g['states'] ) . ')</li>';
+        $html .= '</ul>';
+
+        // 3. Editorial
+        $html .= '<hr><h2>3. Contenido editorial</h2>';
+        $e = $d['editorial'];
+        $html .= '<table><tr><th>M&eacute;trica</th><th>Valor</th></tr>';
+        $html .= '<tr><td>Posts publicados</td><td class="num">' . $e['count'] . '</td></tr>';
+        if ( $e['has_ga4'] ) {
+            $html .= '<tr><td>Vistas totales a noticias</td><td class="num">' . $n( $e['total_views'] ) . '</td></tr>';
+        }
+        $html .= '</table>';
+        if ( $e['posts'] ) {
+            $html .= '<h3>Posts del mes</h3><ul>';
+            foreach ( $e['posts'] as $p ) $html .= '<li><a href="' . $h( $p['url'] ) . '">' . $h( $p['title'] ) . '</a></li>';
+            $html .= '</ul>';
+        }
+        if ( $e['top_post'] ) {
+            $html .= '<h3>Post m&aacute;s le&iacute;do</h3>';
+            $html .= '<blockquote>&ldquo;' . $h( $e['top_post']['title'] ) . '&rdquo; &mdash; ' . $n( $e['top_post']['views'] ) . ' vistas</blockquote>';
+        }
+
+        // 4. Shop
+        $html .= '<hr><h2>4. Tienda</h2>';
+        $s = $d['shop'];
+        if ( $s['active'] ) {
+            $html .= '<table><tr><th>M&eacute;trica</th><th>Valor</th></tr>';
+            $html .= '<tr><td>&Oacute;rdenes</td><td class="num">' . $s['orders'] . '</td></tr>';
+            $html .= '<tr><td>Ingresos totales</td><td class="num">$' . $n( $s['revenue'], 2 ) . ' MXN</td></tr>';
+            $html .= '<tr><td>Ticket promedio</td><td class="num">$' . $n( $s['avg'], 2 ) . ' MXN</td></tr>';
+            $html .= '</table>';
+            if ( $s['top'] ) {
+                $html .= '<h3>Top 3 productos</h3><ol>';
+                foreach ( $s['top'] as $p ) $html .= '<li>' . $h( $p['name'] ) . ' &mdash; ' . $p['qty'] . ' uds &mdash; $' . $n( $p['rev'], 2 ) . '</li>';
+                $html .= '</ol>';
+            }
+        } else {
+            $html .= '<p><em>(WooCommerce no activo.)</em></p>';
+        }
+
+        // 5. Events
+        $html .= '<hr><h2>5. Eventos</h2>';
+        $ev = $d['events'];
+        if ( $ev['active'] ) {
+            $html .= '<table><tr><th>M&eacute;trica</th><th>Valor</th></tr>';
+            $html .= '<tr><td>Eventos creados</td><td class="num">' . $ev['created'] . '</td></tr>';
+            $html .= '<tr><td>Eventos actualizados</td><td class="num">' . $ev['updated'] . '</td></tr>';
+            $html .= '<tr><td>Activos al cierre</td><td class="num">' . $ev['total'] . '</td></tr>';
+            $html .= '</table>';
+        } else {
+            $html .= '<p><em>(Sin CPT de eventos.)</em></p>';
+        }
+
+        // 6. Stability
+        $html .= '<hr><h2>6. Estabilidad</h2>';
+        $html .= '<table><tr><th>M&eacute;trica</th><th>Valor</th></tr>';
+        $html .= '<tr><td>Bugs reportados</td><td class="num"><em>{n}</em></td></tr>';
+        $html .= '<tr><td>Bugs resueltos</td><td class="num"><em>{n}</em></td></tr>';
+        $html .= '<tr><td>Pendientes al cierre</td><td class="num"><em>{n}</em></td></tr>';
+        $html .= '</table>';
+
+        // 7. Implementations
+        $html .= '<hr><h2>7. Implementaciones del mes</h2>';
+        $im = $d['implementations'];
+        if ( $im['found'] && ( $im['feats'] || $im['fixes'] || $im['others'] ) ) {
+            if ( $im['feats'] ) {
+                $html .= '<h3>Nuevas funcionalidades</h3><ul>';
+                foreach ( $im['feats'] as $f ) $html .= '<li>' . $h( $f ) . '</li>';
+                $html .= '</ul>';
+            }
+            if ( $im['fixes'] ) {
+                $html .= '<h3>Correcciones</h3><ul>';
+                foreach ( $im['fixes'] as $f ) $html .= '<li>' . $h( $f ) . '</li>';
+                $html .= '</ul>';
+            }
+            if ( $im['others'] ) {
+                $html .= '<h3>Otros</h3><ul>';
+                foreach ( $im['others'] as $f ) $html .= '<li>' . $h( $f ) . '</li>';
+                $html .= '</ul>';
+            }
+        } else {
+            $html .= '<p>Sin commits en el per&iacute;odo.</p>';
+        }
+
+        $html .= '<hr><p class="meta">Reporte generado autom&aacute;ticamente &middot; ' . $h( $d['date'] ) . '</p>';
+        $html .= '</body></html>';
+        return $html;
+    }
+
+    /* ================================================================== */
+    /*  Helpers                                                            */
+    /* ================================================================== */
+
+    private function totals_range( ?array $result, int $i ): array {
+        $v = [];
+        foreach ( ( $result['totals'][$i]['metricValues'] ?? [] ) as $mv ) $v[] = (float) ( $mv['value'] ?? 0 );
+        return $v;
+    }
+
+    private function pct_change( float $cur, float $prev ): string {
+        if ( $prev == 0 ) return $cur > 0 ? '+∞' : '—';
+        $p = ( $cur - $prev ) / $prev * 100;
+        return sprintf( '%s%.1f%%', $p >= 0 ? '+' : '', $p );
     }
 }
 
