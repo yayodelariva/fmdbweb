@@ -21,6 +21,7 @@ add_action( 'admin_menu', function () {
     remove_menu_page( 'mailpoet-newsletters' );
     remove_menu_page( 'jetrails-site-assistant' );
     remove_menu_page( 'jetrails' );
+    remove_menu_page( 'edit-comments.php' );
 }, 999 );
 
 add_action( 'admin_head', function () {
