@@ -25,6 +25,15 @@ add_action( 'admin_menu', function () {
     if ( ! current_user_can( 'manage_options' ) ) {
         remove_menu_page( 'edit.php?post_type=product' );
     }
+
+    global $menu;
+    foreach ( $menu as $pos => $item ) {
+        $slug = $item[2] ?? '';
+        if ( $slug === 'upload.php' || $slug === 'edit.php?post_type=pp_video_block' ) {
+            unset( $menu[ $pos ] );
+            $menu[ 900 + $pos ] = $item;
+        }
+    }
 }, 999 );
 
 add_action( 'admin_head', function () {
