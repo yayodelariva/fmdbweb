@@ -31,6 +31,10 @@ add_action( 'init', function () {
     if ( $editor && ! $editor->has_cap( 'fmdb_manage_teams' ) ) {
         $editor->add_cap( 'fmdb_manage_teams' );
     }
+    if ( $editor && ! $editor->has_cap( 'list_users' ) ) {
+        $editor->add_cap( 'list_users' );
+        $editor->add_cap( 'edit_users' );
+    }
     if ( $editor && $editor->has_cap( 'edit_pages' ) ) {
         foreach ( [
             'edit_pages', 'edit_others_pages', 'edit_published_pages',
