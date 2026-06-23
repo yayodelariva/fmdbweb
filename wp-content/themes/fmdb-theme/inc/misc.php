@@ -24,7 +24,7 @@ add_action( 'admin_menu', function () {
 }, 999 );
 
 add_action( 'admin_head', function () {
-    echo '<style>#toplevel_page_user-registration-dashboard{display:none!important}</style>';
+    echo '<style>.toplevel_page_user-registration{display:none!important}</style>';
 } );
 
 // Translate Kadence parent-theme strings that ship with es_ES only
