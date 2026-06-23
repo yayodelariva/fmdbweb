@@ -30,6 +30,7 @@ add_action( 'init', function () {
     $editor = get_role( 'editor_fmdb' );
     if ( $editor && ! $editor->has_cap( 'fmdb_manage_teams' ) ) {
         $editor->add_cap( 'fmdb_manage_teams' );
+        $editor->add_cap( 'fmdb_manage_affiliations' );
     }
     if ( $editor && ! $editor->has_cap( 'list_users' ) ) {
         $editor->add_cap( 'list_users' );
