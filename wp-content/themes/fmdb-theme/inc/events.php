@@ -99,6 +99,9 @@ add_action( 'add_meta_boxes', function () {
     foreach ( [ 'litespeed_meta_boxes', 'tec-events-qr-code', 'postimagediv', 'tribe_events_catdiv' ] as $id ) {
         remove_meta_box( $id, 'tribe_events', 'side' );
     }
+    remove_meta_box( 'tribe_events_event_options', 'tribe_events', 'side' );
+    remove_meta_box( 'tagsdiv-post_tag', 'tribe_events', 'side' );
+    remove_meta_box( 'tribe-events-status', 'tribe_events', 'side' );
 }, 99 );
 
 /* ===================================================================
