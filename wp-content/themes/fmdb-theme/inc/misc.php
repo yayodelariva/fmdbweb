@@ -19,6 +19,7 @@ add_action( 'admin_menu', function () {
     remove_menu_page( 'jetpack' );
     remove_menu_page( 'mailpoet-homepage' );
     remove_menu_page( 'mailpoet-newsletters' );
+    remove_menu_page( 'user-registration' );
     remove_menu_page( 'jetrails-site-assistant' );
     remove_menu_page( 'jetrails' );
 }, 999 );
