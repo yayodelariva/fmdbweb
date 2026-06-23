@@ -84,12 +84,13 @@ add_action( 'init', function () {
         'rewrite'      => [ 'slug' => 'seleccion' ],
     ] );
 
-    // Rename "Imagen destacada" to "Logo del equipo" for fmdb_team
+    // Rename "Imagen destacada" to "Logo" for teams and leagues
     add_filter( 'admin_post_thumbnail_html', function ( $html, $post_id ) {
-        if ( get_post_type( $post_id ) === 'fmdb_team' ) {
+        $logos = [ 'fmdb_team', 'fmdb_league' ];
+        if ( in_array( get_post_type( $post_id ), $logos, true ) ) {
             $html = str_replace(
                 [ 'Imagen destacada', 'imagen destacada' ],
-                [ 'Logo del equipo', 'logo del equipo' ],
+                [ 'Logo', 'logo' ],
                 $html
             );
         }
@@ -97,20 +98,19 @@ add_action( 'init', function () {
     }, 10, 2 );
 } );
 
-// fmdb_team admin: hide LiteSpeed + post settings, rename featured image box
+// fmdb_team + fmdb_league admin: hide LiteSpeed + post settings, rename featured image box
 add_action( 'add_meta_boxes', function () {
-    remove_meta_box( 'litespeed_meta_boxes', 'fmdb_team', 'side' );
-    remove_meta_box( 'litespeed_meta_boxes', 'fmdb_team', 'normal' );
-    remove_meta_box( 'litespeed_meta_boxes', 'fmdb_team', 'advanced' );
-
-    // Remove the default featured image box and re-add with custom title
-    remove_meta_box( 'postimagediv', 'fmdb_team', 'side' );
-    add_meta_box( 'postimagediv', 'Logo del equipo', 'post_thumbnail_meta_box', 'fmdb_team', 'side', 'low' );
+    foreach ( [ 'fmdb_team', 'fmdb_league' ] as $pt ) {
+        remove_meta_box( 'litespeed_meta_boxes', $pt, 'side' );
+        remove_meta_box( 'litespeed_meta_boxes', $pt, 'normal' );
+        remove_meta_box( 'litespeed_meta_boxes', $pt, 'advanced' );
+        remove_meta_box( 'postimagediv', $pt, 'side' );
+        add_meta_box( 'postimagediv', 'Logo', 'post_thumbnail_meta_box', $pt, 'side', 'low' );
+    }
 }, 99 );
 
 add_action( 'admin_head', function () {
     $screen = get_current_screen();
-    if ( ! $screen || $screen->post_type !== 'fmdb_team' ) return;
-    // Hide Kadence post settings panel
+    if ( ! $screen || ! in_array( $screen->post_type, [ 'fmdb_team', 'fmdb_league' ], true ) ) return;
     echo '<style>#kadence_classic_meta_control{display:none!important}</style>';
 } );
