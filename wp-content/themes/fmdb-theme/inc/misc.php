@@ -14,6 +14,15 @@ add_filter( 'pings_open', function ( $open, $post_id ) {
     return $open;
 }, 10, 2 );
 
+// Hide noisy plugin menu items
+add_action( 'admin_menu', function () {
+    remove_menu_page( 'jetpack' );
+    remove_menu_page( 'mailpoet-homepage' );
+    remove_menu_page( 'mailpoet-newsletters' );
+    remove_menu_page( 'jetrails-site-assistant' );
+    remove_menu_page( 'jetrails' );
+}, 999 );
+
 // Translate Kadence parent-theme strings that ship with es_ES only
 // (site runs es_MX so WP doesn't fall back to es_ES).
 add_filter( 'gettext', function ( $translation, $text, $domain ) {

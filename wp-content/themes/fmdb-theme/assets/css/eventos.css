@@ -618,3 +618,93 @@
 
 /* Note chip on per-occurrence cards (eventos list) */
 .fmdb-evento-card__cat--note { background: #2c3e50 !important; color: #fff !important; }
+
+/* Shared button (home.css only loads on the front page) */
+.fmdb-evento-single .fmdb-btn {
+    display: inline-block;
+    padding: 13px 28px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+    border: 2px solid transparent;
+}
+.fmdb-evento-single .fmdb-btn--primary {
+    background: var(--fmdb-green);
+    color: #fff;
+    border-color: var(--fmdb-green);
+}
+.fmdb-evento-single .fmdb-btn--primary:hover {
+    background: #17876a;
+    border-color: #17876a;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* === Registration box (sidebar) === */
+.fmdb-reg-box { margin-top: 20px; }
+.fmdb-reg-box__btn {
+    width: 100%;
+    text-align: center;
+    margin-top: 12px;
+    display: block;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+}
+.fmdb-reg-box__closed {
+    display: block;
+    text-align: center;
+    margin-top: 12px;
+    padding: 10px;
+    background: #fdecea;
+    color: #c0392b;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+/* Registration form fields */
+.fmdb-reg-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--fmdb-neutral); }
+.fmdb-reg-form__field { margin-bottom: 12px; }
+.fmdb-reg-form__field label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--fmdb-dark-green);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+.fmdb-reg-form__field input {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--fmdb-neutral);
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+.fmdb-reg-form__field input:focus {
+    outline: none;
+    border-color: var(--fmdb-green);
+    box-shadow: 0 0 0 2px rgba(8,80,65,0.1);
+}
+.fmdb-reg-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 380px) { .fmdb-reg-form__row { grid-template-columns: 1fr; } }
+
+/* WC notices inside the registration box */
+.fmdb-reg-box .woocommerce-error,
+.fmdb-reg-box .woocommerce-message,
+.fmdb-reg-box .woocommerce-info {
+    font-size: 0.82rem;
+    padding: 8px 12px;
+    margin: 0 0 12px;
+    border-radius: 6px;
+    list-style: none;
+}

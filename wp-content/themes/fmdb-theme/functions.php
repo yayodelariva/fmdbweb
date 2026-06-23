@@ -17,6 +17,7 @@ foreach ( [
     'cmb2-fields',
     'events',
     'woocommerce',
+    'tournament-registration',
     'nav',
     'login',
     'email-verification',

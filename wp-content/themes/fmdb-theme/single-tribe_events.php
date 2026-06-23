@@ -290,6 +290,8 @@ while ( have_posts() ) : the_post();
                         </a>
                     <?php endif; ?>
                 </div>
+
+                <?php fmdb_event_registration_box( $id ); ?>
             </aside>
 
         </div>
