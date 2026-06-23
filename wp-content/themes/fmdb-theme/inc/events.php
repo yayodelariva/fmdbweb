@@ -11,8 +11,7 @@
 
 // Fix TEC Spanish translations
 add_filter( 'gettext_the-events-calendar', function ( $translation, $text ) {
-    if ( $text === 'Event Cost' ) return 'Costo del Evento';
-    if ( $translation === 'Evento Coste' ) return 'Costo del Evento';
+    if ( $text === '%s Cost' ) return 'Costo del %s';
     return $translation;
 }, 20, 2 );
 
