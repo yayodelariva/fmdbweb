@@ -31,6 +31,16 @@ add_action( 'init', function () {
     if ( $editor && ! $editor->has_cap( 'fmdb_manage_teams' ) ) {
         $editor->add_cap( 'fmdb_manage_teams' );
     }
+    if ( $editor && $editor->has_cap( 'edit_pages' ) ) {
+        foreach ( [
+            'edit_pages', 'edit_others_pages', 'edit_published_pages',
+            'edit_private_pages', 'read_private_pages',
+            'delete_pages', 'delete_others_pages', 'delete_published_pages',
+            'delete_private_pages', 'publish_pages',
+        ] as $cap ) {
+            $editor->remove_cap( $cap );
+        }
+    }
 } );
 
 // Block all WP admin access for jugadores and representantes — front-end only
