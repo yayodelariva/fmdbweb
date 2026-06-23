@@ -1,20 +1,35 @@
 <?php
 /**
- * Roles: register `jugador`, remove unused WP defaults, gate wp-admin
- * access for player-facing roles, hide admin bar for non-admins.
+ * Roles: register `jugador`, remove unused WP defaults, grant custom FMDB
+ * capabilities, gate wp-admin access for player-facing roles.
+ *
+ * Custom capabilities (checked elsewhere in the theme):
+ *   fmdb_manage_teams        — can manage any team (admin + editor_fmdb)
+ *   fmdb_manage_affiliations — can approve/reject user affiliations (admin only)
  *
  * Note: roles `representante_equipo` and `editor_fmdb` are referenced
  * elsewhere in the theme but are managed by the Members plugin (or were
  * created via WP admin) rather than registered here.
  */
 
-// Register custom roles and remove unused WP defaults
+// Register custom roles, remove unused WP defaults, grant FMDB caps
 add_action( 'init', function () {
     if ( ! get_role( 'jugador' ) ) {
         add_role( 'jugador', 'Jugador', [ 'read' => true ] );
     }
     foreach ( [ 'subscriber', 'contributor', 'author', 'editor' ] as $r ) {
         remove_role( $r );
+    }
+
+    $admin = get_role( 'administrator' );
+    if ( $admin && ! $admin->has_cap( 'fmdb_manage_teams' ) ) {
+        $admin->add_cap( 'fmdb_manage_teams' );
+        $admin->add_cap( 'fmdb_manage_affiliations' );
+    }
+
+    $editor = get_role( 'editor_fmdb' );
+    if ( $editor && ! $editor->has_cap( 'fmdb_manage_teams' ) ) {
+        $editor->add_cap( 'fmdb_manage_teams' );
     }
 } );
 
@@ -29,9 +44,9 @@ add_action( 'admin_init', function () {
     }
 } );
 
-// Hide admin bar for everyone except administrators
+// Show admin bar only for roles that use wp-admin (admin + editor_fmdb)
 add_action( 'after_setup_theme', function () {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! current_user_can( 'edit_others_posts' ) ) {
         show_admin_bar( false );
     }
 } );

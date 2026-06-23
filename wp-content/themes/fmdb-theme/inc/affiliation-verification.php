@@ -140,7 +140,7 @@ add_action( 'pre_get_users', function ( $query ) {
 
 // Editable section on the User Edit screen.
 function fmdb_render_affiliation_profile_fields( $user ) {
-    if ( ! current_user_can( 'manage_options' ) ) return;
+    if ( ! current_user_can( 'fmdb_manage_affiliations' ) ) return;
     $id     = get_user_meta( $user->ID, 'fmdb_affiliation_id', true );
     $status = fmdb_affiliation_status( $user->ID );
     ?>
@@ -172,7 +172,7 @@ add_action( 'show_user_profile', 'fmdb_render_affiliation_profile_fields' );
 add_action( 'edit_user_profile', 'fmdb_render_affiliation_profile_fields' );
 
 function fmdb_save_affiliation_profile_fields( $user_id ) {
-    if ( ! current_user_can( 'edit_user', $user_id ) || ! current_user_can( 'manage_options' ) ) return;
+    if ( ! current_user_can( 'edit_user', $user_id ) || ! current_user_can( 'fmdb_manage_affiliations' ) ) return;
 
     if ( isset( $_POST['fmdb_affiliation_id'] ) ) {
         $id = sanitize_text_field( wp_unslash( $_POST['fmdb_affiliation_id'] ) );

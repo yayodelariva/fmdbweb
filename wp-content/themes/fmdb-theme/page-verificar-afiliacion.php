@@ -13,7 +13,7 @@ $action = isset( $_GET['action'] ) ? sanitize_key(       $_GET['action'] ) : '';
 
 $result = null; // 'approved' | 'rejected' | 'invalid' | 'missing' | 'unauthorized'
 
-if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+if ( ! is_user_logged_in() || ! current_user_can( 'fmdb_manage_affiliations' ) ) {
     $result = 'unauthorized';
 } elseif ( ! $uid || ! $token || ! in_array( $action, [ 'approve', 'reject' ], true ) ) {
     $result = 'missing';

@@ -144,10 +144,9 @@ function fmdb_render_cmb2_form( $box_id, $object_id, $tab_slug, $submit_label ) 
     ] );
 }
 
-// True for administrators and Editor FMDB — can manage any team
+// True for any user with the fmdb_manage_teams capability (admin + editor_fmdb)
 function fmdb_is_team_manager() {
-    $roles = (array) wp_get_current_user()->roles;
-    return current_user_can( 'manage_options' ) || in_array( 'editor_fmdb', $roles, true );
+    return current_user_can( 'fmdb_manage_teams' );
 }
 
 /**
