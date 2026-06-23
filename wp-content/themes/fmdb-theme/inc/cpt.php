@@ -86,7 +86,7 @@ add_action( 'init', function () {
 
     // Rename "Imagen destacada" to "Logo" for teams and leagues
     add_filter( 'admin_post_thumbnail_html', function ( $html, $post_id ) {
-        $logos = [ 'fmdb_team', 'fmdb_league' ];
+        $logos = [ 'fmdb_team', 'fmdb_league', 'fmdb_asociacion', 'fmdb_seleccion' ];
         if ( in_array( get_post_type( $post_id ), $logos, true ) ) {
             $html = str_replace(
                 [ 'Imagen destacada', 'imagen destacada' ],
@@ -100,7 +100,7 @@ add_action( 'init', function () {
 
 // fmdb_team + fmdb_league admin: hide LiteSpeed + post settings, rename featured image box
 add_action( 'add_meta_boxes', function () {
-    foreach ( [ 'fmdb_team', 'fmdb_league' ] as $pt ) {
+    foreach ( [ 'fmdb_team', 'fmdb_league', 'fmdb_asociacion', 'fmdb_seleccion' ] as $pt ) {
         remove_meta_box( 'litespeed_meta_boxes', $pt, 'side' );
         remove_meta_box( 'litespeed_meta_boxes', $pt, 'normal' );
         remove_meta_box( 'litespeed_meta_boxes', $pt, 'advanced' );
@@ -111,6 +111,6 @@ add_action( 'add_meta_boxes', function () {
 
 add_action( 'admin_head', function () {
     $screen = get_current_screen();
-    if ( ! $screen || ! in_array( $screen->post_type, [ 'fmdb_team', 'fmdb_league' ], true ) ) return;
+    if ( ! $screen || ! in_array( $screen->post_type, [ 'fmdb_team', 'fmdb_league', 'fmdb_asociacion', 'fmdb_seleccion' ], true ) ) return;
     echo '<style>#kadence_classic_meta_control{display:none!important}</style>';
 } );
