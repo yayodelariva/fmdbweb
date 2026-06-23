@@ -107,10 +107,12 @@ add_action( 'acf/init', function () {
         'location' => [ [ [ 'param' => 'post_type', 'operator' => '==', 'value' => 'fmdb_team' ] ] ],
     ] );
 
-    // --- Group 2: Estadísticas de temporada ---
+    // --- Group 2: Estadísticas de temporada (low position) ---
     acf_add_local_field_group( [
         'key'    => 'group_fmdb_team_stats',
         'title'  => 'Estadísticas de temporada',
+        'position' => 'normal',
+        'menu_order' => 100,
         'fields' => [
             [
                 'key'   => 'field_team_wins',

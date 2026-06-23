@@ -83,4 +83,34 @@ add_action( 'init', function () {
         'supports'     => [ 'title', 'thumbnail', 'custom-fields' ],
         'rewrite'      => [ 'slug' => 'seleccion' ],
     ] );
+
+    // Rename "Imagen destacada" to "Logo del equipo" for fmdb_team
+    add_filter( 'admin_post_thumbnail_html', function ( $html, $post_id ) {
+        if ( get_post_type( $post_id ) === 'fmdb_team' ) {
+            $html = str_replace(
+                [ 'Imagen destacada', 'imagen destacada' ],
+                [ 'Logo del equipo', 'logo del equipo' ],
+                $html
+            );
+        }
+        return $html;
+    }, 10, 2 );
+} );
+
+// fmdb_team admin: hide LiteSpeed + post settings, rename featured image box
+add_action( 'add_meta_boxes', function () {
+    remove_meta_box( 'litespeed_meta_boxes', 'fmdb_team', 'side' );
+    remove_meta_box( 'litespeed_meta_boxes', 'fmdb_team', 'normal' );
+    remove_meta_box( 'litespeed_meta_boxes', 'fmdb_team', 'advanced' );
+
+    // Remove the default featured image box and re-add with custom title
+    remove_meta_box( 'postimagediv', 'fmdb_team', 'side' );
+    add_meta_box( 'postimagediv', 'Logo del equipo', 'post_thumbnail_meta_box', 'fmdb_team', 'side', 'low' );
+}, 99 );
+
+add_action( 'admin_head', function () {
+    $screen = get_current_screen();
+    if ( ! $screen || $screen->post_type !== 'fmdb_team' ) return;
+    // Hide Kadence post settings panel
+    echo '<style>#kadence_classic_meta_control{display:none!important}</style>';
 } );
