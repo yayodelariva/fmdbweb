@@ -86,11 +86,17 @@ add_action( 'init', function () {
 
     // Rename "Imagen destacada" to "Logo" for teams and leagues
     add_filter( 'admin_post_thumbnail_html', function ( $html, $post_id ) {
-        $logos = [ 'fmdb_team', 'fmdb_league', 'fmdb_asociacion', 'fmdb_seleccion' ];
-        if ( in_array( get_post_type( $post_id ), $logos, true ) ) {
+        $pt = get_post_type( $post_id );
+        if ( in_array( $pt, [ 'fmdb_team', 'fmdb_league', 'fmdb_asociacion' ], true ) ) {
             $html = str_replace(
                 [ 'Imagen destacada', 'imagen destacada' ],
                 [ 'Logo', 'logo' ],
+                $html
+            );
+        } elseif ( $pt === 'fmdb_seleccion' ) {
+            $html = str_replace(
+                [ 'Imagen destacada', 'imagen destacada' ],
+                [ 'Foto de jugador', 'foto de jugador' ],
                 $html
             );
         }
@@ -105,7 +111,8 @@ add_action( 'add_meta_boxes', function () {
         remove_meta_box( 'litespeed_meta_boxes', $pt, 'normal' );
         remove_meta_box( 'litespeed_meta_boxes', $pt, 'advanced' );
         remove_meta_box( 'postimagediv', $pt, 'side' );
-        add_meta_box( 'postimagediv', 'Logo', 'post_thumbnail_meta_box', $pt, 'side', 'low' );
+        $label = $pt === 'fmdb_seleccion' ? 'Foto de jugador' : 'Logo';
+        add_meta_box( 'postimagediv', $label, 'post_thumbnail_meta_box', $pt, 'side', 'low' );
     }
 }, 99 );
 
