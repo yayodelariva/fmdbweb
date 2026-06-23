@@ -219,6 +219,23 @@ add_action( 'wp_enqueue_scripts', function () {
     );
 }, 20 );
 
+// Shop + checkout: under construction
+add_action( 'template_redirect', function () {
+    $is_wip = ( function_exists( 'is_shop' ) && is_shop() )
+           || ( function_exists( 'is_checkout' ) && is_checkout() );
+    if ( ! $is_wip ) return;
+    get_header();
+    echo '<main class="fmdb-shop-wip">';
+    echo '<div class="fmdb-shop-wip__wrap">';
+    echo '<h1>Tienda en construcción</h1>';
+    echo '<p>Estamos preparando la tienda. ¡Pronto estará disponible!</p>';
+    echo '<a href="' . esc_url( home_url( '/' ) ) . '" class="fmdb-btn fmdb-btn--primary">Volver al inicio</a>';
+    echo '</div>';
+    echo '</main>';
+    get_footer();
+    exit;
+} );
+
 // Empty cart message with shop link
 add_filter( 'wc_empty_cart_message', function () {
     $shop = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' );

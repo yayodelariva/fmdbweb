@@ -1,5 +1,29 @@
 /* === Tienda (WooCommerce) === */
 
+/* Under construction */
+.fmdb-shop-wip {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--fmdb-pale-green);
+}
+.fmdb-shop-wip__wrap {
+    text-align: center;
+    padding: 60px 20px;
+}
+.fmdb-shop-wip__wrap h1 {
+    font-size: 2rem;
+    color: var(--fmdb-dark-green);
+    margin: 0 0 12px;
+}
+.fmdb-shop-wip__wrap p {
+    font-size: 1.05rem;
+    color: #555;
+    margin: 0 0 28px;
+}
+
+
 /* Page wrapper */
 .fmdb-tienda {
     max-width: 1200px;
