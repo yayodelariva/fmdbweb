@@ -193,3 +193,142 @@ function fmdb_save_affiliation_profile_fields( $user_id ) {
 }
 add_action( 'personal_options_update',  'fmdb_save_affiliation_profile_fields' );
 add_action( 'edit_user_profile_update', 'fmdb_save_affiliation_profile_fields' );
+
+/* =========================================================================
+ * wp-admin → Usuarios → Afiliaciones page
+ * =======================================================================*/
+
+add_action( 'admin_menu', function () {
+    add_submenu_page(
+        'users.php',
+        'Afiliaciones FMDB',
+        'Afiliaciones',
+        'fmdb_manage_affiliations',
+        'fmdb-affiliations',
+        'fmdb_render_affiliations_page'
+    );
+} );
+
+function fmdb_render_affiliations_page() {
+    if ( ! current_user_can( 'fmdb_manage_affiliations' ) ) {
+        wp_die( 'No tienes permiso para acceder a esta página.' );
+    }
+
+    // Handle approve / reject actions.
+    if ( isset( $_POST['fmdb_affil_action'], $_POST['fmdb_affil_uid'], $_POST['_wpnonce'] ) ) {
+        $uid    = absint( $_POST['fmdb_affil_uid'] );
+        $action = sanitize_key( $_POST['fmdb_affil_action'] );
+        if ( wp_verify_nonce( $_POST['_wpnonce'], 'fmdb_affil_' . $uid ) && in_array( $action, [ 'approve', 'reject' ], true ) ) {
+            $new_status = $action === 'approve' ? 'verified' : 'rejected';
+            update_user_meta( $uid, 'fmdb_affiliation_status', $new_status );
+            delete_user_meta( $uid, 'fmdb_affiliation_token' );
+            delete_user_meta( $uid, 'fmdb_affiliation_token_expires' );
+            $label = $action === 'approve' ? 'aprobada' : 'rechazada';
+            echo '<div class="notice notice-success is-dismissible"><p>Afiliación ' . esc_html( $label ) . '.</p></div>';
+        }
+    }
+
+    // Filter tabs.
+    $current_filter = sanitize_key( $_GET['status'] ?? 'pending' );
+    $filters = [
+        'pending'  => 'Pendientes',
+        'verified' => 'Verificados',
+        'rejected' => 'Rechazados',
+        'all'      => 'Todos',
+    ];
+
+    // Query users.
+    $args = [ 'number' => 100, 'orderby' => 'registered', 'order' => 'DESC' ];
+    if ( $current_filter !== 'all' ) {
+        $args['meta_query'] = [ [ 'key' => 'fmdb_affiliation_status', 'value' => $current_filter ] ];
+    } else {
+        $args['meta_query'] = [ [ 'key' => 'fmdb_affiliation_id', 'compare' => 'EXISTS' ] ];
+    }
+    $users = get_users( $args );
+
+    // Count pending for badge.
+    $pending_count = count( get_users( [
+        'fields'     => 'ID',
+        'meta_query' => [ [ 'key' => 'fmdb_affiliation_status', 'value' => 'pending' ] ],
+    ] ) );
+
+    $badge_colors = [
+        'verified' => '#0f6b48',
+        'pending'  => '#856404',
+        'rejected' => '#842029',
+        'none'     => '#777',
+    ];
+
+    ?>
+    <div class="wrap">
+        <h1>Afiliaciones FMDB</h1>
+
+        <ul class="subsubsub">
+            <?php $i = 0; foreach ( $filters as $key => $label ) : $i++; ?>
+                <li>
+                    <a href="<?php echo esc_url( admin_url( 'users.php?page=fmdb-affiliations&status=' . $key ) ); ?>"
+                       class="<?php echo $current_filter === $key ? 'current' : ''; ?>">
+                        <?php echo esc_html( $label ); ?>
+                        <?php if ( $key === 'pending' && $pending_count ) : ?>
+                            <span class="count">(<?php echo (int) $pending_count; ?>)</span>
+                        <?php endif; ?>
+                    </a>
+                    <?php echo $i < count( $filters ) ? ' |' : ''; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+
+        <table class="wp-list-table widefat fixed striped" style="margin-top:12px;">
+            <thead>
+                <tr>
+                    <th style="width:22%;">Usuario</th>
+                    <th style="width:22%;">Correo</th>
+                    <th style="width:15%;">ID de afiliación</th>
+                    <th style="width:12%;">Estado</th>
+                    <th style="width:15%;">Fecha</th>
+                    <th style="width:14%;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ( empty( $users ) ) : ?>
+                    <tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">No hay solicitudes <?php echo $current_filter !== 'all' ? esc_html( strtolower( $filters[ $current_filter ] ) ) : ''; ?>.</td></tr>
+                <?php endif; ?>
+                <?php foreach ( $users as $u ) :
+                    $af_id     = get_user_meta( $u->ID, 'fmdb_affiliation_id', true );
+                    $af_status = fmdb_affiliation_status( $u->ID );
+                    [ $state, $state_label ] = fmdb_affiliation_status_label( $af_status );
+                    $name = trim( $u->first_name . ' ' . $u->last_name ) ?: $u->display_name;
+                    $nonce = wp_create_nonce( 'fmdb_affil_' . $u->ID );
+                ?>
+                    <tr>
+                        <td>
+                            <strong><a href="<?php echo esc_url( get_edit_user_link( $u->ID ) ); ?>"><?php echo esc_html( $name ); ?></a></strong>
+                            <br><small style="color:#888;"><?php echo esc_html( $u->user_login ); ?></small>
+                        </td>
+                        <td><?php echo esc_html( $u->user_email ); ?></td>
+                        <td><code><?php echo esc_html( $af_id ?: '—' ); ?></code></td>
+                        <td>
+                            <span style="display:inline-block;padding:2px 10px;border-radius:999px;background:<?php echo esc_attr( $badge_colors[ $state ] ); ?>;color:#fff;font-size:12px;font-weight:600;">
+                                <?php echo esc_html( $state_label ); ?>
+                            </span>
+                        </td>
+                        <td><?php echo esc_html( date_i18n( 'j M Y', strtotime( $u->user_registered ) ) ); ?></td>
+                        <td>
+                            <?php if ( $af_status === 'pending' ) : ?>
+                                <form method="post" style="display:inline;">
+                                    <input type="hidden" name="fmdb_affil_uid" value="<?php echo (int) $u->ID; ?>">
+                                    <input type="hidden" name="_wpnonce" value="<?php echo esc_attr( $nonce ); ?>">
+                                    <button type="submit" name="fmdb_affil_action" value="approve" class="button button-small button-primary">Aprobar</button>
+                                    <button type="submit" name="fmdb_affil_action" value="reject" class="button button-small" style="color:#842029;">Rechazar</button>
+                                </form>
+                            <?php else : ?>
+                                <span style="color:#999;">—</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php
+}
