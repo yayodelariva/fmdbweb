@@ -9,6 +9,13 @@
  *  - Inline admin CSS/JS for picker, bracket visibility, and validation
  */
 
+// Fix TEC Spanish translations
+add_filter( 'gettext_the-events-calendar', function ( $translation, $text ) {
+    if ( $text === 'Event Cost' ) return 'Costo del Evento';
+    if ( $translation === 'Evento Coste' ) return 'Costo del Evento';
+    return $translation;
+}, 20, 2 );
+
 // Create the three event categories (Torneo, Campamento, Misceláneo)
 add_action( 'init', function () {
     if ( ! taxonomy_exists( 'tribe_events_cat' ) ) return;
