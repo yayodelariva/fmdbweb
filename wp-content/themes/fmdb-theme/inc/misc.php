@@ -19,10 +19,13 @@ add_action( 'admin_menu', function () {
     remove_menu_page( 'jetpack' );
     remove_menu_page( 'mailpoet-homepage' );
     remove_menu_page( 'mailpoet-newsletters' );
-    remove_menu_page( 'user-registration-dashboard' );
     remove_menu_page( 'jetrails-site-assistant' );
     remove_menu_page( 'jetrails' );
 }, 999 );
+
+add_action( 'admin_head', function () {
+    echo '<style>#toplevel_page_user-registration-dashboard{display:none!important}</style>';
+} );
 
 // Translate Kadence parent-theme strings that ship with es_ES only
 // (site runs es_MX so WP doesn't fall back to es_ES).
