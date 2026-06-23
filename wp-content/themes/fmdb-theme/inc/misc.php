@@ -22,6 +22,9 @@ add_action( 'admin_menu', function () {
     remove_menu_page( 'jetrails-site-assistant' );
     remove_menu_page( 'jetrails' );
     remove_menu_page( 'edit-comments.php' );
+    if ( ! current_user_can( 'manage_options' ) ) {
+        remove_menu_page( 'edit.php?post_type=product' );
+    }
 }, 999 );
 
 add_action( 'admin_head', function () {
