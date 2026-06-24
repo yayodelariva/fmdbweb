@@ -37,7 +37,7 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
         <?php endif; ?>
         <div class="fmdb-hero__inner">
             <p class="fmdb-hero__eyebrow">Federación Mexicana de Dodgeball</p>
-            <h1 class="fmdb-hero__title">La casa del dodgeball de alto rendimiento de México</h1>
+            <h1 class="fmdb-hero__title">La casa del Dodgeball de alto rendimiento de México</h1>
             <p class="fmdb-hero__subtitle">Conectamos equipos, ligas y jugadores en todo el país.</p>
             <div class="fmdb-hero__ctas">
                 <a href="<?php echo esc_url( home_url( '/mapa-interactivo/' ) ); ?>" class="fmdb-btn fmdb-btn--primary">Encuentra tu equipo</a>
