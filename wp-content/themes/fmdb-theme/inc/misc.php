@@ -22,6 +22,7 @@ add_action( 'admin_menu', function () {
     remove_menu_page( 'jetrails-site-assistant' );
     remove_menu_page( 'jetrails' );
     remove_menu_page( 'edit-comments.php' );
+    remove_menu_page( 'edit.php?post_type=pp_video_block' );
     if ( ! current_user_can( 'manage_options' ) ) {
         remove_menu_page( 'edit.php?post_type=product' );
     }
@@ -39,7 +40,7 @@ add_action( 'admin_menu', function () {
     global $menu;
     foreach ( $menu as $pos => $item ) {
         $slug = $item[2] ?? '';
-        if ( $slug === 'upload.php' || $slug === 'edit.php?post_type=pp_video_block' ) {
+        if ( $slug === 'upload.php' ) {
             unset( $menu[ $pos ] );
             $menu[ 900 + $pos ] = $item;
         }
