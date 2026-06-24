@@ -26,6 +26,16 @@ add_action( 'admin_menu', function () {
         remove_menu_page( 'edit.php?post_type=product' );
     }
 
+    // Editor Noticias: only Entradas — hide FMDB CPTs and Events
+    $user = wp_get_current_user();
+    if ( in_array( 'editor_noticias', (array) $user->roles, true ) ) {
+        remove_menu_page( 'edit.php?post_type=fmdb_team' );
+        remove_menu_page( 'edit.php?post_type=fmdb_league' );
+        remove_menu_page( 'edit.php?post_type=fmdb_asociacion' );
+        remove_menu_page( 'edit.php?post_type=fmdb_seleccion' );
+        remove_menu_page( 'edit.php?post_type=tribe_events' );
+    }
+
     global $menu;
     foreach ( $menu as $pos => $item ) {
         $slug = $item[2] ?? '';

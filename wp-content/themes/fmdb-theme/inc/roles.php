@@ -72,6 +72,19 @@ add_action( 'admin_init', function () {
         wp_safe_redirect( home_url( '/mi-equipo/' ) );
         exit;
     }
+
+    // Editor Noticias: block direct access to FMDB CPTs and Events
+    if ( in_array( 'editor_noticias', $roles, true ) ) {
+        $blocked = [ 'fmdb_team', 'fmdb_league', 'fmdb_asociacion', 'fmdb_seleccion', 'tribe_events' ];
+        $pt = $_GET['post_type'] ?? '';
+        if ( ! $pt && ! empty( $_GET['post'] ) ) {
+            $pt = get_post_type( (int) $_GET['post'] );
+        }
+        if ( in_array( $pt, $blocked, true ) ) {
+            wp_safe_redirect( admin_url() );
+            exit;
+        }
+    }
 } );
 
 // Show admin bar only for roles that use wp-admin (admin + editor_fmdb)
