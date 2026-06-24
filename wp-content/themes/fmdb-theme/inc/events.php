@@ -15,6 +15,25 @@ add_filter( 'gettext_the-events-calendar', function ( $translation, $text ) {
     return $translation;
 }, 20, 2 );
 
+// "Por determinarse" checkbox inside the TEC date/time section
+add_action( 'tribe_events_date_display', function ( $post_id ) {
+    $checked = get_post_meta( $post_id, '_fmdb_date_tbd', true );
+    wp_nonce_field( 'fmdb_date_tbd_save', 'fmdb_date_tbd_nonce' );
+    printf(
+        '<tr><td colspan="2" style="padding:8px 0 0;"><label style="font-weight:600;cursor:pointer;">'
+        . '<input type="checkbox" name="_fmdb_date_tbd" value="1"%s style="margin-right:6px;">'
+        . 'Por determinarse</label></td></tr>',
+        checked( $checked, '1', false )
+    );
+} );
+
+add_action( 'save_post_tribe_events', function ( $post_id ) {
+    if ( ! isset( $_POST['fmdb_date_tbd_nonce'] ) ) return;
+    if ( ! wp_verify_nonce( $_POST['fmdb_date_tbd_nonce'], 'fmdb_date_tbd_save' ) ) return;
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+    update_post_meta( $post_id, '_fmdb_date_tbd', ! empty( $_POST['_fmdb_date_tbd'] ) ? '1' : '' );
+}, 15 );
+
 // Create the three event categories (Torneo, Campamento, Misceláneo)
 add_action( 'init', function () {
     if ( ! taxonomy_exists( 'tribe_events_cat' ) ) return;
