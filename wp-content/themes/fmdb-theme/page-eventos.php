@@ -99,6 +99,7 @@ get_header();
                         $dp         = $occ['is_primary']
                             ? fmdb_event_date_parts( $start_ts, $end_ts )
                             : fmdb_event_date_parts( $start_ts, $start_ts );
+                        $card_tbd   = get_post_meta( $id, '_fmdb_date_tbd', true ) === '1';
                         $time_start = date_i18n( 'g:i a', $start_ts );
                         $time_end   = date_i18n( 'g:i a', $end_ts );
                         $venue_id   = get_post_meta( $id, '_EventVenueID', true );
@@ -140,7 +141,11 @@ get_header();
                             <?php endif; ?>
                             <p class="fmdb-evento-card__time">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <?php echo esc_html( $time_start ); ?><?php if ( $end_ts && $end_ts !== $start_ts ) echo ' – ' . esc_html( $time_end ); ?>
+                                <?php if ( $card_tbd ) : ?>
+                                    Horario por determinarse
+                                <?php else : ?>
+                                    <?php echo esc_html( $time_start ); ?><?php if ( $end_ts && $end_ts !== $start_ts ) echo ' – ' . esc_html( $time_end ); ?>
+                                <?php endif; ?>
                             </p>
                             <?php if ( has_excerpt() ) : ?>
                                 <p class="fmdb-evento-card__excerpt"><?php echo esc_html( wp_trim_words( get_the_excerpt(), 18 ) ); ?></p>

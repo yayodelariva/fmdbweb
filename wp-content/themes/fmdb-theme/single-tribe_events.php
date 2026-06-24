@@ -201,24 +201,16 @@ while ( have_posts() ) : the_post();
                 <div class="fmdb-evento-single__meta-card">
                     <h3 class="fmdb-evento-single__meta-title">Detalles del evento</h3>
 
-                    <?php if ( $date_tbd ) : ?>
-                    <div class="fmdb-evento-single__meta-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        <div>
-                            <strong>Fecha</strong>
-                            <span>Por determinarse</span>
-                        </div>
-                    </div>
-                    <?php else : ?>
                     <div class="fmdb-evento-single__meta-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         <div>
                             <strong>Inicio</strong>
                             <span><?php echo date_i18n( 'j \d\e F, Y', $start_ts ); ?></span>
-                            <span><?php echo date_i18n( 'g:i a', $start_ts ); ?></span>
+                            <span><?php echo $date_tbd ? 'Horario por determinarse' : date_i18n( 'g:i a', $start_ts ); ?></span>
                         </div>
                     </div>
 
+                    <?php if ( ! $date_tbd ) : ?>
                     <?php if ( $end_ts && ! $same_day ) : ?>
                         <div class="fmdb-evento-single__meta-item">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
