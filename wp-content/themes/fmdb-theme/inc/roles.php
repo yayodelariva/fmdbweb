@@ -17,6 +17,19 @@ add_action( 'init', function () {
     if ( ! get_role( 'jugador' ) ) {
         add_role( 'jugador', 'Jugador', [ 'read' => true ] );
     }
+    if ( ! get_role( 'editor_noticias' ) ) {
+        add_role( 'editor_noticias', 'Editor Noticias', [
+            'read'                   => true,
+            'edit_posts'             => true,
+            'edit_others_posts'      => true,
+            'edit_published_posts'   => true,
+            'publish_posts'          => true,
+            'delete_posts'           => true,
+            'delete_others_posts'    => true,
+            'delete_published_posts' => true,
+            'upload_files'           => true,
+        ] );
+    }
     foreach ( [ 'subscriber', 'contributor', 'author', 'editor' ] as $r ) {
         remove_role( $r );
     }
@@ -63,6 +76,7 @@ add_action( 'admin_init', function () {
 
 // Show admin bar only for roles that use wp-admin (admin + editor_fmdb)
 add_action( 'after_setup_theme', function () {
+    // edit_others_posts: admin, editor_fmdb, editor_noticias
     if ( ! current_user_can( 'edit_others_posts' ) ) {
         show_admin_bar( false );
     }
