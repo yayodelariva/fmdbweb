@@ -27,32 +27,66 @@ class FMDB_Monthly_Report_Command {
      * [--month=<yyyy-mm>]
      * : Month to report on. Defaults to previous calendar month.
      *
+     * [--from=<yyyy-mm-dd>]
+     * : Start date for a custom range. Requires --to. Overrides --month.
+     *
+     * [--to=<yyyy-mm-dd>]
+     * : End date (inclusive) for a custom range. Requires --from.
+     *
      * [--output=<path>]
      * : Write a styled HTML report to this path.
      *
      * @when after_wp_load
      */
     public function monthly( $args, $assoc_args ) {
-        $month_arg = $assoc_args['month'] ?? gmdate( 'Y-m', strtotime( 'first day of last month' ) );
-        if ( ! preg_match( '/^\d{4}-\d{2}$/', $month_arg ) ) {
-            WP_CLI::error( 'Invalid --month. Use YYYY-MM (e.g. 2026-05).' );
-        }
-        $start      = $month_arg . '-01 00:00:00';
-        $end        = gmdate( 'Y-m-d 23:59:59', strtotime( 'last day of ' . $month_arg . '-01' ) );
-        $start_date = $month_arg . '-01';
-        $end_date   = gmdate( 'Y-m-d', strtotime( 'last day of ' . $month_arg . '-01' ) );
-
-        $prev_month = gmdate( 'Y-m', strtotime( $start . ' -1 month' ) );
-        $prev_start = $prev_month . '-01';
-        $prev_end   = gmdate( 'Y-m-d', strtotime( 'last day of ' . $prev_month . '-01' ) );
-
         $meses = [
             '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo', '04' => 'Abril',
             '05' => 'Mayo',  '06' => 'Junio',   '07' => 'Julio', '08' => 'Agosto',
             '09' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre',
         ];
-        $parts = explode( '-', $month_arg );
-        $label = ( $meses[ $parts[1] ] ?? $parts[1] ) . ' ' . $parts[0];
+
+        $from_arg = $assoc_args['from'] ?? '';
+        $to_arg   = $assoc_args['to'] ?? '';
+
+        if ( $from_arg !== '' || $to_arg !== '' ) {
+            if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $from_arg ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $to_arg ) ) {
+                WP_CLI::error( 'Invalid range. Use --from=YYYY-MM-DD --to=YYYY-MM-DD (both required).' );
+            }
+            if ( strtotime( $from_arg ) > strtotime( $to_arg ) ) {
+                WP_CLI::error( '--from must be on or before --to.' );
+            }
+            $start_date = $from_arg;
+            $end_date   = $to_arg;
+            $start      = $from_arg . ' 00:00:00';
+            $end        = $to_arg . ' 23:59:59';
+
+            // Previous window: same length, ending the day before --from.
+            $days       = (int) round( ( strtotime( $to_arg ) - strtotime( $from_arg ) ) / 86400 ) + 1;
+            $prev_end   = gmdate( 'Y-m-d', strtotime( $from_arg . ' -1 day' ) );
+            $prev_start = gmdate( 'Y-m-d', strtotime( $prev_end . ' -' . ( $days - 1 ) . ' day' ) );
+
+            $fmt   = function ( $ds ) use ( $meses ) {
+                $p = explode( '-', $ds );
+                return (int) $p[2] . ' ' . ( $meses[ $p[1] ] ?? $p[1] ) . ' ' . $p[0];
+            };
+            $label = $fmt( $start_date ) . ' – ' . $fmt( $end_date );
+        } else {
+            $month_arg = $assoc_args['month'] ?? gmdate( 'Y-m', strtotime( 'first day of last month' ) );
+            if ( ! preg_match( '/^\d{4}-\d{2}$/', $month_arg ) ) {
+                WP_CLI::error( 'Invalid --month. Use YYYY-MM (e.g. 2026-05).' );
+            }
+            $start      = $month_arg . '-01 00:00:00';
+            $end        = gmdate( 'Y-m-d 23:59:59', strtotime( 'last day of ' . $month_arg . '-01' ) );
+            $start_date = $month_arg . '-01';
+            $end_date   = gmdate( 'Y-m-d', strtotime( 'last day of ' . $month_arg . '-01' ) );
+
+            $prev_month = gmdate( 'Y-m', strtotime( $start . ' -1 month' ) );
+            $prev_start = $prev_month . '-01';
+            $prev_end   = gmdate( 'Y-m-d', strtotime( 'last day of ' . $prev_month . '-01' ) );
+
+            $parts = explode( '-', $month_arg );
+            $label = ( $meses[ $parts[1] ] ?? $parts[1] ) . ' ' . $parts[0];
+        }
 
         $this->init_ga4();
 
