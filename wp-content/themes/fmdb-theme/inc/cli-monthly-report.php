@@ -156,8 +156,7 @@ class FMDB_Monthly_Report_Command {
         file_put_contents( $tmp, $pdf ?? $html );
 
         $subject = 'FMDB · Reporte mensual · ' . $d['label'];
-        $body    = "Adjunto el reporte mensual de la FMDB para el período: {$d['label']}.\n\n"
-                 . "Generado automáticamente. La sección de Estabilidad (bugs) puede requerir ajuste manual.\n";
+        $body    = "Adjunto el reporte mensual de la FMDB para el período: {$d['label']}.\n";
         $to_list = array_filter( array_map( 'trim', explode( ',', $to ) ) );
 
         $sent = wp_mail( $to_list, $subject, $body, [ 'Content-Type: text/plain; charset=UTF-8' ], [ $tmp ] );
