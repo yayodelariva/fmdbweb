@@ -36,6 +36,10 @@ class FMDB_Monthly_Report_Command {
      * [--output=<path>]
      * : Write a styled HTML report to this path.
      *
+     * [--email=<address>]
+     * : Email the report (PDF attachment) to this address via wp_mail.
+     *   Comma-separate for multiple recipients.
+     *
      * @when after_wp_load
      */
     public function monthly( $args, $assoc_args ) {
@@ -108,6 +112,61 @@ class FMDB_Monthly_Report_Command {
         if ( $output !== '' ) {
             file_put_contents( $output, $this->render_html( $d ) );
             WP_CLI::success( "Reporte guardado en: {$output}" );
+        }
+
+        $email = $assoc_args['email'] ?? '';
+        if ( $email !== '' ) {
+            $this->email_report( $email, $d );
+        }
+    }
+
+    /* ================================================================== */
+    /*  PDF + email                                                        */
+    /* ================================================================== */
+
+    /**
+     * Render the report HTML to PDF bytes via Dompdf. Dompdf is installed
+     * outside the repo; its autoload path is stored in the fmdb_dompdf_autoload
+     * option. Returns null (with a warning) if unavailable.
+     */
+    private function render_pdf( string $html ): ?string {
+        $autoload = trim( (string) get_option( 'fmdb_dompdf_autoload', '' ) );
+        if ( $autoload === '' || ! file_exists( $autoload ) ) {
+            WP_CLI::warning( 'Dompdf no encontrado (option fmdb_dompdf_autoload). Se adjuntará HTML.' );
+            return null;
+        }
+        require_once $autoload;
+        if ( ! class_exists( '\Dompdf\Dompdf' ) ) {
+            WP_CLI::warning( 'Dompdf autoload cargado pero la clase no existe. Se adjuntará HTML.' );
+            return null;
+        }
+        $dompdf = new \Dompdf\Dompdf( [ 'isRemoteEnabled' => false, 'defaultFont' => 'Helvetica' ] );
+        $dompdf->loadHtml( $html, 'UTF-8' );
+        $dompdf->setPaper( 'letter', 'portrait' );
+        $dompdf->render();
+        return $dompdf->output();
+    }
+
+    private function email_report( string $to, array $d ): void {
+        $html = $this->render_html( $d );
+        $pdf  = $this->render_pdf( $html );
+
+        $slug = 'reporte-' . preg_replace( '/[^0-9a-z\-]/i', '', str_replace( ' ', '', $d['label'] ) );
+        $tmp  = trailingslashit( sys_get_temp_dir() ) . $slug . ( $pdf !== null ? '.pdf' : '.html' );
+        file_put_contents( $tmp, $pdf ?? $html );
+
+        $subject = 'FMDB · Reporte mensual · ' . $d['label'];
+        $body    = "Adjunto el reporte mensual de la FMDB para el período: {$d['label']}.\n\n"
+                 . "Generado automáticamente. La sección de Estabilidad (bugs) puede requerir ajuste manual.\n";
+        $to_list = array_filter( array_map( 'trim', explode( ',', $to ) ) );
+
+        $sent = wp_mail( $to_list, $subject, $body, [ 'Content-Type: text/plain; charset=UTF-8' ], [ $tmp ] );
+        @unlink( $tmp );
+
+        if ( $sent ) {
+            WP_CLI::success( 'Reporte enviado a: ' . implode( ', ', $to_list ) );
+        } else {
+            WP_CLI::warning( 'wp_mail devolvió false — revisar configuración SMTP (wp-mail-smtp).' );
         }
     }
 
