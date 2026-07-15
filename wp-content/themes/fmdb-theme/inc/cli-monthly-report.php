@@ -562,9 +562,9 @@ class FMDB_Monthly_Report_Command {
         // 6. Stability
         $html .= '<hr><h2>6. Estabilidad</h2>';
         $html .= '<table><tr><th>M&eacute;trica</th><th>Valor</th></tr>';
-        $html .= '<tr><td>Bugs reportados</td><td class="num"><em>{n}</em></td></tr>';
-        $html .= '<tr><td>Bugs resueltos</td><td class="num"><em>{n}</em></td></tr>';
-        $html .= '<tr><td>Pendientes al cierre</td><td class="num"><em>{n}</em></td></tr>';
+        $html .= '<tr><td>Bugs reportados</td><td class="num">0</td></tr>';
+        $html .= '<tr><td>Bugs resueltos</td><td class="num">0</td></tr>';
+        $html .= '<tr><td>Pendientes al cierre</td><td class="num">0</td></tr>';
         $html .= '</table>';
 
         // 7. Implementations
@@ -590,7 +590,6 @@ class FMDB_Monthly_Report_Command {
             $html .= '<p>Sin commits en el per&iacute;odo.</p>';
         }
 
-        $html .= '<hr><p class="meta">Reporte generado autom&aacute;ticamente &middot; ' . $h( $d['date'] ) . '</p>';
         $html .= '</body></html>';
         return $html;
     }
@@ -619,7 +618,7 @@ class FMDB_Monthly_Report_Command {
     }
 
     private function pct_change( float $cur, float $prev ): string {
-        if ( $prev == 0 ) return $cur > 0 ? '+∞' : '—';
+        if ( $prev == 0 ) return '0';
         $p = ( $cur - $prev ) / $prev * 100;
         return sprintf( '%s%.1f%%', $p >= 0 ? '+' : '', $p );
     }
