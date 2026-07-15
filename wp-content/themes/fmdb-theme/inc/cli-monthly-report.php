@@ -421,7 +421,7 @@ class FMDB_Monthly_Report_Command {
 
         // 2. Membership
         $m = $d['membership'];
-        WP_CLI::log( "## 2. Membresía federativa\n" );
+        WP_CLI::log( "## 2. Membresías\n" );
         WP_CLI::log( "- Cuentas nuevas:                     {$m['new']}" );
         WP_CLI::log( "- Cuentas totales al cierre:          {$m['total']}" );
         WP_CLI::log( "- Correos verificados (acumulado):    {$m['email_ok']}" );
@@ -551,7 +551,7 @@ class FMDB_Monthly_Report_Command {
         }
 
         // 2. Membership
-        $html .= '<hr><h2>2. Membres&iacute;a federativa</h2>';
+        $html .= '<hr><h2>2. Membres&iacute;as</h2>';
         $m = $d['membership'];
         $html .= '<table><tr><th>M&eacute;trica</th><th>Valor</th></tr>';
         $html .= '<tr><td>Cuentas nuevas en el mes</td><td class="num">' . $m['new'] . '</td></tr>';
