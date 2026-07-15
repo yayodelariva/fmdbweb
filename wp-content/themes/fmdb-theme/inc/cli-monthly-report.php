@@ -152,8 +152,8 @@ class FMDB_Monthly_Report_Command {
             WP_CLI::warning( 'GA4 traffic unavailable — ' . $out['error'] );
             return $out;
         }
-        $cur  = $this->ga4->totals( $ov );
-        $prev = $this->totals_range( $ov, 1 );
+        $cur  = $this->range_metrics( $ov, 0 );
+        $prev = $this->range_metrics( $ov, 1 );
 
         $out['sessions']      = [ 'cur' => $cur[0] ?? 0, 'prev' => $prev[0] ?? 0 ];
         $out['users']         = [ 'cur' => $cur[1] ?? 0, 'prev' => $prev[1] ?? 0 ];
@@ -599,10 +599,23 @@ class FMDB_Monthly_Report_Command {
     /*  Helpers                                                            */
     /* ================================================================== */
 
-    private function totals_range( ?array $result, int $i ): array {
-        $v = [];
-        foreach ( ( $result['totals'][$i]['metricValues'] ?? [] ) as $mv ) $v[] = (float) ( $mv['value'] ?? 0 );
-        return $v;
+    /**
+     * Metric values for date range #$i from a multi-dateRange report. GA4 tags
+     * each row with an implicit `date_range_N` dimension and omits the `totals`
+     * block unless metricAggregations is requested, so read straight from rows.
+     */
+    private function range_metrics( ?array $result, int $i ): array {
+        $key = 'date_range_' . $i;
+        foreach ( ( $result['rows'] ?? [] ) as $row ) {
+            $dims = $row['dimensionValues'] ?? [];
+            $last = end( $dims );
+            if ( ( $last['value'] ?? '' ) === $key ) {
+                $v = [];
+                foreach ( ( $row['metricValues'] ?? [] ) as $mv ) $v[] = (float) ( $mv['value'] ?? 0 );
+                return $v;
+            }
+        }
+        return [];
     }
 
     private function pct_change( float $cur, float $prev ): string {
