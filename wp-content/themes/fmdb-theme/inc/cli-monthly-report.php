@@ -147,6 +147,11 @@ class FMDB_Monthly_Report_Command {
         $ov = $this->ga4->run_report( [ 'dateRanges' => $ranges, 'metrics' => [
             [ 'name' => 'sessions' ], [ 'name' => 'totalUsers' ],
         ] ] );
+        if ( $ov === null ) {
+            $out['error'] = $this->ga4->last_error() ?? 'Unknown GA4 Data API error.';
+            WP_CLI::warning( 'GA4 traffic unavailable — ' . $out['error'] );
+            return $out;
+        }
         $cur  = $this->ga4->totals( $ov );
         $prev = $this->totals_range( $ov, 1 );
 
@@ -336,6 +341,9 @@ class FMDB_Monthly_Report_Command {
         $t = $d['traffic'];
         if ( ! $t['has_ga4'] ) {
             WP_CLI::log( "(GA4 no configurado.)\n" );
+        } elseif ( isset( $t['error'] ) ) {
+            WP_CLI::log( "(Datos de tráfico no disponibles — error de la GA4 Data API.)" );
+            WP_CLI::log( '  ' . $t['error'] . "\n" );
         } else {
             WP_CLI::log( sprintf( '- Visitas totales:      %s  (%s)', number_format( $t['sessions']['cur'] ), $t['sessions']['change'] ) );
             WP_CLI::log( sprintf( '- Visitantes únicos:    %s  (%s)', number_format( $t['users']['cur'] ), $t['users']['change'] ) );
@@ -459,7 +467,7 @@ class FMDB_Monthly_Report_Command {
         // 1. Traffic
         $html .= '<h2>1. Alcance y tr&aacute;fico</h2>';
         $t = $d['traffic'];
-        if ( $t['has_ga4'] ) {
+        if ( $t['has_ga4'] && ! isset( $t['error'] ) ) {
             $html .= '<table><tr><th>M&eacute;trica</th><th>Mes actual</th><th>vs. mes anterior</th></tr>';
             $html .= '<tr><td>Visitas totales</td><td class="num">' . $n( $t['sessions']['cur'] ) . '</td><td class="num">' . $h( $t['sessions']['change'] ) . '</td></tr>';
             $html .= '<tr><td>Visitantes &uacute;nicos</td><td class="num">' . $n( $t['users']['cur'] ) . '</td><td class="num">' . $h( $t['users']['change'] ) . '</td></tr>';
@@ -476,6 +484,9 @@ class FMDB_Monthly_Report_Command {
                 foreach ( $t['sources'] as $src ) $html .= '<li>' . $h( $src['channel'] ) . ': ' . $src['pct'] . '% (' . $n( $src['count'] ) . ')</li>';
                 $html .= '</ul>';
             }
+        } elseif ( isset( $t['error'] ) ) {
+            $html .= '<p><em>Datos de tr&aacute;fico no disponibles &mdash; error de la GA4 Data API:</em><br>'
+                . '<span class="meta">' . $h( $t['error'] ) . '</span></p>';
         } else {
             $html .= '<p><em>(GA4 no configurado.)</em></p>';
         }

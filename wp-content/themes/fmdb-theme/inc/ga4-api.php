@@ -13,6 +13,7 @@ class FMDB_GA4_API {
     private string $credentials_path;
     private string $property_id;
     private ?string $access_token = null;
+    private ?string $last_error = null;
 
     public function __construct( string $credentials_path, string $property_id ) {
         $this->credentials_path = $credentials_path;
@@ -66,7 +67,10 @@ class FMDB_GA4_API {
     }
 
     public function run_report( array $body ): ?array {
-        if ( ! $this->access_token ) return null;
+        if ( ! $this->access_token ) {
+            $this->last_error = 'No access token (authentication did not run or failed).';
+            return null;
+        }
 
         $url = sprintf(
             'https://analyticsdata.googleapis.com/v1beta/properties/%s:runReport',
@@ -82,12 +86,26 @@ class FMDB_GA4_API {
             'timeout' => 30,
         ] );
 
-        if ( is_wp_error( $response ) ) return null;
+        if ( is_wp_error( $response ) ) {
+            $this->last_error = $response->get_error_message();
+            return null;
+        }
 
         $code = (int) wp_remote_retrieve_response_code( $response );
-        if ( $code < 200 || $code >= 300 ) return null;
+        if ( $code < 200 || $code >= 300 ) {
+            $decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+            $msg     = $decoded['error']['message'] ?? wp_remote_retrieve_body( $response );
+            $this->last_error = sprintf( 'HTTP %d: %s', $code, $msg );
+            return null;
+        }
 
+        $this->last_error = null;
         return json_decode( wp_remote_retrieve_body( $response ), true );
+    }
+
+    /** Last error message from run_report(), or null if the last call succeeded. */
+    public function last_error(): ?string {
+        return $this->last_error;
     }
 
     /**
