@@ -204,6 +204,11 @@ function fmdb_cart_checkout_overrides() {
         'Someone has requested a new password for the following account on {site_title}:' => 'Se ha solicitado una nueva contraseña para la siguiente cuenta en {site_title}:',
         "If you didn't make this request, just ignore this email. If you'd like to proceed:" => 'Si no solicitaste esto, ignora este correo. Si deseas continuar:',
         'Click here to reset your password'                               => 'Haz clic aquí para restablecer tu contraseña',
+        // ── Shipping methods ─────────────────────────────────────────────────
+        'Free shipping'  => 'Envío gratis',
+        'Free Shipping'  => 'Envío gratis',
+        'Local pickup'   => 'Recoger en tienda',
+        'Local Pickup'   => 'Recoger en tienda',
         // ── Order status labels ──────────────────────────────────────────────
         'Processing'  => 'Procesando',
         'Completed'   => 'Completado',
