@@ -402,3 +402,14 @@ add_filter( 'woocommerce_email_subject_new_order',                 fn( $s, $orde
     'Nuevo pedido #' . $order->get_order_number(), 10, 2 );
 add_filter( 'woocommerce_email_subject_customer_new_account',      fn() => 'Tu cuenta en ' . get_bloginfo( 'name' ) );
 add_filter( 'woocommerce_email_subject_customer_reset_password',   fn() => 'Restablecimiento de contraseña en ' . get_bloginfo( 'name' ) );
+
+add_filter( 'woocommerce_email_order_meta_fields', function ( $fields, $sent_to_admin, $order ) {
+    $email = $order->get_billing_email();
+    if ( $email ) {
+        $fields['billing_email'] = [
+            'label' => 'Correo electrónico',
+            'value' => $email,
+        ];
+    }
+    return $fields;
+}, 10, 3 );
