@@ -126,7 +126,7 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
     $orders = wc_get_orders( [
         'meta_key'   => '_fmdb_reg_event_id',
         'meta_value' => $event_id,
-        'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+        'status'     => [ 'wc-processing', 'wc-completed' ],
         'limit'      => -1,
     ] );
 
@@ -238,7 +238,7 @@ function fmdb_reg_slot_team_count( int $event_id, string $rama, string $modalida
     $orders = wc_get_orders( [
         'meta_key'   => '_fmdb_reg_event_id',
         'meta_value' => $event_id,
-        'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+        'status'     => [ 'wc-processing', 'wc-completed' ],
         'limit'      => -1,
     ] );
     $count = 0;
