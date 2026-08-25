@@ -778,9 +778,15 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         'completed'  => [ 'label' => 'Inscripción completa', 'mod' => 'confirmed' ],
     ];
 
-    $confirmed   = array_values( array_filter( $teams, fn( $t ) => $t['confirmed'] ?? false ) );
-    $waitlisted  = array_values( array_filter( $teams, fn( $t ) => ! ( $t['confirmed'] ?? false ) && ( $t['on_waitlist'] ?? false ) ) );
-    $unconfirmed = array_values( array_filter( $teams, fn( $t ) => ! ( $t['confirmed'] ?? false ) && ! ( $t['on_waitlist'] ?? false ) ) );
+    $confirmed  = array_values( array_filter( $teams, fn( $t ) => $t['confirmed'] ?? false ) );
+    $waitlisted = array_values( array_filter( $teams, function ( $t ) {
+        $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
+        return ! ( $t['confirmed'] ?? false ) && ( $t['on_waitlist'] ?? false ) && $total >= 7;
+    } ) );
+    $incomplete = array_values( array_filter( $teams, function ( $t ) {
+        $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
+        return ! ( $t['confirmed'] ?? false ) && $total < 7;
+    } ) );
 
     // Use event-configured options for filters (fallback to full list).
     $all_ramas = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_ramas', true ) ) );
@@ -797,13 +803,17 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         $ind_count = count( $team['players'] );
         $total     = $team['bulk_count'] + $ind_count;
 
+        $total = $team['bulk_count'] + $ind_count;
         if ( $team['confirmed'] ?? false ) {
             $st = [ 'label' => 'Confirmado', 'mod' => 'confirmed' ];
+        } elseif ( $total < 7 ) {
+            $st = [ 'label' => 'Incompleto', 'mod' => 'incomplete' ];
         } elseif ( $team['on_waitlist'] ?? false ) {
             $st = [ 'label' => 'Lista de espera', 'mod' => 'waitlist' ];
         } else {
             $st = $pay_status_labels[ $team['status'] ] ?? null;
         }
+        unset( $total ); // recomputed above; clear to avoid confusion with later uses
         ?>
         <div class="fmdb-reg-team-card"
              data-rama="<?php echo esc_attr( $team['rama'] ); ?>"
@@ -932,17 +942,15 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         </div>
         <?php endif; ?>
 
-        <?php if ( ! empty( $unconfirmed ) ) :
-            $total_teams = count( $confirmed ) + count( $waitlisted ) + count( $unconfirmed );
-        ?>
-        <div class="fmdb-reg-teams__section" id="<?php echo esc_attr( $sid ); ?>-registered">
+        <?php if ( ! empty( $incomplete ) ) : ?>
+        <div class="fmdb-reg-teams__section" id="<?php echo esc_attr( $sid ); ?>-incomplete">
             <h3 class="fmdb-reg-teams__section-title fmdb-reg-teams__section-title--muted">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Equipos registrados
-                <span class="fmdb-reg-teams__section-count"><?php echo esc_html( $total_teams ); ?></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Equipos incompletos
+                <span class="fmdb-reg-teams__section-count"><?php echo esc_html( count( $incomplete ) ); ?></span>
             </h3>
             <div class="fmdb-reg-teams__grid">
-                <?php foreach ( $unconfirmed as $team ) { $render_card( $team ); } ?>
+                <?php foreach ( $incomplete as $team ) { $render_card( $team ); } ?>
             </div>
         </div>
         <?php endif; ?>
@@ -986,7 +994,7 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
                 });
 
                 // Hide section headings when all their cards are filtered out.
-                ['confirmed', 'waitlist', 'registered'].forEach(function (key) {
+                ['confirmed', 'waitlist', 'incomplete'].forEach(function (key) {
                     var sec = document.getElementById(sid + '-' + key);
                     if (!sec) return;
                     var visible = sec.querySelectorAll('.fmdb-reg-team-card:not(.fmdb-reg-form--hidden)').length;
@@ -1030,17 +1038,23 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
         $cart_item_data['fmdb_player_count']  = absint( $_POST['fmdb_player_count'] ?? 0 );
 
         // Determine waitlist status: slot at capacity → waitlist.
-        $slot_cap = fmdb_reg_slot_cap( $event_id, $cart_item_data['fmdb_categoria'] );
-        if ( $slot_cap > 0 ) {
-            $slot_count = fmdb_reg_slot_team_count(
-                $event_id,
-                $cart_item_data['fmdb_rama'],
-                $cart_item_data['fmdb_modalidad'],
-                $cart_item_data['fmdb_categoria']
-            );
-            $cart_item_data['fmdb_on_waitlist'] = $slot_count >= $slot_cap ? '1' : '0';
-        } else {
+        // Teams with fewer than 7 players go to "Equipos incompletos" and never to waitlist.
+        $player_count = $cart_item_data['fmdb_player_count'] ?? 0;
+        if ( $player_count < 7 ) {
             $cart_item_data['fmdb_on_waitlist'] = '0';
+        } else {
+            $slot_cap = fmdb_reg_slot_cap( $event_id, $cart_item_data['fmdb_categoria'] );
+            if ( $slot_cap > 0 ) {
+                $slot_count = fmdb_reg_slot_team_count(
+                    $event_id,
+                    $cart_item_data['fmdb_rama'],
+                    $cart_item_data['fmdb_modalidad'],
+                    $cart_item_data['fmdb_categoria']
+                );
+                $cart_item_data['fmdb_on_waitlist'] = $slot_count >= $slot_cap ? '1' : '0';
+            } else {
+                $cart_item_data['fmdb_on_waitlist'] = '0';
+            }
         }
     }
 
