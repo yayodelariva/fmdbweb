@@ -163,6 +163,55 @@ function fmdb_cart_checkout_overrides() {
         'Showing all %d results'                           => 'Mostrando los %d resultados',
         'Showing %1$d&#8211;%2$d of %3$d results'          => 'Mostrando %1$d&#8211;%2$d de %3$d resultados',
         'Showing %1$d–%2$d of %3$d results'                => 'Mostrando %1$d–%2$d de %3$d resultados',
+        // ── Email headings and subjects ──────────────────────────────────────
+        'Thank you for your order!'                                      => '¡Gracias por tu pedido!',
+        'Thanks for shopping with us'                                    => 'Gracias por comprar con nosotros',
+        'Your order is being processed'                                  => 'Tu pedido está siendo procesado',
+        'Your {site_title} order has been received!'                     => 'Tu pedido en {site_title} ha sido recibido',
+        'Your {site_title} order is now complete'                        => 'Tu pedido en {site_title} está completo',
+        'Your {site_title} order receipt'                                => 'Tu recibo de compra en {site_title}',
+        'Your {site_title} order has been cancelled'                     => 'Tu pedido en {site_title} fue cancelado',
+        'Your {site_title} order has been refunded'                      => 'Tu pedido en {site_title} fue reembolsado',
+        '[{site_title}]: New order #{order_number}'                      => '[{site_title}]: Nuevo pedido #{order_number}',
+        '[{site_title}]: Order #{order_number} has been received'        => '[{site_title}]: Pedido #{order_number} recibido',
+        'New order'                                                      => 'Nuevo pedido',
+        'Your account on {site_title}'                                   => 'Tu cuenta en {site_title}',
+        'Welcome to {site_title}'                                        => 'Bienvenido/a a {site_title}',
+        'Password reset request for {site_title}'                        => 'Restablecimiento de contraseña en {site_title}',
+        'Password reset request'                                         => 'Restablecimiento de contraseña',
+        // ── email_improvements intro line (WC 9+) ───────────────────────────
+        'Hi {customer_first_name},'                                      => 'Hola {customer_first_name},',
+        "Just to let you know — we've received your order #{order_number}, and it is now being processed:" => '¡Hemos recibido tu pedido #{order_number} y está siendo procesado!',
+        // ── Order details table ──────────────────────────────────────────────
+        'Order details'      => 'Detalles del pedido',
+        'Order #%s'          => 'Pedido #%s',
+        'Order date:'        => 'Fecha del pedido:',
+        'Telephone:'         => 'Teléfono:',
+        'Payment method:'    => 'Método de pago:',
+        'Quantity'           => 'Cantidad',
+        'Note:'              => 'Nota:',
+        'Tax'                => 'Impuesto',
+        'Discount:'          => 'Descuento:',
+        'Shipping:'          => 'Envío:',
+        'Customer details'   => 'Datos del cliente',
+        // ── New account email ────────────────────────────────────────────────
+        'Hi, a new customer has registered on your website.'             => 'Un nuevo cliente se ha registrado en tu sitio web.',
+        'Email address:'                                                  => 'Correo electrónico:',
+        'Username:'                                                       => 'Nombre de usuario:',
+        'Password:'                                                       => 'Contraseña:',
+        'Click here to set your password'                                 => 'Haz clic aquí para establecer tu contraseña',
+        // ── Password reset ───────────────────────────────────────────────────
+        'Someone has requested a new password for the following account on {site_title}:' => 'Se ha solicitado una nueva contraseña para la siguiente cuenta en {site_title}:',
+        "If you didn't make this request, just ignore this email. If you'd like to proceed:" => 'Si no solicitaste esto, ignora este correo. Si deseas continuar:',
+        'Click here to reset your password'                               => 'Haz clic aquí para restablecer tu contraseña',
+        // ── Order status labels ──────────────────────────────────────────────
+        'Processing'  => 'Procesando',
+        'Completed'   => 'Completado',
+        'On hold'     => 'En espera',
+        'Cancelled'   => 'Cancelado',
+        'Refunded'    => 'Reembolsado',
+        'Failed'      => 'Fallido',
+        'Pending'     => 'Pendiente',
     ];
 }
 
@@ -321,3 +370,30 @@ add_action( 'woocommerce_single_product_summary', function () {
         echo '</div>';
     }, 30 );
 }, 1 );
+
+/* ─── Email headings and subjects in Spanish ──────────────────────────────── */
+// These override the values stored in WC settings (which bypass gettext).
+
+add_filter( 'woocommerce_email_heading_customer_processing_order', fn() => '¡Gracias por tu pedido!' );
+add_filter( 'woocommerce_email_heading_customer_completed_order',  fn() => 'Tu pedido está completo' );
+add_filter( 'woocommerce_email_heading_customer_on_hold_order',    fn() => '¡Gracias por tu pedido!' );
+add_filter( 'woocommerce_email_heading_customer_cancelled_order',  fn() => 'Tu pedido fue cancelado' );
+add_filter( 'woocommerce_email_heading_customer_refunded_order',   fn() => 'Tu pedido fue reembolsado' );
+add_filter( 'woocommerce_email_heading_new_order',                 fn() => 'Nuevo pedido' );
+add_filter( 'woocommerce_email_heading_customer_new_account',      fn() => 'Bienvenido/a a {site_title}' );
+add_filter( 'woocommerce_email_heading_customer_reset_password',   fn() => 'Restablecimiento de contraseña' );
+
+add_filter( 'woocommerce_email_subject_customer_processing_order', fn( $s, $order ) =>
+    'Tu pedido #' . $order->get_order_number() . ' ha sido recibido', 10, 2 );
+add_filter( 'woocommerce_email_subject_customer_completed_order',  fn( $s, $order ) =>
+    'Tu pedido #' . $order->get_order_number() . ' está completo', 10, 2 );
+add_filter( 'woocommerce_email_subject_customer_on_hold_order',    fn( $s, $order ) =>
+    'Tu pedido #' . $order->get_order_number() . ' está en espera', 10, 2 );
+add_filter( 'woocommerce_email_subject_customer_cancelled_order',  fn( $s, $order ) =>
+    'Tu pedido #' . $order->get_order_number() . ' fue cancelado', 10, 2 );
+add_filter( 'woocommerce_email_subject_customer_refunded_order',   fn( $s, $order ) =>
+    'Tu pedido #' . $order->get_order_number() . ' fue reembolsado', 10, 2 );
+add_filter( 'woocommerce_email_subject_new_order',                 fn( $s, $order ) =>
+    'Nuevo pedido #' . $order->get_order_number(), 10, 2 );
+add_filter( 'woocommerce_email_subject_customer_new_account',      fn() => 'Tu cuenta en ' . get_bloginfo( 'name' ) );
+add_filter( 'woocommerce_email_subject_customer_reset_password',   fn() => 'Restablecimiento de contraseña en ' . get_bloginfo( 'name' ) );
