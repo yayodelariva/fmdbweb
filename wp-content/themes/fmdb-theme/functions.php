@@ -31,3 +31,8 @@ foreach ( [
     require_once $fmdb_inc . $fmdb_file . '.php';
 }
 unset( $fmdb_inc, $fmdb_file );
+
+// Dev-only fixture data — remove before deploying to production.
+if ( file_exists( get_stylesheet_directory() . '/inc/dev-fixtures.php' ) ) {
+    require_once get_stylesheet_directory() . '/inc/dev-fixtures.php';
+}

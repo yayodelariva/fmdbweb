@@ -219,10 +219,21 @@ add_action( 'wp_enqueue_scripts', function () {
     );
 }, 20 );
 
-// Shop + checkout: under construction
+// Shop + checkout: under construction (checkout exempt when cart has tournament registrations)
 add_action( 'template_redirect', function () {
-    $is_wip = ( function_exists( 'is_shop' ) && is_shop() )
-           || ( function_exists( 'is_checkout' ) && is_checkout() );
+    if ( function_exists( 'is_shop' ) && is_shop() ) {
+        $is_wip = true;
+    } elseif ( function_exists( 'is_checkout' ) && is_checkout() ) {
+        $has_reg = false;
+        if ( function_exists( 'WC' ) && WC()->cart ) {
+            foreach ( WC()->cart->get_cart() as $_item ) {
+                if ( ! empty( $_item['fmdb_event_id'] ) ) { $has_reg = true; break; }
+            }
+        }
+        $is_wip = ! $has_reg;
+    } else {
+        $is_wip = false;
+    }
     if ( ! $is_wip ) return;
     get_header();
     echo '<main class="fmdb-shop-wip">';

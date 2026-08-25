@@ -8,6 +8,9 @@ node_modules/
 # Migration bundles (DB dumps + uploads — never commit, contain user data)
 migration/
 
+# Dev fixtures (local test data — never deploy)
+wp-content/themes/fmdb-theme/inc/dev-fixtures.php
+
 # Editor / OS
 .DS_Store
 .idea/

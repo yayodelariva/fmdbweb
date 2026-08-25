@@ -299,6 +299,8 @@ while ( have_posts() ) : the_post();
 
         </div>
 
+        <?php fmdb_event_registered_teams_section( $id ); ?>
+
     </div>
 </main>
 
