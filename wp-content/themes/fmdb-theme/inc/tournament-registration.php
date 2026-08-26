@@ -411,8 +411,11 @@ function fmdb_event_registration_box( int $event_id ): void {
 
     $confirmed_count = count( array_filter( $registered_teams, fn( $t ) => $t['confirmed'] ?? false ) );
 
-    $fee_fmt  = number_format( $fee, 2 );
-    $eid      = (int) $event_id;
+    $fee_fmt     = number_format( $fee, 2 );
+    $eid         = (int) $event_id;
+    $h_ids       = fmdb_hospedaje_product_ids();
+    $h_doble_id  = $h_ids['doble']  ?? 0;
+    $h_triple_id = $h_ids['triple'] ?? 0;
     ?>
     <div class="fmdb-evento-single__meta-card fmdb-reg-box">
         <h3 class="fmdb-evento-single__meta-title">Inscripción al torneo</h3>
@@ -463,6 +466,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                         data-target="fmdb-form-ind-<?php echo $eid; ?>">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
                     Individual
+                </button>
+                <button type="button" class="fmdb-reg-tab" data-target="fmdb-form-hospedaje-<?php echo $eid; ?>">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Hospedaje
                 </button>
             </div>
 
@@ -660,6 +667,39 @@ function fmdb_event_registration_box( int $event_id ): void {
                 </button>
             </form>
 
+            <!-- ── HOSPEDAJE-ONLY FORM ── -->
+            <form method="post" class="fmdb-reg-form fmdb-reg-form--hidden"
+                  id="fmdb-form-hospedaje-<?php echo $eid; ?>">
+                <input type="hidden" name="add-to-cart"         id="fmdb-hospedaje-pid-<?php echo $eid; ?>" value="">
+                <input type="hidden" name="fmdb_hospedaje_only" value="1">
+
+                <div class="fmdb-reg-form__section-title">Selecciona tu habitación</div>
+                <p class="fmdb-reg-form__hint fmdb-reg-hospedaje__desc">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
+
+                <div class="fmdb-reg-hospedaje">
+                    <label class="fmdb-reg-hospedaje__option">
+                        <input type="radio" name="fmdb_hospedaje_room" value="doble">
+                        <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
+                        <span class="fmdb-reg-hospedaje__price">$1,415 MXN</span>
+                    </label>
+                    <label class="fmdb-reg-hospedaje__option">
+                        <input type="radio" name="fmdb_hospedaje_room" value="triple">
+                        <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
+                        <span class="fmdb-reg-hospedaje__price">$1,355 MXN</span>
+                    </label>
+                </div>
+
+                <div class="fmdb-reg-fee-preview" id="fmdb-fee-h-<?php echo $eid; ?>">
+                    <span class="fmdb-reg-fee-preview__label">Total</span>
+                    <span class="fmdb-reg-fee-preview__amount" id="fmdb-fee-h-amt-<?php echo $eid; ?>">—</span>
+                </div>
+
+                <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn"
+                        id="fmdb-hospedaje-submit-<?php echo $eid; ?>" disabled>
+                    Agregar hospedaje →
+                </button>
+            </form>
+
             <script>
             (function () {
                 var eid  = <?php echo $eid; ?>;
@@ -672,7 +712,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                         tabs.forEach(function (b) { b.classList.remove('is-active'); });
                         btn.classList.add('is-active');
                         var target = btn.dataset.target;
-                        ['fmdb-form-team-' + eid, 'fmdb-form-ind-' + eid].forEach(function (id) {
+                        ['fmdb-form-team-' + eid, 'fmdb-form-ind-' + eid, 'fmdb-form-hospedaje-' + eid].forEach(function (id) {
                             var el = document.getElementById(id);
                             if (el) el.classList.toggle('fmdb-reg-form--hidden', id !== target);
                         });
@@ -723,6 +763,25 @@ function fmdb_event_registration_box( int $event_id ): void {
                     }
                     indForm.querySelectorAll('input[name="fmdb_hospedaje"]').forEach(function (r) {
                         r.addEventListener('change', updateIndFee);
+                    });
+                }
+
+                // Hospedaje-only form
+                var hospedajeOnlyForm  = document.getElementById('fmdb-form-hospedaje-' + eid);
+                var hospedajeSubmitBtn = document.getElementById('fmdb-hospedaje-submit-' + eid);
+                var hospedajePidInput  = document.getElementById('fmdb-hospedaje-pid-' + eid);
+                var hospedajeFeeBox    = document.getElementById('fmdb-fee-h-' + eid);
+                var hospedajeFeeAmt    = document.getElementById('fmdb-fee-h-amt-' + eid);
+                var hospedajeProductIds = { 'doble': <?php echo $h_doble_id; ?>, 'triple': <?php echo $h_triple_id; ?> };
+
+                if (hospedajeOnlyForm) {
+                    hospedajeOnlyForm.querySelectorAll('input[name="fmdb_hospedaje_room"]').forEach(function (r) {
+                        r.addEventListener('change', function () {
+                            if (hospedajePidInput) hospedajePidInput.value = hospedajeProductIds[r.value] || '';
+                            if (hospedajeFeeAmt)   hospedajeFeeAmt.textContent = fmtMXN(hospedajePrices[r.value] || 0);
+                            if (hospedajeFeeBox)   hospedajeFeeBox.classList.add('is-visible');
+                            if (hospedajeSubmitBtn) hospedajeSubmitBtn.disabled = false;
+                        });
                     });
                 }
 
@@ -1100,6 +1159,15 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
 /* ─── 5. Capture team/division data in cart item ───────────────────────── */
 
 add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $product_id ) {
+    // Hospedaje-only: tag so the display filters can identify it.
+    if ( ! empty( $_POST['fmdb_hospedaje_only'] ) ) {
+        $room = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
+        if ( in_array( $room, [ 'doble', 'triple' ], true ) ) {
+            $cart_item_data['fmdb_hospedaje_type'] = $room;
+        }
+        return $cart_item_data;
+    }
+
     $event_id = (int) get_post_meta( $product_id, '_fmdb_reg_event_id', true );
     if ( ! $event_id ) return $cart_item_data;
 
@@ -1295,6 +1363,12 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
 add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
     if ( wc_notice_count( 'error' ) > 0 ) return $url;
     if ( ! isset( $_REQUEST['add-to-cart'] ) ) return $url;
+
+    // Hospedaje-only purchase → skip straight to checkout.
+    if ( ! empty( $_REQUEST['fmdb_hospedaje_only'] ) ) {
+        return wc_get_checkout_url();
+    }
+
     $pid = absint( $_REQUEST['add-to-cart'] );
     if ( ! get_post_meta( $pid, '_fmdb_reg_event_id', true ) ) return $url;
 
