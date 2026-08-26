@@ -72,6 +72,18 @@ add_action( 'cmb2_init', function () {
         'type'    => 'multicheck',
         'options' => [ 'Foam' => 'Foam', 'Cloth' => 'Cloth' ],
     ] );
+    $cmb->add_field( [
+        'name'       => __( 'Hospedaje – Habitación Doble (MXN)', 'fmdb' ),
+        'id'         => '_fmdb_hospedaje_doble_fee',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '1415' ],
+    ] );
+    $cmb->add_field( [
+        'name'       => __( 'Hospedaje – Habitación Triple (MXN)', 'fmdb' ),
+        'id'         => '_fmdb_hospedaje_triple_fee',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '1355' ],
+    ] );
 } );
 
 /* ─── 2. Sync WC product on event save ────────────────────────────────── */
@@ -292,7 +304,10 @@ function fmdb_hospedaje_product_ids(): array {
     return $cache = $ids;
 }
 
-function fmdb_hospedaje_form_section(): void { ?>
+function fmdb_hospedaje_form_section( float $price_doble = 1415.0, float $price_triple = 1355.0 ): void {
+    $fmt_d = '$' . number_format( $price_doble,  0, '.', ',' ) . ' MXN';
+    $fmt_t = '$' . number_format( $price_triple, 0, '.', ',' ) . ' MXN';
+    ?>
 <div class="fmdb-reg-form__section-title">Hospedaje <span class="fmdb-reg-form__range">(opcional)</span></div>
 <p class="fmdb-reg-form__hint fmdb-reg-hospedaje__desc">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
 <div class="fmdb-reg-hospedaje">
@@ -303,12 +318,12 @@ function fmdb_hospedaje_form_section(): void { ?>
     <label class="fmdb-reg-hospedaje__option">
         <input type="radio" name="fmdb_hospedaje" value="doble">
         <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
-        <span class="fmdb-reg-hospedaje__price">$1,415 MXN</span>
+        <span class="fmdb-reg-hospedaje__price"><?php echo esc_html( $fmt_d ); ?></span>
     </label>
     <label class="fmdb-reg-hospedaje__option">
         <input type="radio" name="fmdb_hospedaje" value="triple">
         <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
-        <span class="fmdb-reg-hospedaje__price">$1,355 MXN</span>
+        <span class="fmdb-reg-hospedaje__price"><?php echo esc_html( $fmt_t ); ?></span>
     </label>
 </div>
 <?php }
@@ -416,6 +431,14 @@ function fmdb_event_registration_box( int $event_id ): void {
     $h_ids       = fmdb_hospedaje_product_ids();
     $h_doble_id  = $h_ids['doble']  ?? 0;
     $h_triple_id = $h_ids['triple'] ?? 0;
+
+    // Hospedaje prices: event meta overrides WC product price, which overrides the default.
+    $h_doble_prod   = $h_doble_id  ? wc_get_product( $h_doble_id )  : null;
+    $h_triple_prod  = $h_triple_id ? wc_get_product( $h_triple_id ) : null;
+    $h_price_doble  = (float) get_post_meta( $event_id, '_fmdb_hospedaje_doble_fee',  true )
+                      ?: ( $h_doble_prod  ? (float) $h_doble_prod->get_regular_price()  : 1415.0 );
+    $h_price_triple = (float) get_post_meta( $event_id, '_fmdb_hospedaje_triple_fee', true )
+                      ?: ( $h_triple_prod ? (float) $h_triple_prod->get_regular_price() : 1355.0 );
     ?>
     <div class="fmdb-evento-single__meta-card fmdb-reg-box">
         <h3 class="fmdb-evento-single__meta-title">Inscripción al torneo</h3>
@@ -555,7 +578,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <span class="fmdb-reg-form__hint">El coach no cuenta como jugador.</span>
                 </div>
 
-                <?php fmdb_hospedaje_form_section(); ?>
+                <?php fmdb_hospedaje_form_section( $h_price_doble, $h_price_triple ); ?>
 
                 <div class="fmdb-reg-fee-preview" id="fmdb-fee-team-<?php echo $eid; ?>">
                     <span class="fmdb-reg-fee-preview__label">Total estimado</span>
@@ -655,7 +678,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 </div>
                 <?php endif; ?>
 
-                <?php fmdb_hospedaje_form_section(); ?>
+                <?php fmdb_hospedaje_form_section( $h_price_doble, $h_price_triple ); ?>
 
                 <div class="fmdb-reg-fee-preview is-visible" id="fmdb-fee-ind-<?php echo $eid; ?>">
                     <span class="fmdb-reg-fee-preview__label">Total</span>
@@ -670,8 +693,9 @@ function fmdb_event_registration_box( int $event_id ): void {
             <!-- ── HOSPEDAJE-ONLY FORM ── -->
             <form method="post" class="fmdb-reg-form fmdb-reg-form--hidden"
                   id="fmdb-form-hospedaje-<?php echo $eid; ?>">
-                <input type="hidden" name="add-to-cart"         id="fmdb-hospedaje-pid-<?php echo $eid; ?>" value="">
-                <input type="hidden" name="fmdb_hospedaje_only" value="1">
+                <input type="hidden" name="add-to-cart"              id="fmdb-hospedaje-pid-<?php echo $eid; ?>" value="">
+                <input type="hidden" name="fmdb_hospedaje_only"      value="1">
+                <input type="hidden" name="fmdb_hospedaje_event_id"  value="<?php echo $eid; ?>">
 
                 <div class="fmdb-reg-form__section-title">Selecciona tu habitación</div>
                 <p class="fmdb-reg-form__hint fmdb-reg-hospedaje__desc">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
@@ -680,12 +704,12 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <label class="fmdb-reg-hospedaje__option">
                         <input type="radio" name="fmdb_hospedaje_room" value="doble">
                         <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
-                        <span class="fmdb-reg-hospedaje__price">$1,415 MXN</span>
+                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_doble,  0, '.', ',' ) ); ?> MXN</span>
                     </label>
                     <label class="fmdb-reg-hospedaje__option">
                         <input type="radio" name="fmdb_hospedaje_room" value="triple">
                         <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
-                        <span class="fmdb-reg-hospedaje__price">$1,355 MXN</span>
+                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_triple, 0, '.', ',' ) ); ?> MXN</span>
                     </label>
                 </div>
 
@@ -719,7 +743,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                     });
                 });
 
-                var hospedajePrices = { '': 0, 'doble': 1415, 'triple': 1355 };
+                var hospedajePrices = { '': 0, 'doble': <?php echo (float) $h_price_doble; ?>, 'triple': <?php echo (float) $h_price_triple; ?> };
 
                 function getHospedajePrice(form) {
                     var radio = form && form.querySelector('input[name="fmdb_hospedaje"]:checked');
@@ -1159,11 +1183,16 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
 /* ─── 5. Capture team/division data in cart item ───────────────────────── */
 
 add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $product_id ) {
-    // Hospedaje-only: tag so the display filters can identify it.
+    // Hospedaje-only: tag item and capture event-specific price for override.
     if ( ! empty( $_POST['fmdb_hospedaje_only'] ) ) {
         $room = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
         if ( in_array( $room, [ 'doble', 'triple' ], true ) ) {
             $cart_item_data['fmdb_hospedaje_type'] = $room;
+            $h_eid     = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
+            $h_meta_k  = $room === 'doble' ? '_fmdb_hospedaje_doble_fee' : '_fmdb_hospedaje_triple_fee';
+            $h_default = $room === 'doble' ? 1415.0 : 1355.0;
+            $h_price   = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta_k, true ) ?: $h_default ) : $h_default;
+            $cart_item_data['fmdb_hospedaje_price'] = $h_price;
         }
         return $cart_item_data;
     }
@@ -1223,6 +1252,10 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
 add_action( 'woocommerce_before_calculate_totals', function ( $cart ) {
     if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
     foreach ( $cart->get_cart() as $item ) {
+        if ( ! empty( $item['fmdb_hospedaje_price'] ) ) {
+            $item['data']->set_price( (float) $item['fmdb_hospedaje_price'] );
+            continue;
+        }
         if ( empty( $item['fmdb_event_id'] ) || empty( $item['fmdb_unit_fee'] ) ) continue;
         $count = max( 1, (int) $item['fmdb_player_count'] );
         $item['data']->set_price( (float) $item['fmdb_unit_fee'] * $count );
@@ -1374,10 +1407,17 @@ add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
 
     $hospedaje = sanitize_text_field( $_REQUEST['fmdb_hospedaje'] ?? '' );
     if ( in_array( $hospedaje, [ 'doble', 'triple' ], true ) ) {
-        $h_ids = fmdb_hospedaje_product_ids();
-        $h_pid = $h_ids[ $hospedaje ] ?? 0;
+        $h_ids   = fmdb_hospedaje_product_ids();
+        $h_pid   = $h_ids[ $hospedaje ] ?? 0;
+        $h_eid   = (int) get_post_meta( $pid, '_fmdb_reg_event_id', true );
+        $h_meta  = $hospedaje === 'doble' ? '_fmdb_hospedaje_doble_fee' : '_fmdb_hospedaje_triple_fee';
+        $h_def   = $hospedaje === 'doble' ? 1415.0 : 1355.0;
+        $h_price = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta, true ) ?: $h_def ) : $h_def;
         if ( $h_pid ) {
-            WC()->cart->add_to_cart( $h_pid, 1, 0, [], [ 'fmdb_hospedaje_type' => $hospedaje ] );
+            WC()->cart->add_to_cart( $h_pid, 1, 0, [], [
+                'fmdb_hospedaje_type'  => $hospedaje,
+                'fmdb_hospedaje_price' => $h_price,
+            ] );
         }
     }
 
