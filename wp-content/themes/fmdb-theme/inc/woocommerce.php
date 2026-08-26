@@ -382,6 +382,7 @@ add_action( 'woocommerce_single_product_summary', function () {
 add_filter( 'woocommerce_email_heading_customer_processing_order', fn() => '¡Gracias por tu pedido!' );
 add_filter( 'woocommerce_email_heading_customer_completed_order',  fn() => 'Tu pedido está completo' );
 add_filter( 'woocommerce_email_heading_customer_on_hold_order',    fn() => '¡Gracias por tu pedido!' );
+add_filter( 'woocommerce_email_heading_customer_failed_order',     fn() => 'Tu pedido no se pudo completar' );
 add_filter( 'woocommerce_email_heading_customer_cancelled_order',  fn() => 'Tu pedido fue cancelado' );
 add_filter( 'woocommerce_email_heading_customer_refunded_order',   fn() => 'Tu pedido fue reembolsado' );
 add_filter( 'woocommerce_email_heading_new_order',                 fn() => 'Nuevo pedido' );
@@ -394,6 +395,8 @@ add_filter( 'woocommerce_email_subject_customer_completed_order',  fn( $s, $orde
     'Tu pedido #' . $order->get_order_number() . ' está completo', 10, 2 );
 add_filter( 'woocommerce_email_subject_customer_on_hold_order',    fn( $s, $order ) =>
     'Tu pedido #' . $order->get_order_number() . ' está en espera', 10, 2 );
+add_filter( 'woocommerce_email_subject_customer_failed_order',     fn( $s, $order ) =>
+    'Tu pedido #' . $order->get_order_number() . ' no se pudo completar', 10, 2 );
 add_filter( 'woocommerce_email_subject_customer_cancelled_order',  fn( $s, $order ) =>
     'Tu pedido #' . $order->get_order_number() . ' fue cancelado', 10, 2 );
 add_filter( 'woocommerce_email_subject_customer_refunded_order',   fn( $s, $order ) =>
