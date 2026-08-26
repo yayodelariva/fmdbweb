@@ -548,12 +548,12 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <span class="fmdb-reg-form__hint">El coach no cuenta como jugador.</span>
                 </div>
 
+                <?php fmdb_hospedaje_form_section(); ?>
+
                 <div class="fmdb-reg-fee-preview" id="fmdb-fee-team-<?php echo $eid; ?>">
                     <span class="fmdb-reg-fee-preview__label">Total estimado</span>
                     <span class="fmdb-reg-fee-preview__amount" id="fmdb-fee-team-amt-<?php echo $eid; ?>">—</span>
                 </div>
-
-                <?php fmdb_hospedaje_form_section(); ?>
 
                 <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn">
                     Inscribir equipo →
@@ -648,12 +648,12 @@ function fmdb_event_registration_box( int $event_id ): void {
                 </div>
                 <?php endif; ?>
 
-                <div class="fmdb-reg-fee-preview is-visible" style="margin-top:14px;">
-                    <span class="fmdb-reg-fee-preview__label">Total</span>
-                    <span class="fmdb-reg-fee-preview__amount">$<?php echo esc_html( $fee_fmt ); ?> MXN</span>
-                </div>
-
                 <?php fmdb_hospedaje_form_section(); ?>
+
+                <div class="fmdb-reg-fee-preview is-visible" id="fmdb-fee-ind-<?php echo $eid; ?>">
+                    <span class="fmdb-reg-fee-preview__label">Total</span>
+                    <span class="fmdb-reg-fee-preview__amount" id="fmdb-fee-ind-amt-<?php echo $eid; ?>">$<?php echo esc_html( $fee_fmt ); ?> MXN</span>
+                </div>
 
                 <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn">
                     Registrarme →
@@ -679,7 +679,19 @@ function fmdb_event_registration_box( int $event_id ): void {
                     });
                 });
 
+                var hospedajePrices = { '': 0, 'doble': 1415, 'triple': 1355 };
+
+                function getHospedajePrice(form) {
+                    var radio = form && form.querySelector('input[name="fmdb_hospedaje"]:checked');
+                    return radio ? (hospedajePrices[radio.value] || 0) : 0;
+                }
+
+                function fmtMXN(amount) {
+                    return '$' + amount.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' MXN';
+                }
+
                 // Team fee preview
+                var teamForm   = document.getElementById('fmdb-form-team-' + eid);
                 var countInput = document.getElementById('fmdb-count-' + eid);
                 var feeBox     = document.getElementById('fmdb-fee-team-' + eid);
                 var feeAmt     = document.getElementById('fmdb-fee-team-amt-' + eid);
@@ -687,14 +699,31 @@ function fmdb_event_registration_box( int $event_id ): void {
                     function updateFee() {
                         var n = parseInt(countInput.value, 10);
                         if (n >= 1 && n <= 9) {
-                            feeAmt.textContent = '$' + (fee * n).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' MXN';
+                            feeAmt.textContent = fmtMXN(fee * n + getHospedajePrice(teamForm));
                             feeBox.classList.add('is-visible');
                         } else {
                             feeBox.classList.remove('is-visible');
                         }
                     }
                     countInput.addEventListener('input', updateFee);
+                    if (teamForm) {
+                        teamForm.querySelectorAll('input[name="fmdb_hospedaje"]').forEach(function (r) {
+                            r.addEventListener('change', updateFee);
+                        });
+                    }
                     updateFee();
+                }
+
+                // Individual fee preview
+                var indForm    = document.getElementById('fmdb-form-ind-' + eid);
+                var indFeeAmt  = document.getElementById('fmdb-fee-ind-amt-' + eid);
+                if (indForm && indFeeAmt) {
+                    function updateIndFee() {
+                        indFeeAmt.textContent = fmtMXN(fee + getHospedajePrice(indForm));
+                    }
+                    indForm.querySelectorAll('input[name="fmdb_hospedaje"]').forEach(function (r) {
+                        r.addEventListener('change', updateIndFee);
+                    });
                 }
 
                 // Individual tab: registered team select → division card
