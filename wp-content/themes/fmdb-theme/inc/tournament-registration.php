@@ -257,6 +257,62 @@ function fmdb_reg_slot_team_count( int $event_id, string $rama, string $modalida
     return (int) apply_filters( 'fmdb_reg_slot_team_count', $count, $event_id, $rama, $modalidad, $categoria );
 }
 
+/* ─── 3d. Hospedaje add-on products ───────────────────────────────────── */
+
+function fmdb_hospedaje_product_ids(): array {
+    static $cache = null;
+    if ( $cache !== null ) return $cache;
+    if ( ! class_exists( 'WC_Product_Simple' ) ) return $cache = [];
+
+    $inclusions = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)';
+
+    $defs = [
+        'doble'  => [ 'name' => 'Hospedaje – Habitación Doble',  'price' => '1415', 'opt' => 'fmdb_hospedaje_doble_id'  ],
+        'triple' => [ 'name' => 'Hospedaje – Habitación Triple', 'price' => '1355', 'opt' => 'fmdb_hospedaje_triple_id' ],
+    ];
+
+    $ids = [];
+    foreach ( $defs as $key => $d ) {
+        $pid = (int) get_option( $d['opt'] );
+        if ( ! $pid || ! wc_get_product( $pid ) ) {
+            $p = new WC_Product_Simple();
+            $p->set_name( $d['name'] );
+            $p->set_short_description( $inclusions );
+            $p->set_regular_price( $d['price'] );
+            $p->set_virtual( true );
+            $p->set_catalog_visibility( 'hidden' );
+            $p->set_status( 'publish' );
+            $p->save();
+            update_option( $d['opt'], $p->get_id() );
+            $pid = $p->get_id();
+        }
+        $ids[ $key ] = $pid;
+    }
+
+    return $cache = $ids;
+}
+
+function fmdb_hospedaje_form_section(): void { ?>
+<div class="fmdb-reg-form__section-title">Hospedaje <span class="fmdb-reg-form__range">(opcional)</span></div>
+<p class="fmdb-reg-form__hint fmdb-reg-hospedaje__desc">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
+<div class="fmdb-reg-hospedaje">
+    <label class="fmdb-reg-hospedaje__option">
+        <input type="radio" name="fmdb_hospedaje" value="" checked>
+        <span class="fmdb-reg-hospedaje__label">Sin hospedaje</span>
+    </label>
+    <label class="fmdb-reg-hospedaje__option">
+        <input type="radio" name="fmdb_hospedaje" value="doble">
+        <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
+        <span class="fmdb-reg-hospedaje__price">$1,415 MXN</span>
+    </label>
+    <label class="fmdb-reg-hospedaje__option">
+        <input type="radio" name="fmdb_hospedaje" value="triple">
+        <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
+        <span class="fmdb-reg-hospedaje__price">$1,355 MXN</span>
+    </label>
+</div>
+<?php }
+
 /* ─── 4. Frontend: registration card ──────────────────────────────────── */
 
 function fmdb_event_registration_box( int $event_id ): void {
@@ -497,6 +553,8 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <span class="fmdb-reg-fee-preview__amount" id="fmdb-fee-team-amt-<?php echo $eid; ?>">—</span>
                 </div>
 
+                <?php fmdb_hospedaje_form_section(); ?>
+
                 <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn">
                     Inscribir equipo →
                 </button>
@@ -594,6 +652,8 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <span class="fmdb-reg-fee-preview__label">Total</span>
                     <span class="fmdb-reg-fee-preview__amount">$<?php echo esc_html( $fee_fmt ); ?> MXN</span>
                 </div>
+
+                <?php fmdb_hospedaje_form_section(); ?>
 
                 <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn">
                     Registrarme →
@@ -1207,10 +1267,18 @@ add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
     if ( wc_notice_count( 'error' ) > 0 ) return $url;
     if ( ! isset( $_REQUEST['add-to-cart'] ) ) return $url;
     $pid = absint( $_REQUEST['add-to-cart'] );
-    if ( get_post_meta( $pid, '_fmdb_reg_event_id', true ) ) {
-        return wc_get_checkout_url();
+    if ( ! get_post_meta( $pid, '_fmdb_reg_event_id', true ) ) return $url;
+
+    $hospedaje = sanitize_text_field( $_REQUEST['fmdb_hospedaje'] ?? '' );
+    if ( in_array( $hospedaje, [ 'doble', 'triple' ], true ) ) {
+        $h_ids = fmdb_hospedaje_product_ids();
+        $h_pid = $h_ids[ $hospedaje ] ?? 0;
+        if ( $h_pid ) {
+            WC()->cart->add_to_cart( $h_pid, 1, 0, [], [ 'fmdb_hospedaje_type' => $hospedaje ] );
+        }
     }
-    return $url;
+
+    return wc_get_checkout_url();
 } );
 
 // Hard gate: if WC error notices are present when landing on checkout,
@@ -1260,7 +1328,23 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
     }
 }, 10, 4 );
 
-/* ─── 11. Bank transfer instructions on order confirmation ─────────────── */
+/* ─── 11. Hospedaje: cart display + order meta ──────────────────────────── */
+
+add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
+    if ( empty( $cart_item['fmdb_hospedaje_type'] ) ) return $data;
+    $label = $cart_item['fmdb_hospedaje_type'] === 'doble' ? 'Habitación Doble' : 'Habitación Triple';
+    $data[] = [ 'name' => 'Habitación', 'value' => $label ];
+    $data[] = [ 'name' => 'Incluye',    'value' => '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)' ];
+    return $data;
+}, 10, 2 );
+
+add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $cart_item_key, $values, $order ) {
+    if ( empty( $values['fmdb_hospedaje_type'] ) ) return;
+    $item->add_meta_data( 'Habitación', $values['fmdb_hospedaje_type'] === 'doble' ? 'Doble' : 'Triple' );
+    $item->add_meta_data( 'Incluye',    '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)' );
+}, 10, 4 );
+
+/* ─── 12. Bank transfer instructions on order confirmation ─────────────── */
 
 add_action( 'woocommerce_thankyou', function ( $order_id ) {
     $order = wc_get_order( $order_id );

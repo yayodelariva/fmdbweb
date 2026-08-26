@@ -841,6 +841,25 @@
     color: var(--fmdb-green);
 }
 
+/* === Hospedaje add-on === */
+.fmdb-reg-hospedaje__desc { margin: -4px 0 10px !important; }
+.fmdb-reg-hospedaje { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.fmdb-reg-hospedaje__option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--fmdb-neutral);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+.fmdb-reg-hospedaje__option:has(input:checked) {
+    border-color: var(--fmdb-green);
+    background: color-mix(in srgb, var(--fmdb-green) 8%, transparent);
+}
+.fmdb-reg-hospedaje__option input[type="radio"] { accent-color: var(--fmdb-green); flex-shrink: 0; }
+.fmdb-reg-hospedaje__label { flex: 1; font-size: 0.88rem; font-weight: 500; }
+.fmdb-reg-hospedaje__price { font-size: 0.82rem; font-weight: 700; color: var(--fmdb-green); white-space: nowrap; }
+
 /* === Bank transfer / order confirmation === */
 .fmdb-reg-thankyou {
     background: #f0f8f5;
