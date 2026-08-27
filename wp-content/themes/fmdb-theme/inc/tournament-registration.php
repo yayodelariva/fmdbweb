@@ -1508,6 +1508,10 @@ add_action( 'wp_loaded', function () {
         'fmdb_hospedaje_event_id' => $h_eid,
     ] );
 
+    // Persist session now — wp shutdown never fires after exit.
+    WC()->cart->maybe_set_cart_cookies();
+    WC()->session->save_data();
+
     // Prevent WC's add_to_cart_action (priority 20) from re-processing this.
     unset( $_GET['add-to-cart'], $_POST['add-to-cart'], $_REQUEST['add-to-cart'] );
 
