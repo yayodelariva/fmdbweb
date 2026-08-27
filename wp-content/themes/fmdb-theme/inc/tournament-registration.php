@@ -1485,13 +1485,14 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
 /* ─── 9. Redirect to checkout after adding registration product ────────── */
 
 add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
-    if ( wc_notice_count( 'error' ) > 0 ) return $url;
-    if ( ! isset( $_REQUEST['add-to-cart'] ) ) return $url;
-
-    // Hospedaje-only purchase → skip straight to checkout.
-    if ( ! empty( $_REQUEST['fmdb_hospedaje_only'] ) ) {
+    // Hospedaje-only: check BEFORE the error gate so WC's cart-page default is never used.
+    // Uses $_POST directly — fmdb_hospedaje_only is always a POST field, never a query param.
+    if ( ! empty( $_POST['fmdb_hospedaje_only'] ) ) {
         return wc_get_checkout_url();
     }
+
+    if ( wc_notice_count( 'error' ) > 0 ) return $url;
+    if ( ! isset( $_REQUEST['add-to-cart'] ) ) return $url;
 
     $pid = absint( $_REQUEST['add-to-cart'] );
     if ( ! get_post_meta( $pid, '_fmdb_reg_event_id', true ) ) return $url;
