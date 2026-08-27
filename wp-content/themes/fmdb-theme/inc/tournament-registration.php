@@ -1546,6 +1546,13 @@ function fmdb_ajax_add_hospedaje(): void {
     $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
     $max     = $h_eid ? (int) get_post_meta( $h_eid, $max_key, true ) : 0;
 
+    // Prevent adding hospedaje twice for the same event.
+    foreach ( WC()->cart->get_cart() as $_item ) {
+        if ( ! empty( $_item['fmdb_hospedaje_event_id'] ) && (int) $_item['fmdb_hospedaje_event_id'] === $h_eid ) {
+            wp_send_json_error( [ 'message' => 'Ya tienes hospedaje en tu carrito para este evento.' ] );
+        }
+    }
+
     if ( $max > 0 && fmdb_hospedaje_sold_count( $h_eid, $room ) >= $max ) {
         wp_send_json_error( [ 'message' => 'Lo sentimos, ya no hay disponibilidad para esa habitación.' ] );
     }
@@ -1567,7 +1574,61 @@ function fmdb_ajax_add_hospedaje(): void {
     wp_send_json_success( [ 'checkout_url' => wc_get_checkout_url() ] );
 }
 
-/* ─── 9b. Redirect to checkout after adding registration or hospedaje product ── */
+/* ─── 9b. Hard capacity gate at order creation ─────────────────────────────
+ *
+ * Fires for both classic and Blocks checkout, after the order row exists but
+ * before payment is processed. We sort all valid orders for this event+room
+ * by order ID (auto-increment = DB creation order) and cancel any that fall
+ * outside the allowed count. This is deterministic and race-safe without
+ * needing DB locks: the order with the lower ID always wins.
+ */
+add_action( 'woocommerce_checkout_order_created', function ( \WC_Order $order ) {
+    foreach ( $order->get_items() as $item ) {
+        $label = $item->get_meta( 'Habitación' );
+        if ( ! $label ) continue;
+
+        $room  = $label === 'Doble' ? 'doble' : 'triple';
+        $h_eid = (int) $order->get_meta( '_fmdb_hospedaje_event_id' )
+              ?: (int) $order->get_meta( '_fmdb_reg_event_id' );
+        if ( ! $h_eid ) continue;
+
+        $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
+        $max     = (int) get_post_meta( $h_eid, $max_key, true );
+        if ( $max <= 0 ) continue;
+
+        // Collect all order IDs for this event+room (pending/on-hold/processing/completed).
+        $all_orders = wc_get_orders( [
+            'limit'      => -1,
+            'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+            'meta_query' => [
+                'relation' => 'OR',
+                [ 'key' => '_fmdb_reg_event_id',       'value' => $h_eid, 'compare' => '=' ],
+                [ 'key' => '_fmdb_hospedaje_event_id', 'value' => $h_eid, 'compare' => '=' ],
+            ],
+        ] );
+
+        $matching_ids = [];
+        foreach ( $all_orders as $o ) {
+            foreach ( $o->get_items() as $it ) {
+                if ( $it->get_meta( 'Habitación' ) === $label ) {
+                    $matching_ids[] = $o->get_id();
+                    break;
+                }
+            }
+        }
+        sort( $matching_ids ); // ascending = DB creation order
+        $allowed_ids = array_slice( $matching_ids, 0, $max );
+
+        if ( ! in_array( $order->get_id(), $allowed_ids, true ) ) {
+            $order->update_status( 'cancelled', 'Sin disponibilidad de hospedaje al momento del pago.' );
+            $order->save();
+            // Exception is caught by both classic WC checkout and WC Blocks REST handler.
+            throw new \Exception( 'Lo sentimos, ya no hay disponibilidad para la habitación seleccionada. Tu pedido ha sido cancelado.' );
+        }
+    }
+} );
+
+/* ─── 9c. Redirect to checkout after adding a registration product (classic WC) ── */
 
 add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
     if ( wc_notice_count( 'error' ) > 0 ) return $url;
