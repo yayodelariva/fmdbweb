@@ -102,6 +102,24 @@ add_action( 'cmb2_init', function () {
 
 /* ─── 2. Sync WC product on event save ────────────────────────────────── */
 
+// Explicitly save hospedaje capacity fields from $_POST — CMB2 saves at priority 10
+// but TEC's edit flow sometimes bypasses the CMB2 nonce check for these fields.
+add_action( 'save_post_tribe_events', function ( $post_id ) {
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+    if ( wp_is_post_revision( $post_id ) ) return;
+    if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+
+    foreach ( [ '_fmdb_hospedaje_doble_max', '_fmdb_hospedaje_triple_max' ] as $key ) {
+        if ( ! isset( $_POST[ $key ] ) ) continue;
+        $val = absint( $_POST[ $key ] );
+        if ( $val > 0 ) {
+            update_post_meta( $post_id, $key, $val );
+        } else {
+            delete_post_meta( $post_id, $key );
+        }
+    }
+}, 20 );
+
 add_action( 'save_post_tribe_events', function ( $post_id ) {
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
     if ( wp_is_post_revision( $post_id ) ) return;
