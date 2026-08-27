@@ -386,7 +386,7 @@ add_filter( 'woocommerce_email_heading_customer_failed_order',     fn() => 'Tu p
 add_filter( 'woocommerce_email_heading_customer_cancelled_order',  fn() => 'Tu pedido fue cancelado' );
 add_filter( 'woocommerce_email_heading_customer_refunded_order',   fn() => 'Tu pedido fue reembolsado' );
 add_filter( 'woocommerce_email_heading_new_order',                 fn() => 'Nuevo pedido' );
-add_filter( 'woocommerce_email_heading_customer_new_account',      fn() => 'Bienvenido/a a {site_title}' );
+add_filter( 'woocommerce_email_heading_customer_new_account',      fn() => 'Bienvenido/a a ' . get_bloginfo( 'name' ) );
 add_filter( 'woocommerce_email_heading_customer_reset_password',   fn() => 'Restablecimiento de contraseña' );
 
 add_filter( 'woocommerce_email_subject_customer_processing_order', fn( $s, $order ) =>
