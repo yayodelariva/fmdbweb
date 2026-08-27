@@ -1778,24 +1778,24 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
 
     $type = $values['fmdb_reg_type'] ?? 'team';
 
-    $item->add_meta_data( 'Evento',    get_the_title( $values['fmdb_event_id'] ) );
-    $item->add_meta_data( 'Equipo',    $values['fmdb_team_name'] ?? '' );
-    $item->add_meta_data( 'Rama',      $values['fmdb_rama'] ?? '' );
-    $item->add_meta_data( 'Categoría', $values['fmdb_categoria'] ?? '' );
-    $item->add_meta_data( 'Modalidad', $values['fmdb_modalidad'] ?? '' );
-    $item->add_meta_data( 'Tipo',      $type === 'individual' ? 'Individual' : 'Equipo' );
+    $item->update_meta_data( 'Evento',    get_the_title( $values['fmdb_event_id'] ) );
+    $item->update_meta_data( 'Equipo',    $values['fmdb_team_name'] ?? '' );
+    $item->update_meta_data( 'Rama',      $values['fmdb_rama'] ?? '' );
+    $item->update_meta_data( 'Categoría', $values['fmdb_categoria'] ?? '' );
+    $item->update_meta_data( 'Modalidad', $values['fmdb_modalidad'] ?? '' );
+    $item->update_meta_data( 'Tipo',      $type === 'individual' ? 'Individual' : 'Equipo' );
 
     if ( $type === 'individual' ) {
-        $item->add_meta_data( 'Jugador',   $values['fmdb_player_name'] ?? '' );
+        $item->update_meta_data( 'Jugador',   $values['fmdb_player_name'] ?? '' );
         if ( ! empty( $values['fmdb_player_phone'] ) ) {
-            $item->add_meta_data( 'Teléfono', $values['fmdb_player_phone'] );
+            $item->update_meta_data( 'Teléfono', $values['fmdb_player_phone'] );
         }
     } else {
-        $item->add_meta_data( 'Capitán',   $values['fmdb_captain_name'] ?? '' );
-        $item->add_meta_data( 'Teléfono',  $values['fmdb_captain_phone'] ?? '' );
-        $item->add_meta_data( 'Jugadores', $values['fmdb_player_count'] ?? 0 );
+        $item->update_meta_data( 'Capitán',   $values['fmdb_captain_name'] ?? '' );
+        $item->update_meta_data( 'Teléfono',  $values['fmdb_captain_phone'] ?? '' );
+        $item->update_meta_data( 'Jugadores', $values['fmdb_player_count'] ?? 0 );
         if ( ! empty( $values['fmdb_team_post_id'] ) ) {
-            $item->add_meta_data( '_fmdb_team_post_id', $values['fmdb_team_post_id'], true );
+            $item->update_meta_data( '_fmdb_team_post_id', $values['fmdb_team_post_id'] );
         }
     }
 
@@ -1819,8 +1819,8 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
 
 add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $cart_item_key, $values, $order ) {
     if ( empty( $values['fmdb_hospedaje_type'] ) ) return;
-    $item->add_meta_data( 'Habitación', $values['fmdb_hospedaje_type'] === 'doble' ? 'Doble' : 'Triple' );
-    $item->add_meta_data( 'Incluye',    '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)' );
+    $item->update_meta_data( 'Habitación', $values['fmdb_hospedaje_type'] === 'doble' ? 'Doble' : 'Triple' );
+    $item->update_meta_data( 'Incluye',    '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)' );
     if ( ! empty( $values['fmdb_hospedaje_event_id'] ) ) {
         $order->update_meta_data( '_fmdb_hospedaje_event_id', (int) $values['fmdb_hospedaje_event_id'] );
     }
