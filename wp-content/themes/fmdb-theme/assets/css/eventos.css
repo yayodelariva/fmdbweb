@@ -864,6 +864,7 @@
 .fmdb-reg-hospedaje__avail--soldout { background: color-mix(in srgb, currentColor 10%, transparent); color: var(--fmdb-neutral-fg, #888); }
 .fmdb-reg-hospedaje__option--soldout { opacity: 0.55; cursor: not-allowed; }
 .fmdb-reg-hospedaje__option--soldout input[type="radio"] { cursor: not-allowed; }
+.fmdb-hospedaje-ajax-error { font-size: 0.82rem; color: var(--fmdb-red, #c0392b); margin: 0 0 8px; }
 
 /* === Bank transfer / order confirmation === */
 .fmdb-reg-thankyou {

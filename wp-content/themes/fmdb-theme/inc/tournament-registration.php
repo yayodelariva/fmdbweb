@@ -752,11 +752,9 @@ function fmdb_event_registration_box( int $event_id ): void {
             </form>
 
             <!-- ── HOSPEDAJE-ONLY FORM ── -->
-            <form method="post" class="fmdb-reg-form fmdb-reg-form--hidden"
+            <form class="fmdb-reg-form fmdb-reg-form--hidden"
                   id="fmdb-form-hospedaje-<?php echo $eid; ?>">
-                <input type="hidden" name="add-to-cart"              id="fmdb-hospedaje-pid-<?php echo $eid; ?>" value="">
-                <input type="hidden" name="fmdb_hospedaje_only"      value="1">
-                <input type="hidden" name="fmdb_hospedaje_event_id"  value="<?php echo $eid; ?>">
+                <input type="hidden" name="fmdb_hospedaje_event_id" value="<?php echo $eid; ?>">
 
                 <div class="fmdb-reg-form__section-title">Selecciona tu habitación</div>
                 <p class="fmdb-reg-form__hint fmdb-reg-hospedaje__desc">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
@@ -801,8 +799,10 @@ function fmdb_event_registration_box( int $event_id ): void {
 
             <script>
             (function () {
-                var eid  = <?php echo $eid; ?>;
-                var fee  = <?php echo (float) $fee; ?>;
+                var eid              = <?php echo $eid; ?>;
+                var fee              = <?php echo (float) $fee; ?>;
+                var hospedajeAjaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+                var hospedajeNonce   = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_hospedaje' ) ); ?>';
 
                 // Tab switching
                 var tabs = document.querySelectorAll('#fmdb-reg-tabs-' + eid + ' .fmdb-reg-tab');
@@ -876,11 +876,49 @@ function fmdb_event_registration_box( int $event_id ): void {
                 if (hospedajeOnlyForm) {
                     hospedajeOnlyForm.querySelectorAll('input[name="fmdb_hospedaje_room"]').forEach(function (r) {
                         r.addEventListener('change', function () {
-                            if (hospedajePidInput) hospedajePidInput.value = hospedajeProductIds[r.value] || '';
-                            if (hospedajeFeeAmt)   hospedajeFeeAmt.textContent = fmtMXN(hospedajePrices[r.value] || 0);
-                            if (hospedajeFeeBox)   hospedajeFeeBox.classList.add('is-visible');
+                            if (hospedajeFeeAmt)    hospedajeFeeAmt.textContent = fmtMXN(hospedajePrices[r.value] || 0);
+                            if (hospedajeFeeBox)    hospedajeFeeBox.classList.add('is-visible');
                             if (hospedajeSubmitBtn) hospedajeSubmitBtn.disabled = false;
                         });
+                    });
+
+                    hospedajeOnlyForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        var room = hospedajeOnlyForm.querySelector('input[name="fmdb_hospedaje_room"]:checked');
+                        if (!room || !hospedajeSubmitBtn) return;
+
+                        var eventId  = hospedajeOnlyForm.querySelector('[name="fmdb_hospedaje_event_id"]').value;
+                        var origText = hospedajeSubmitBtn.textContent;
+                        hospedajeSubmitBtn.disabled  = true;
+                        hospedajeSubmitBtn.textContent = 'Procesando…';
+
+                        var errEl = hospedajeOnlyForm.querySelector('.fmdb-hospedaje-ajax-error');
+                        if (errEl) errEl.remove();
+
+                        var fd = new FormData();
+                        fd.append('action',                  'fmdb_add_hospedaje');
+                        fd.append('nonce',                   hospedajeNonce);
+                        fd.append('fmdb_hospedaje_room',     room.value);
+                        fd.append('fmdb_hospedaje_event_id', eventId);
+
+                        fetch(hospedajeAjaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                if (data.success) {
+                                    window.location.href = data.data.checkout_url;
+                                } else {
+                                    var msg = document.createElement('p');
+                                    msg.className = 'fmdb-hospedaje-ajax-error';
+                                    msg.textContent = (data.data && data.data.message) || 'Error al agregar. Intenta de nuevo.';
+                                    hospedajeSubmitBtn.insertAdjacentElement('beforebegin', msg);
+                                    hospedajeSubmitBtn.disabled   = false;
+                                    hospedajeSubmitBtn.textContent = origText;
+                                }
+                            })
+                            .catch(function () {
+                                hospedajeSubmitBtn.disabled   = false;
+                                hospedajeSubmitBtn.textContent = origText;
+                            });
                     });
                 }
 
@@ -1479,6 +1517,55 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
 
     return $passed;
 }, 10, 2 );
+
+/* ─── 9a. AJAX endpoint: hospedaje-only add-to-cart ───────────────────────
+ *
+ * Bluehost PHP has request_order=GP, so $_REQUEST never contains POST data.
+ * WC's add_to_cart_action() uses $_REQUEST and therefore never fires for our
+ * form POSTs. We bypass it entirely with a custom WP AJAX action. JS calls
+ * this, we add to cart here, and WC's PHP-shutdown hook saves the session
+ * normally before wp_die() returns the response. JS then redirects to checkout.
+ */
+add_action( 'wp_ajax_nopriv_fmdb_add_hospedaje', 'fmdb_ajax_add_hospedaje' );
+add_action( 'wp_ajax_fmdb_add_hospedaje',        'fmdb_ajax_add_hospedaje' );
+function fmdb_ajax_add_hospedaje(): void {
+    check_ajax_referer( 'fmdb_add_hospedaje', 'nonce' );
+
+    $room = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
+    if ( ! in_array( $room, [ 'doble', 'triple' ], true ) ) {
+        wp_send_json_error( [ 'message' => 'Habitación inválida.' ] );
+    }
+
+    $h_ids = fmdb_hospedaje_product_ids();
+    $h_pid = $h_ids[ $room ] ?? 0;
+    if ( ! $h_pid ) {
+        wp_send_json_error( [ 'message' => 'Producto no encontrado.' ] );
+    }
+
+    $h_eid   = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
+    $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
+    $max     = $h_eid ? (int) get_post_meta( $h_eid, $max_key, true ) : 0;
+
+    if ( $max > 0 && fmdb_hospedaje_sold_count( $h_eid, $room ) >= $max ) {
+        wp_send_json_error( [ 'message' => 'Lo sentimos, ya no hay disponibilidad para esa habitación.' ] );
+    }
+
+    $h_meta    = $room === 'doble' ? '_fmdb_hospedaje_doble_fee' : '_fmdb_hospedaje_triple_fee';
+    $h_default = $room === 'doble' ? 1415.0 : 1355.0;
+    $h_price   = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta, true ) ?: $h_default ) : $h_default;
+
+    $result = WC()->cart->add_to_cart( $h_pid, 1, 0, [], [
+        'fmdb_hospedaje_type'     => $room,
+        'fmdb_hospedaje_price'    => $h_price,
+        'fmdb_hospedaje_event_id' => $h_eid,
+    ] );
+
+    if ( $result === false ) {
+        wp_send_json_error( [ 'message' => 'No se pudo agregar al carrito. Intenta de nuevo.' ] );
+    }
+
+    wp_send_json_success( [ 'checkout_url' => wc_get_checkout_url() ] );
+}
 
 /* ─── 9b. Redirect to checkout after adding registration or hospedaje product ── */
 
