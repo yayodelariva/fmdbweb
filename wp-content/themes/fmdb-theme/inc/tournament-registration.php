@@ -109,6 +109,16 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
     if ( wp_is_post_revision( $post_id ) ) return;
     if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
+    $log = [
+        'post_id'   => $post_id,
+        'has_doble' => isset( $_POST['_fmdb_hospedaje_doble_max'] ),
+        'doble_raw' => $_POST['_fmdb_hospedaje_doble_max'] ?? 'NOT_SET',
+        'has_triple'=> isset( $_POST['_fmdb_hospedaje_triple_max'] ),
+        'triple_raw'=> $_POST['_fmdb_hospedaje_triple_max'] ?? 'NOT_SET',
+        'post_keys' => implode( ',', array_keys( $_POST ) ),
+    ];
+    set_transient( 'fmdb_hospedaje_save_debug', $log, 300 );
+
     foreach ( [ '_fmdb_hospedaje_doble_max', '_fmdb_hospedaje_triple_max' ] as $key ) {
         if ( ! isset( $_POST[ $key ] ) ) continue;
         $val = absint( $_POST[ $key ] );
