@@ -1371,9 +1371,18 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
 /* ─── 8. Validate registration on add-to-cart ──────────────────────────── */
 
 add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_id ) {
-    // Hospedaje-only is handled entirely in the wp_loaded priority-15 action (section 9a);
-    // WC's handler never sees this submission, so no validation needed here.
-    if ( ! empty( $_POST['fmdb_hospedaje_only'] ) ) return $passed;
+    // Hospedaje-only: only server-side capacity check needed; WC handles add-to-cart normally.
+    if ( ! empty( $_POST['fmdb_hospedaje_only'] ) ) {
+        $room    = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
+        $h_eid   = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
+        $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
+        $max     = $h_eid ? (int) get_post_meta( $h_eid, $max_key, true ) : 0;
+        if ( $max > 0 && fmdb_hospedaje_sold_count( $h_eid, $room ) >= $max ) {
+            wc_add_notice( 'Lo sentimos, ya no hay disponibilidad para esa habitación.', 'error' );
+            return false;
+        }
+        return $passed;
+    }
 
     $event_id = (int) get_post_meta( $product_id, '_fmdb_reg_event_id', true );
     if ( ! $event_id ) return $passed;
@@ -1471,61 +1480,22 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
     return $passed;
 }, 10, 2 );
 
-/* ─── 9a. Hospedaje-only: own add-to-cart + redirect at priority 15 ───────
- *
- * Runs BEFORE WC's add_to_cart_action (wp_loaded priority 20). We add the
- * item to cart directly, then redirect to checkout and exit. We also clear
- * add-to-cart from the superglobals so WC's handler sees nothing to do.
- * This avoids the entire woocommerce_add_to_cart_redirect filter chain.
- */
-add_action( 'wp_loaded', function () {
-    if ( is_admin() || empty( $_POST['fmdb_hospedaje_only'] ) ) return;
-
-    $room = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
-    if ( ! in_array( $room, [ 'doble', 'triple' ], true ) ) return;
-
-    $h_ids = fmdb_hospedaje_product_ids();
-    $h_pid = $h_ids[ $room ] ?? 0;
-    if ( ! $h_pid ) return;
-
-    $h_eid   = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
-    $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
-    $max     = $h_eid ? (int) get_post_meta( $h_eid, $max_key, true ) : 0;
-
-    if ( $max > 0 && fmdb_hospedaje_sold_count( $h_eid, $room ) >= $max ) {
-        wc_add_notice( 'Lo sentimos, ya no hay disponibilidad para esa habitación.', 'error' );
-        wp_safe_redirect( wp_get_referer() ?: home_url( '/' ) );
-        exit;
-    }
-
-    $h_meta    = $room === 'doble' ? '_fmdb_hospedaje_doble_fee' : '_fmdb_hospedaje_triple_fee';
-    $h_default = $room === 'doble' ? 1415.0 : 1355.0;
-    $h_price   = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta, true ) ?: $h_default ) : $h_default;
-
-    WC()->cart->add_to_cart( $h_pid, 1, 0, [], [
-        'fmdb_hospedaje_type'     => $room,
-        'fmdb_hospedaje_price'    => $h_price,
-        'fmdb_hospedaje_event_id' => $h_eid,
-    ] );
-
-    // Persist session now — wp shutdown never fires after exit.
-    WC()->cart->maybe_set_cart_cookies();
-    WC()->session->save_data();
-
-    // Prevent WC's add_to_cart_action (priority 20) from re-processing this.
-    unset( $_GET['add-to-cart'], $_POST['add-to-cart'], $_REQUEST['add-to-cart'] );
-
-    wp_safe_redirect( wc_get_checkout_url() );
-    exit;
-}, 15 );
-
-/* ─── 9b. Redirect to checkout after adding registration product ───────── */
+/* ─── 9b. Redirect to checkout after adding registration or hospedaje product ── */
 
 add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
     if ( wc_notice_count( 'error' ) > 0 ) return $url;
     if ( ! isset( $_REQUEST['add-to-cart'] ) ) return $url;
 
     $pid = absint( $_REQUEST['add-to-cart'] );
+
+    // Hospedaje-only: send straight to checkout; WC handled the cart add normally.
+    if ( ! empty( $_POST['fmdb_hospedaje_only'] ) ) {
+        $h_ids = fmdb_hospedaje_product_ids();
+        if ( in_array( $pid, array_values( $h_ids ), true ) ) {
+            return wc_get_checkout_url();
+        }
+    }
+
     if ( ! get_post_meta( $pid, '_fmdb_reg_event_id', true ) ) return $url;
 
     $hospedaje = sanitize_text_field( $_REQUEST['fmdb_hospedaje'] ?? '' );
