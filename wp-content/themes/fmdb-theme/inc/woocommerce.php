@@ -281,7 +281,7 @@ add_action( 'template_redirect', function () {
         $has_reg = false;
         if ( function_exists( 'WC' ) && WC()->cart ) {
             foreach ( WC()->cart->get_cart() as $_item ) {
-                if ( ! empty( $_item['fmdb_event_id'] ) ) { $has_reg = true; break; }
+                if ( ! empty( $_item['fmdb_event_id'] ) || ! empty( $_item['fmdb_hospedaje_type'] ) ) { $has_reg = true; break; }
             }
         }
         $is_wip = ! $has_reg;
