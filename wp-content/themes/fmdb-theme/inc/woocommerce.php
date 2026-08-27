@@ -389,6 +389,15 @@ add_filter( 'woocommerce_email_heading_new_order',                 fn() => 'Nuev
 add_filter( 'woocommerce_email_heading_customer_new_account',      fn() => 'Bienvenido/a a ' . get_bloginfo( 'name' ) );
 add_filter( 'woocommerce_email_heading_customer_reset_password',   fn() => 'Restablecimiento de contraseña' );
 
+// Replace WC's 'user_preview' placeholder with the current admin's login in preview/test emails.
+add_filter( 'woocommerce_prepare_email_for_preview', function ( $email ) {
+    if ( isset( $email->user_login ) && $email->user_login === 'user_preview' ) {
+        $current = wp_get_current_user();
+        $email->user_login = $current->ID ? $current->user_login : 'cliente';
+    }
+    return $email;
+} );
+
 add_filter( 'woocommerce_email_subject_customer_processing_order', fn( $s, $order ) =>
     'Tu pedido #' . $order->get_order_number() . ' ha sido recibido', 10, 2 );
 add_filter( 'woocommerce_email_subject_customer_completed_order',  fn( $s, $order ) =>
