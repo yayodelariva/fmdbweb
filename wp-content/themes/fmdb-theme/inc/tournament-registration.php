@@ -318,6 +318,24 @@ function fmdb_hospedaje_product_ids(): array {
     return $cache = $ids;
 }
 
+// AJAX: return current availability for both room types of an event (cache-safe).
+add_action( 'wp_ajax_nopriv_fmdb_hospedaje_avail', 'fmdb_ajax_hospedaje_avail' );
+add_action( 'wp_ajax_fmdb_hospedaje_avail',        'fmdb_ajax_hospedaje_avail' );
+function fmdb_ajax_hospedaje_avail(): void {
+    $event_id = absint( $_GET['event_id'] ?? 0 );
+    if ( ! $event_id ) wp_send_json_error( [], 400 );
+
+    $result = [];
+    foreach ( [ 'doble', 'triple' ] as $room ) {
+        $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
+        $max     = (int) get_post_meta( $event_id, $max_key, true );
+        $result[ $room ] = $max > 0
+            ? max( 0, $max - fmdb_hospedaje_sold_count( $event_id, $room ) )
+            : -1;
+    }
+    wp_send_json_success( $result );
+}
+
 // Returns count of hospedaje items sold for an event. Counts pending/on-hold too so slots don't race.
 function fmdb_hospedaje_sold_count( int $event_id, string $room_type ): int {
     if ( ! function_exists( 'wc_get_orders' ) ) return 0;
@@ -921,6 +939,60 @@ function fmdb_event_registration_box( int $event_id ): void {
                             });
                     });
                 }
+
+                // Refresh avail badges from live data (bypasses LiteSpeed page cache).
+                (function () {
+                    var regTabs = document.getElementById('fmdb-reg-tabs-' + eid);
+                    if (!regTabs) return;
+
+                    function applyAvail(room, avail) {
+                        var selectors = [
+                            'input[name="fmdb_hospedaje"][value="' + room + '"]',
+                            'input[name="fmdb_hospedaje_room"][value="' + room + '"]',
+                        ];
+                        selectors.forEach(function (sel) {
+                            regTabs.querySelectorAll(sel).forEach(function (radio) {
+                                var label = radio.closest('.fmdb-reg-hospedaje__option');
+                                if (!label) return;
+                                var meta    = label.querySelector('.fmdb-reg-hospedaje__meta');
+                                var oldBadge = label.querySelector('.fmdb-reg-hospedaje__avail');
+                                if (oldBadge) oldBadge.remove();
+
+                                if (avail === -1) {
+                                    radio.disabled = false;
+                                    label.classList.remove('fmdb-reg-hospedaje__option--soldout');
+                                } else if (avail === 0) {
+                                    radio.disabled = true;
+                                    label.classList.add('fmdb-reg-hospedaje__option--soldout');
+                                    if (meta) {
+                                        var badge = document.createElement('span');
+                                        badge.className = 'fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout';
+                                        badge.textContent = 'Agotado';
+                                        meta.appendChild(badge);
+                                    }
+                                } else {
+                                    radio.disabled = false;
+                                    label.classList.remove('fmdb-reg-hospedaje__option--soldout');
+                                    if (meta) {
+                                        var badge = document.createElement('span');
+                                        badge.className = 'fmdb-reg-hospedaje__avail';
+                                        badge.textContent = avail + ' disponible' + (avail !== 1 ? 's' : '');
+                                        meta.appendChild(badge);
+                                    }
+                                }
+                            });
+                        });
+                    }
+
+                    fetch(hospedajeAjaxUrl + '?action=fmdb_hospedaje_avail&event_id=' + eid, { credentials: 'same-origin' })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (!data.success) return;
+                            applyAvail('doble',  data.data.doble);
+                            applyAvail('triple', data.data.triple);
+                        })
+                        .catch(function () { /* silent — static values remain */ });
+                }());
 
                 // Individual tab: registered team select → division card
                 var indSel      = document.getElementById('fmdb-ind-sel-' + eid);
