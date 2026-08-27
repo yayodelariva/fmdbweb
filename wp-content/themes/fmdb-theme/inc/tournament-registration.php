@@ -359,22 +359,26 @@ function fmdb_hospedaje_form_section( float $price_doble = 1415.0, float $price_
     <label class="fmdb-reg-hospedaje__option<?php echo $soldout_d ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
         <input type="radio" name="fmdb_hospedaje" value="doble"<?php echo $soldout_d ? ' disabled' : ''; ?>>
         <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
-        <span class="fmdb-reg-hospedaje__price"><?php echo esc_html( $fmt_d ); ?></span>
-        <?php if ( $avail_doble === 0 ) : ?>
-            <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-        <?php elseif ( $avail_doble > 0 ) : ?>
-            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $avail_doble ); ?> disponible<?php echo $avail_doble !== 1 ? 's' : ''; ?></span>
-        <?php endif; ?>
+        <span class="fmdb-reg-hospedaje__meta">
+            <span class="fmdb-reg-hospedaje__price"><?php echo esc_html( $fmt_d ); ?></span>
+            <?php if ( $avail_doble === 0 ) : ?>
+                <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
+            <?php elseif ( $avail_doble > 0 ) : ?>
+                <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $avail_doble ); ?> disponible<?php echo $avail_doble !== 1 ? 's' : ''; ?></span>
+            <?php endif; ?>
+        </span>
     </label>
     <label class="fmdb-reg-hospedaje__option<?php echo $soldout_t ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
         <input type="radio" name="fmdb_hospedaje" value="triple"<?php echo $soldout_t ? ' disabled' : ''; ?>>
         <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
-        <span class="fmdb-reg-hospedaje__price"><?php echo esc_html( $fmt_t ); ?></span>
-        <?php if ( $avail_triple === 0 ) : ?>
-            <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-        <?php elseif ( $avail_triple > 0 ) : ?>
-            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $avail_triple ); ?> disponible<?php echo $avail_triple !== 1 ? 's' : ''; ?></span>
-        <?php endif; ?>
+        <span class="fmdb-reg-hospedaje__meta">
+            <span class="fmdb-reg-hospedaje__price"><?php echo esc_html( $fmt_t ); ?></span>
+            <?php if ( $avail_triple === 0 ) : ?>
+                <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
+            <?php elseif ( $avail_triple > 0 ) : ?>
+                <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $avail_triple ); ?> disponible<?php echo $avail_triple !== 1 ? 's' : ''; ?></span>
+            <?php endif; ?>
+        </span>
     </label>
 </div>
 <?php }
@@ -761,22 +765,26 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <label class="fmdb-reg-hospedaje__option<?php echo $h_avail_doble === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
                         <input type="radio" name="fmdb_hospedaje_room" value="doble"<?php echo $h_avail_doble === 0 ? ' disabled' : ''; ?>>
                         <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
-                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_doble, 0, '.', ',' ) ); ?> MXN</span>
-                        <?php if ( $h_avail_doble === 0 ) : ?>
-                            <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-                        <?php elseif ( $h_avail_doble > 0 ) : ?>
-                            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_doble ); ?> disponible<?php echo $h_avail_doble !== 1 ? 's' : ''; ?></span>
-                        <?php endif; ?>
+                        <span class="fmdb-reg-hospedaje__meta">
+                            <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_doble, 0, '.', ',' ) ); ?> MXN</span>
+                            <?php if ( $h_avail_doble === 0 ) : ?>
+                                <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
+                            <?php elseif ( $h_avail_doble > 0 ) : ?>
+                                <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_doble ); ?> disponible<?php echo $h_avail_doble !== 1 ? 's' : ''; ?></span>
+                            <?php endif; ?>
+                        </span>
                     </label>
                     <label class="fmdb-reg-hospedaje__option<?php echo $h_avail_triple === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
                         <input type="radio" name="fmdb_hospedaje_room" value="triple"<?php echo $h_avail_triple === 0 ? ' disabled' : ''; ?>>
                         <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
-                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_triple, 0, '.', ',' ) ); ?> MXN</span>
-                        <?php if ( $h_avail_triple === 0 ) : ?>
-                            <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-                        <?php elseif ( $h_avail_triple > 0 ) : ?>
-                            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_triple ); ?> disponible<?php echo $h_avail_triple !== 1 ? 's' : ''; ?></span>
-                        <?php endif; ?>
+                        <span class="fmdb-reg-hospedaje__meta">
+                            <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_triple, 0, '.', ',' ) ); ?> MXN</span>
+                            <?php if ( $h_avail_triple === 0 ) : ?>
+                                <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
+                            <?php elseif ( $h_avail_triple > 0 ) : ?>
+                                <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_triple ); ?> disponible<?php echo $h_avail_triple !== 1 ? 's' : ''; ?></span>
+                            <?php endif; ?>
+                        </span>
                     </label>
                 </div>
 
