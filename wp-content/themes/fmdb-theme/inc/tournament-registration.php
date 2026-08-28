@@ -805,6 +805,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 </label>
 
                 <div class="fmdb-reg-hospedaje__group-label">Con 3 comidas</div>
+                <p class="fmdb-reg-hospedaje__group-desc">1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos) · Incluye acceso al venue.</p>
                 <?php
                 $h_room_opts = [
                     'doble'  => [ 'label' => 'Habitación Doble',  'price' => $h_price_doble,  'avail' => $h_avail_doble  ],
@@ -826,6 +827,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <?php endforeach; ?>
 
                 <div class="fmdb-reg-hospedaje__group-label">Solo cuarto</div>
+                <p class="fmdb-reg-hospedaje__group-desc">No incluye comidas. Incluye acceso al venue.</p>
                 <?php
                 $h_sc_opts = [
                     'doble_sc'  => [ 'label' => 'Habitación Doble',  'price' => $h_price_doble_sc,  'avail' => $h_avail_doble  ],
