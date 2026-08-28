@@ -827,7 +827,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <?php endforeach; ?>
 
                 <div class="fmdb-reg-hospedaje__group-label">Solo cuarto</div>
-                <p class="fmdb-reg-hospedaje__group-desc">No incluye comidas. Incluye acceso al venue.</p>
+                <p class="fmdb-reg-hospedaje__group-desc">1 Noche de hospedaje · No incluye comidas. Incluye acceso al venue.</p>
                 <?php
                 $h_sc_opts = [
                     'doble_sc'  => [ 'label' => 'Habitación Doble',  'price' => $h_price_doble_sc,  'avail' => $h_avail_doble  ],
