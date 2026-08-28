@@ -1088,6 +1088,18 @@ function fmdb_event_registration_box( int $event_id ): void {
                     });
                 }
 
+                // ── Spanish required-field tooltip ──
+                [teamForm, indForm].forEach(function (form) {
+                    if (!form) return;
+                    form.querySelectorAll('[required]').forEach(function (field) {
+                        field.addEventListener('invalid', function () {
+                            if (field.validity.valueMissing) field.setCustomValidity('Por favor llene este campo');
+                        });
+                        field.addEventListener('input',  function () { if (!field.validity.valueMissing) field.setCustomValidity(''); });
+                        field.addEventListener('change', function () { if (!field.validity.valueMissing) field.setCustomValidity(''); });
+                    });
+                });
+
                 // ── Phone digit-only validation ──
                 function validatePhone(input) {
                     input.setCustomValidity((input.value || '').replace(/\D/g, '').length < 8 ? 'Ingresa al menos 8 dígitos.' : '');
