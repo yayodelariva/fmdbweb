@@ -866,6 +866,87 @@
 .fmdb-reg-hospedaje__option--soldout input[type="radio"] { cursor: not-allowed; }
 .fmdb-hospedaje-ajax-error { font-size: 0.82rem; color: var(--fmdb-red, #c0392b); margin: 0 0 8px; }
 
+/* === Registration section headers === */
+.fmdb-reg-section__header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fmdb-dark-green);
+    margin: 20px 0 10px;
+}
+.fmdb-reg-section__header--sep {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--fmdb-neutral);
+}
+.fmdb-reg-section__btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 14px;
+}
+.fmdb-reg-section__msg {
+    font-size: 0.82rem;
+    margin: 6px 0 0;
+    min-height: 1em;
+}
+.fmdb-reg-section__msg--ok { color: var(--fmdb-green); }
+.fmdb-reg-section__msg--err { color: var(--fmdb-red, #c0392b); }
+
+/* === Section buttons === */
+.fmdb-evento-single .fmdb-btn--secondary {
+    background: transparent;
+    color: var(--fmdb-dark-green);
+    border: 1.5px solid var(--fmdb-green);
+}
+.fmdb-evento-single .fmdb-btn--secondary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--fmdb-green) 10%, transparent);
+}
+.fmdb-evento-single .fmdb-btn--success {
+    background: var(--fmdb-green) !important;
+    opacity: 0.85;
+    cursor: default;
+}
+.fmdb-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* === Grand total section === */
+.fmdb-reg-total {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 2px solid var(--fmdb-neutral);
+}
+.fmdb-reg-total__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 0;
+    font-size: 0.88rem;
+}
+.fmdb-reg-total__row--grand {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--fmdb-dark-green);
+    padding: 6px 0 2px;
+}
+.fmdb-reg-total__divider {
+    height: 1px;
+    background: var(--fmdb-neutral);
+    margin: 8px 0;
+}
+.fmdb-reg-total__label { color: var(--fmdb-text-muted, #555); }
+.fmdb-reg-total__row--grand .fmdb-reg-total__label { color: inherit; }
+.fmdb-reg-total__val { font-weight: 600; font-variant-numeric: tabular-nums; }
+.fmdb-reg-total__btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 14px;
+    font-size: 1rem;
+    padding: 13px 20px;
+}
+
 /* === Bank transfer / order confirmation === */
 .fmdb-reg-thankyou {
     background: #f0f8f5;

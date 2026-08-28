@@ -575,7 +575,11 @@ function fmdb_event_registration_box( int $event_id ): void {
 
         <?php elseif ( is_user_logged_in() ) : ?>
 
-            <!-- Registration type tabs -->
+            <!-- ── REGISTRO SECTION ── -->
+            <div class="fmdb-reg-section__header">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Registro al torneo
+            </div>
             <div class="fmdb-reg-tabs" id="fmdb-reg-tabs-<?php echo $eid; ?>">
                 <button type="button" class="fmdb-reg-tab<?php echo $active_tab === 'team' ? ' is-active' : ''; ?>"
                         data-target="fmdb-form-team-<?php echo $eid; ?>">
@@ -586,10 +590,6 @@ function fmdb_event_registration_box( int $event_id ): void {
                         data-target="fmdb-form-ind-<?php echo $eid; ?>">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
                     Individual
-                </button>
-                <button type="button" class="fmdb-reg-tab" data-target="fmdb-form-hospedaje-<?php echo $eid; ?>">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    Hospedaje
                 </button>
             </div>
 
@@ -675,16 +675,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <span class="fmdb-reg-form__hint">El coach no cuenta como jugador.</span>
                 </div>
 
-                <?php fmdb_hospedaje_form_section( $h_price_doble, $h_price_triple, $h_avail_doble, $h_avail_triple ); ?>
-
-                <div class="fmdb-reg-fee-preview" id="fmdb-fee-team-<?php echo $eid; ?>">
-                    <span class="fmdb-reg-fee-preview__label">Total estimado</span>
-                    <span class="fmdb-reg-fee-preview__amount" id="fmdb-fee-team-amt-<?php echo $eid; ?>">—</span>
-                </div>
-
-                <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn">
-                    Inscribir equipo →
+                <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-section__btn">
+                    Agregar inscripción →
                 </button>
+                <div class="fmdb-reg-section__msg" id="fmdb-reg-msg-team-<?php echo $eid; ?>"></div>
             </form>
             <?php endif; // team_already_registered ?>
 
@@ -775,234 +769,280 @@ function fmdb_event_registration_box( int $event_id ): void {
                 </div>
                 <?php endif; ?>
 
-                <?php fmdb_hospedaje_form_section( $h_price_doble, $h_price_triple, $h_avail_doble, $h_avail_triple ); ?>
-
-                <div class="fmdb-reg-fee-preview is-visible" id="fmdb-fee-ind-<?php echo $eid; ?>">
-                    <span class="fmdb-reg-fee-preview__label">Total</span>
-                    <span class="fmdb-reg-fee-preview__amount" id="fmdb-fee-ind-amt-<?php echo $eid; ?>">$<?php echo esc_html( $fee_fmt ); ?> MXN</span>
-                </div>
-
-                <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn">
-                    Registrarme →
+                <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-section__btn">
+                    Agregar inscripción →
                 </button>
+                <div class="fmdb-reg-section__msg" id="fmdb-reg-msg-ind-<?php echo $eid; ?>"></div>
             </form>
 
-            <!-- ── HOSPEDAJE-ONLY FORM ── -->
-            <form class="fmdb-reg-form fmdb-reg-form--hidden"
-                  id="fmdb-form-hospedaje-<?php echo $eid; ?>">
-                <input type="hidden" name="fmdb_hospedaje_event_id" value="<?php echo $eid; ?>">
+            <!-- ── HOSPEDAJE SECTION ── -->
+            <div class="fmdb-reg-section__header fmdb-reg-section__header--sep">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Hospedaje <span class="fmdb-reg-form__range">(opcional)</span>
+            </div>
+            <p class="fmdb-reg-form__hint">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
 
-                <div class="fmdb-reg-form__section-title">Selecciona tu habitación</div>
-                <p class="fmdb-reg-form__hint fmdb-reg-hospedaje__desc">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
+            <div class="fmdb-reg-hospedaje" id="fmdb-hospedaje-opts-<?php echo $eid; ?>">
+                <label class="fmdb-reg-hospedaje__option">
+                    <input type="radio" name="fmdb_hospedaje_pick_<?php echo $eid; ?>" value="" checked>
+                    <span class="fmdb-reg-hospedaje__label">Sin hospedaje</span>
+                </label>
+                <label class="fmdb-reg-hospedaje__option<?php echo $h_avail_doble === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
+                    <input type="radio" name="fmdb_hospedaje_pick_<?php echo $eid; ?>" value="doble"<?php echo $h_avail_doble === 0 ? ' disabled' : ''; ?>>
+                    <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
+                    <span class="fmdb-reg-hospedaje__meta">
+                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_doble, 0, '.', ',' ) ); ?> MXN</span>
+                        <?php if ( $h_avail_doble === 0 ) : ?>
+                            <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
+                        <?php elseif ( $h_avail_doble > 0 ) : ?>
+                            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_doble ); ?> disponible<?php echo $h_avail_doble !== 1 ? 's' : ''; ?></span>
+                        <?php endif; ?>
+                    </span>
+                </label>
+                <label class="fmdb-reg-hospedaje__option<?php echo $h_avail_triple === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
+                    <input type="radio" name="fmdb_hospedaje_pick_<?php echo $eid; ?>" value="triple"<?php echo $h_avail_triple === 0 ? ' disabled' : ''; ?>>
+                    <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
+                    <span class="fmdb-reg-hospedaje__meta">
+                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_triple, 0, '.', ',' ) ); ?> MXN</span>
+                        <?php if ( $h_avail_triple === 0 ) : ?>
+                            <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
+                        <?php elseif ( $h_avail_triple > 0 ) : ?>
+                            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_triple ); ?> disponible<?php echo $h_avail_triple !== 1 ? 's' : ''; ?></span>
+                        <?php endif; ?>
+                    </span>
+                </label>
+            </div>
 
-                <div class="fmdb-reg-hospedaje">
-                    <label class="fmdb-reg-hospedaje__option<?php echo $h_avail_doble === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
-                        <input type="radio" name="fmdb_hospedaje_room" value="doble"<?php echo $h_avail_doble === 0 ? ' disabled' : ''; ?>>
-                        <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
-                        <span class="fmdb-reg-hospedaje__meta">
-                            <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_doble, 0, '.', ',' ) ); ?> MXN</span>
-                            <?php if ( $h_avail_doble === 0 ) : ?>
-                                <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-                            <?php elseif ( $h_avail_doble > 0 ) : ?>
-                                <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_doble ); ?> disponible<?php echo $h_avail_doble !== 1 ? 's' : ''; ?></span>
-                            <?php endif; ?>
-                        </span>
-                    </label>
-                    <label class="fmdb-reg-hospedaje__option<?php echo $h_avail_triple === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
-                        <input type="radio" name="fmdb_hospedaje_room" value="triple"<?php echo $h_avail_triple === 0 ? ' disabled' : ''; ?>>
-                        <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
-                        <span class="fmdb-reg-hospedaje__meta">
-                            <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_triple, 0, '.', ',' ) ); ?> MXN</span>
-                            <?php if ( $h_avail_triple === 0 ) : ?>
-                                <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-                            <?php elseif ( $h_avail_triple > 0 ) : ?>
-                                <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_triple ); ?> disponible<?php echo $h_avail_triple !== 1 ? 's' : ''; ?></span>
-                            <?php endif; ?>
-                        </span>
-                    </label>
+            <button class="fmdb-btn fmdb-btn--secondary fmdb-reg-section__btn"
+                    id="fmdb-hospedaje-submit-<?php echo $eid; ?>" type="button" disabled>
+                Agregar hospedaje →
+            </button>
+            <div class="fmdb-reg-section__msg" id="fmdb-hospedaje-msg-<?php echo $eid; ?>"></div>
+
+            <!-- ── TOTAL SECTION ── -->
+            <div class="fmdb-reg-total">
+                <div class="fmdb-reg-total__row">
+                    <span class="fmdb-reg-total__label">Inscripción</span>
+                    <span class="fmdb-reg-total__val" id="fmdb-total-reg-<?php echo $eid; ?>">—</span>
                 </div>
-
-                <div class="fmdb-reg-fee-preview" id="fmdb-fee-h-<?php echo $eid; ?>">
-                    <span class="fmdb-reg-fee-preview__label">Total</span>
-                    <span class="fmdb-reg-fee-preview__amount" id="fmdb-fee-h-amt-<?php echo $eid; ?>">—</span>
+                <div class="fmdb-reg-total__row">
+                    <span class="fmdb-reg-total__label">Hospedaje</span>
+                    <span class="fmdb-reg-total__val" id="fmdb-total-hosp-<?php echo $eid; ?>">—</span>
                 </div>
-
-                <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn"
-                        id="fmdb-hospedaje-submit-<?php echo $eid; ?>" disabled>
-                    Agregar hospedaje →
-                </button>
-            </form>
+                <div class="fmdb-reg-total__divider"></div>
+                <div class="fmdb-reg-total__row fmdb-reg-total__row--grand">
+                    <span class="fmdb-reg-total__label">Total</span>
+                    <span class="fmdb-reg-total__val" id="fmdb-total-grand-<?php echo $eid; ?>">—</span>
+                </div>
+                <a href="<?php echo esc_url( wc_get_checkout_url() ); ?>"
+                   class="fmdb-btn fmdb-btn--primary fmdb-reg-total__btn">
+                    Ir al pago →
+                </a>
+            </div>
 
             <script>
             (function () {
-                var eid              = <?php echo $eid; ?>;
-                var fee              = <?php echo (float) $fee; ?>;
-                var hospedajeAjaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
-                var hospedajeNonce   = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_hospedaje' ) ); ?>';
+                var eid       = <?php echo $eid; ?>;
+                var fee       = <?php echo (float) $fee; ?>;
+                var ajaxUrl   = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+                var regNonce  = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_registration' ) ); ?>';
+                var hospNonce = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_hospedaje' ) ); ?>';
+                var hospPrices = { '': 0, 'doble': <?php echo (float) $h_price_doble; ?>, 'triple': <?php echo (float) $h_price_triple; ?> };
+                var catLabels  = <?php echo json_encode( $cat_labels ); ?>;
 
-                // Tab switching
-                var tabs = document.querySelectorAll('#fmdb-reg-tabs-' + eid + ' .fmdb-reg-tab');
+                function fmtMXN(n) {
+                    return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
+                }
+
+                // ── Grand total ──
+                var regAmt  = 0;
+                var hospAmt = 0;
+
+                function updateGrandTotal() {
+                    var regEl   = document.getElementById('fmdb-total-reg-'   + eid);
+                    var hospEl  = document.getElementById('fmdb-total-hosp-'  + eid);
+                    var grandEl = document.getElementById('fmdb-total-grand-' + eid);
+                    if (regEl)   regEl.textContent   = regAmt  > 0 ? fmtMXN(regAmt)  : '—';
+                    if (hospEl)  hospEl.textContent   = hospAmt > 0 ? fmtMXN(hospAmt) : '—';
+                    if (grandEl) grandEl.textContent  = (regAmt + hospAmt) > 0 ? fmtMXN(regAmt + hospAmt) : '—';
+                }
+
+                // ── Tab switching ──
+                var tabs       = document.querySelectorAll('#fmdb-reg-tabs-' + eid + ' .fmdb-reg-tab');
+                var countInput = document.getElementById('fmdb-count-' + eid);
+
                 tabs.forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         tabs.forEach(function (b) { b.classList.remove('is-active'); });
                         btn.classList.add('is-active');
                         var target = btn.dataset.target;
-                        ['fmdb-form-team-' + eid, 'fmdb-form-ind-' + eid, 'fmdb-form-hospedaje-' + eid].forEach(function (id) {
+                        ['fmdb-form-team-' + eid, 'fmdb-form-ind-' + eid].forEach(function (id) {
                             var el = document.getElementById(id);
                             if (el) el.classList.toggle('fmdb-reg-form--hidden', id !== target);
                         });
+                        // Recompute regAmt for active tab
+                        if (target === 'fmdb-form-team-' + eid) {
+                            var n = countInput ? parseInt(countInput.value, 10) : 0;
+                            regAmt = (n >= 1 && n <= 9) ? fee * n : 0;
+                        } else {
+                            regAmt = fee;
+                        }
+                        updateGrandTotal();
                     });
                 });
 
-                var hospedajePrices = { '': 0, 'doble': <?php echo (float) $h_price_doble; ?>, 'triple': <?php echo (float) $h_price_triple; ?> };
-
-                function getHospedajePrice(form) {
-                    var radio = form && form.querySelector('input[name="fmdb_hospedaje"]:checked');
-                    return radio ? (hospedajePrices[radio.value] || 0) : 0;
-                }
-
-                function fmtMXN(amount) {
-                    return '$' + amount.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' MXN';
-                }
-
-                // Team fee preview
-                var teamForm   = document.getElementById('fmdb-form-team-' + eid);
-                var countInput = document.getElementById('fmdb-count-' + eid);
-                var feeBox     = document.getElementById('fmdb-fee-team-' + eid);
-                var feeAmt     = document.getElementById('fmdb-fee-team-amt-' + eid);
-                if (countInput && feeBox && feeAmt) {
-                    function updateFee() {
+                // Team: player count drives regAmt
+                if (countInput) {
+                    countInput.addEventListener('input', function () {
                         var n = parseInt(countInput.value, 10);
-                        if (n >= 1 && n <= 9) {
-                            feeAmt.textContent = fmtMXN(fee * n + getHospedajePrice(teamForm));
-                            feeBox.classList.add('is-visible');
-                        } else {
-                            feeBox.classList.remove('is-visible');
-                        }
-                    }
-                    countInput.addEventListener('input', updateFee);
-                    if (teamForm) {
-                        teamForm.querySelectorAll('input[name="fmdb_hospedaje"]').forEach(function (r) {
-                            r.addEventListener('change', updateFee);
-                        });
-                    }
-                    updateFee();
-                }
-
-                // Individual fee preview
-                var indForm    = document.getElementById('fmdb-form-ind-' + eid);
-                var indFeeAmt  = document.getElementById('fmdb-fee-ind-amt-' + eid);
-                if (indForm && indFeeAmt) {
-                    function updateIndFee() {
-                        indFeeAmt.textContent = fmtMXN(fee + getHospedajePrice(indForm));
-                    }
-                    indForm.querySelectorAll('input[name="fmdb_hospedaje"]').forEach(function (r) {
-                        r.addEventListener('change', updateIndFee);
+                        regAmt = (n >= 1 && n <= 9) ? fee * n : 0;
+                        updateGrandTotal();
                     });
+                    var initN = parseInt(countInput.value, 10);
+                    if (initN >= 1 && initN <= 9) { regAmt = fee * initN; updateGrandTotal(); }
+                } else {
+                    // Individual tab is active (no count input) — regAmt = fee × 1
+                    var activeTabEl = document.querySelector('#fmdb-reg-tabs-' + eid + ' .fmdb-reg-tab.is-active');
+                    if (activeTabEl && activeTabEl.dataset.target === 'fmdb-form-ind-' + eid) {
+                        regAmt = fee;
+                        updateGrandTotal();
+                    }
                 }
 
-                // Hospedaje-only form
-                var hospedajeOnlyForm  = document.getElementById('fmdb-form-hospedaje-' + eid);
-                var hospedajeSubmitBtn = document.getElementById('fmdb-hospedaje-submit-' + eid);
-                var hospedajePidInput  = document.getElementById('fmdb-hospedaje-pid-' + eid);
-                var hospedajeFeeBox    = document.getElementById('fmdb-fee-h-' + eid);
-                var hospedajeFeeAmt    = document.getElementById('fmdb-fee-h-amt-' + eid);
-                var hospedajeProductIds = { 'doble': <?php echo $h_doble_id; ?>, 'triple': <?php echo $h_triple_id; ?> };
-
-                if (hospedajeOnlyForm) {
-                    hospedajeOnlyForm.querySelectorAll('input[name="fmdb_hospedaje_room"]').forEach(function (r) {
+                // ── Hospedaje radio → hospAmt + enable button ──
+                var hospOpts = document.getElementById('fmdb-hospedaje-opts-' + eid);
+                var hospBtn  = document.getElementById('fmdb-hospedaje-submit-' + eid);
+                if (hospOpts) {
+                    hospOpts.querySelectorAll('input[type="radio"]').forEach(function (r) {
                         r.addEventListener('change', function () {
-                            if (hospedajeFeeAmt)    hospedajeFeeAmt.textContent = fmtMXN(hospedajePrices[r.value] || 0);
-                            if (hospedajeFeeBox)    hospedajeFeeBox.classList.add('is-visible');
-                            if (hospedajeSubmitBtn) hospedajeSubmitBtn.disabled = false;
+                            hospAmt = hospPrices[r.value] || 0;
+                            if (hospBtn) hospBtn.disabled = (r.value === '');
+                            updateGrandTotal();
                         });
                     });
+                }
 
-                    hospedajeOnlyForm.addEventListener('submit', function (e) {
+                // ── Registration AJAX submit ──
+                function handleRegSubmit(form, msgId) {
+                    if (!form || form.tagName !== 'FORM') return;
+                    var btn = form.querySelector('button[type="submit"]');
+                    if (!btn) return;
+                    var msgEl = document.getElementById(msgId);
+
+                    form.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        var room = hospedajeOnlyForm.querySelector('input[name="fmdb_hospedaje_room"]:checked');
-                        if (!room || !hospedajeSubmitBtn) return;
+                        var phoneInput = form.querySelector('input[type="tel"]');
+                        if (phoneInput) {
+                            var digits = (phoneInput.value || '').replace(/\D/g, '');
+                            if (digits.length < 8) { phoneInput.setCustomValidity('Ingresa al menos 8 dígitos.'); phoneInput.reportValidity(); return; }
+                            phoneInput.setCustomValidity('');
+                        }
+                        if (!form.checkValidity()) { form.reportValidity(); return; }
 
-                        var eventId  = hospedajeOnlyForm.querySelector('[name="fmdb_hospedaje_event_id"]').value;
-                        var origText = hospedajeSubmitBtn.textContent;
-                        hospedajeSubmitBtn.disabled  = true;
-                        hospedajeSubmitBtn.textContent = 'Procesando…';
+                        var origText = btn.textContent;
+                        btn.disabled = true;
+                        btn.textContent = 'Agregando…';
+                        if (msgEl) { msgEl.textContent = ''; msgEl.className = 'fmdb-reg-section__msg'; }
 
-                        var errEl = hospedajeOnlyForm.querySelector('.fmdb-hospedaje-ajax-error');
-                        if (errEl) errEl.remove();
+                        var fd = new FormData(form);
+                        fd.append('action', 'fmdb_add_registration');
+                        fd.append('nonce',  regNonce);
 
-                        var fd = new FormData();
-                        fd.append('action',                  'fmdb_add_hospedaje');
-                        fd.append('nonce',                   hospedajeNonce);
-                        fd.append('fmdb_hospedaje_room',     room.value);
-                        fd.append('fmdb_hospedaje_event_id', eventId);
-
-                        fetch(hospedajeAjaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
                             .then(function (r) { return r.json(); })
                             .then(function (data) {
                                 if (data.success) {
-                                    window.location.href = data.data.checkout_url;
+                                    btn.textContent = '✓ Agregado';
+                                    btn.classList.add('fmdb-btn--success');
+                                    if (msgEl) { msgEl.textContent = 'Inscripción agregada al carrito.'; msgEl.classList.add('fmdb-reg-section__msg--ok'); }
                                 } else {
-                                    var msg = document.createElement('p');
-                                    msg.className = 'fmdb-hospedaje-ajax-error';
-                                    msg.textContent = (data.data && data.data.message) || 'Error al agregar. Intenta de nuevo.';
-                                    hospedajeSubmitBtn.insertAdjacentElement('beforebegin', msg);
-                                    hospedajeSubmitBtn.disabled   = false;
-                                    hospedajeSubmitBtn.textContent = origText;
+                                    btn.disabled = false;
+                                    btn.textContent = origText;
+                                    if (msgEl) { msgEl.textContent = (data.data && data.data.message) || 'Error al agregar. Intenta de nuevo.'; msgEl.classList.add('fmdb-reg-section__msg--err'); }
                                 }
                             })
-                            .catch(function () {
-                                hospedajeSubmitBtn.disabled   = false;
-                                hospedajeSubmitBtn.textContent = origText;
-                            });
+                            .catch(function () { btn.disabled = false; btn.textContent = origText; });
                     });
                 }
 
-                // Refresh avail badges from live data (bypasses LiteSpeed page cache).
+                var teamForm = document.getElementById('fmdb-form-team-' + eid);
+                var indForm  = document.getElementById('fmdb-form-ind-'  + eid);
+                handleRegSubmit(teamForm, 'fmdb-reg-msg-team-' + eid);
+                handleRegSubmit(indForm,  'fmdb-reg-msg-ind-'  + eid);
+
+                // ── Hospedaje AJAX ──
+                if (hospBtn) {
+                    hospBtn.addEventListener('click', function () {
+                        var room = hospOpts ? hospOpts.querySelector('input[type="radio"]:checked') : null;
+                        if (!room || !room.value) return;
+                        var msgEl    = document.getElementById('fmdb-hospedaje-msg-' + eid);
+                        var origText = hospBtn.textContent;
+                        hospBtn.disabled = true;
+                        hospBtn.textContent = 'Agregando…';
+                        if (msgEl) { msgEl.textContent = ''; msgEl.className = 'fmdb-reg-section__msg'; }
+
+                        var fd = new FormData();
+                        fd.append('action',                  'fmdb_add_hospedaje');
+                        fd.append('nonce',                   hospNonce);
+                        fd.append('fmdb_hospedaje_room',     room.value);
+                        fd.append('fmdb_hospedaje_event_id', eid);
+
+                        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                if (data.success) {
+                                    hospBtn.textContent = '✓ Hospedaje agregado';
+                                    hospBtn.classList.add('fmdb-btn--success');
+                                    if (msgEl) { msgEl.textContent = 'Habitación agregada al carrito.'; msgEl.classList.add('fmdb-reg-section__msg--ok'); }
+                                } else {
+                                    hospBtn.disabled = false;
+                                    hospBtn.textContent = origText;
+                                    if (msgEl) { msgEl.textContent = (data.data && data.data.message) || 'Error al agregar. Intenta de nuevo.'; msgEl.classList.add('fmdb-reg-section__msg--err'); }
+                                }
+                            })
+                            .catch(function () { hospBtn.disabled = false; hospBtn.textContent = origText; });
+                    });
+                }
+
+                // ── Avail badge refresh (bypasses LiteSpeed page cache) ──
                 (function () {
-                    var regTabs = document.getElementById('fmdb-reg-tabs-' + eid);
-                    if (!regTabs) return;
+                    var hospOptsEl = document.getElementById('fmdb-hospedaje-opts-' + eid);
+                    if (!hospOptsEl) return;
 
                     function applyAvail(room, avail) {
-                        var selectors = [
-                            'input[name="fmdb_hospedaje"][value="' + room + '"]',
-                            'input[name="fmdb_hospedaje_room"][value="' + room + '"]',
-                        ];
-                        selectors.forEach(function (sel) {
-                            regTabs.querySelectorAll(sel).forEach(function (radio) {
-                                var label = radio.closest('.fmdb-reg-hospedaje__option');
-                                if (!label) return;
-                                var meta    = label.querySelector('.fmdb-reg-hospedaje__meta');
-                                var oldBadge = label.querySelector('.fmdb-reg-hospedaje__avail');
-                                if (oldBadge) oldBadge.remove();
+                        var radio = hospOptsEl.querySelector('input[value="' + room + '"]');
+                        if (!radio) return;
+                        var label = radio.closest('.fmdb-reg-hospedaje__option');
+                        if (!label) return;
+                        var meta     = label.querySelector('.fmdb-reg-hospedaje__meta');
+                        var oldBadge = label.querySelector('.fmdb-reg-hospedaje__avail');
+                        if (oldBadge) oldBadge.remove();
 
-                                if (avail === -1) {
-                                    radio.disabled = false;
-                                    label.classList.remove('fmdb-reg-hospedaje__option--soldout');
-                                } else if (avail === 0) {
-                                    radio.disabled = true;
-                                    label.classList.add('fmdb-reg-hospedaje__option--soldout');
-                                    if (meta) {
-                                        var badge = document.createElement('span');
-                                        badge.className = 'fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout';
-                                        badge.textContent = 'Agotado';
-                                        meta.appendChild(badge);
-                                    }
-                                } else {
-                                    radio.disabled = false;
-                                    label.classList.remove('fmdb-reg-hospedaje__option--soldout');
-                                    if (meta) {
-                                        var badge = document.createElement('span');
-                                        badge.className = 'fmdb-reg-hospedaje__avail';
-                                        badge.textContent = avail + ' disponible' + (avail !== 1 ? 's' : '');
-                                        meta.appendChild(badge);
-                                    }
-                                }
-                            });
-                        });
+                        if (avail === -1) {
+                            radio.disabled = false;
+                            label.classList.remove('fmdb-reg-hospedaje__option--soldout');
+                        } else if (avail === 0) {
+                            radio.disabled = true;
+                            label.classList.add('fmdb-reg-hospedaje__option--soldout');
+                            if (meta) {
+                                var badge = document.createElement('span');
+                                badge.className = 'fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout';
+                                badge.textContent = 'Agotado';
+                                meta.appendChild(badge);
+                            }
+                        } else {
+                            radio.disabled = false;
+                            label.classList.remove('fmdb-reg-hospedaje__option--soldout');
+                            if (meta) {
+                                var badge = document.createElement('span');
+                                badge.className = 'fmdb-reg-hospedaje__avail';
+                                badge.textContent = avail + ' disponible' + (avail !== 1 ? 's' : '');
+                                meta.appendChild(badge);
+                            }
+                        }
                     }
 
-                    fetch(hospedajeAjaxUrl + '?action=fmdb_hospedaje_avail&event_id=' + eid, { credentials: 'same-origin' })
+                    fetch(ajaxUrl + '?action=fmdb_hospedaje_avail&event_id=' + eid, { credentials: 'same-origin' })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
                             if (!data.success) return;
@@ -1012,17 +1052,16 @@ function fmdb_event_registration_box( int $event_id ): void {
                         .catch(function () { /* silent — static values remain */ });
                 }());
 
-                // Individual tab: registered team select → division card
-                var indSel      = document.getElementById('fmdb-ind-sel-' + eid);
-                var indNameHid  = document.getElementById('fmdb-ind-name-' + eid);
+                // ── Individual: team select → division card ──
+                var indSel      = document.getElementById('fmdb-ind-sel-'      + eid);
+                var indNameHid  = document.getElementById('fmdb-ind-name-'     + eid);
                 var indDivCard  = document.getElementById('fmdb-ind-div-card-' + eid);
-                var indHRama    = document.getElementById('fmdb-ind-hrama-' + eid);
-                var indHCat     = document.getElementById('fmdb-ind-hcat-' + eid);
-                var indHMod     = document.getElementById('fmdb-ind-hmod-' + eid);
+                var indHRama    = document.getElementById('fmdb-ind-hrama-'    + eid);
+                var indHCat     = document.getElementById('fmdb-ind-hcat-'     + eid);
+                var indHMod     = document.getElementById('fmdb-ind-hmod-'     + eid);
                 var indRamaSpan = document.getElementById('fmdb-ind-div-rama-' + eid);
-                var indCatSpan  = document.getElementById('fmdb-ind-div-cat-' + eid);
-                var indModSpan  = document.getElementById('fmdb-ind-div-mod-' + eid);
-                var catLabels   = <?php echo json_encode( $cat_labels ); ?>;
+                var indCatSpan  = document.getElementById('fmdb-ind-div-cat-'  + eid);
+                var indModSpan  = document.getElementById('fmdb-ind-div-mod-'  + eid);
 
                 function showDivCard(rama, cat, mod) {
                     if (indRamaSpan) indRamaSpan.textContent = rama;
@@ -1044,43 +1083,25 @@ function fmdb_event_registration_box( int $event_id ): void {
                 if (indSel) {
                     indSel.addEventListener('change', function () {
                         var opt = indSel.options[indSel.selectedIndex];
-                        if (opt.value === '') {
-                            if (indNameHid) indNameHid.value = '';
-                            hideDivCard();
-                        } else {
-                            if (indNameHid) indNameHid.value = opt.value;
-                            showDivCard(opt.dataset.rama || '', opt.dataset.cat || '', opt.dataset.mod || '');
-                        }
+                        if (opt.value === '') { if (indNameHid) indNameHid.value = ''; hideDivCard(); }
+                        else { if (indNameHid) indNameHid.value = opt.value; showDivCard(opt.dataset.rama || '', opt.dataset.cat || '', opt.dataset.mod || ''); }
                     });
                 }
 
-                // Phone digit validation (min 8 digits, ignoring formatting chars).
+                // ── Phone digit-only validation ──
                 function validatePhone(input) {
-                    var digits = (input.value || '').replace(/\D/g, '');
-                    if (digits.length < 8) {
-                        input.setCustomValidity('Ingresa al menos 8 dígitos.');
-                    } else {
-                        input.setCustomValidity('');
-                    }
+                    input.setCustomValidity((input.value || '').replace(/\D/g, '').length < 8 ? 'Ingresa al menos 8 dígitos.' : '');
                 }
-
-                var teamForm  = document.getElementById('fmdb-form-team-' + eid);
-                var indForm   = document.getElementById('fmdb-form-ind-'  + eid);
-
                 [teamForm, indForm].forEach(function (form) {
                     if (!form) return;
                     var phoneInput = form.querySelector('input[type="tel"]');
                     if (!phoneInput) return;
                     phoneInput.addEventListener('input', function () {
-                        var pos = phoneInput.selectionStart;
+                        var pos     = phoneInput.selectionStart;
                         var cleaned = phoneInput.value.replace(/\D/g, '');
-                        if (phoneInput.value !== cleaned) {
-                            phoneInput.value = cleaned;
-                            phoneInput.setSelectionRange(pos - 1, pos - 1);
-                        }
+                        if (phoneInput.value !== cleaned) { phoneInput.value = cleaned; phoneInput.setSelectionRange(pos - 1, pos - 1); }
                         validatePhone(phoneInput);
                     });
-                    form.addEventListener('submit', function () { validatePhone(phoneInput); });
                 });
             })();
             </script>
@@ -1098,6 +1119,40 @@ function fmdb_event_registration_box( int $event_id ): void {
         <?php endif; ?>
     </div>
     <?php
+}
+
+/* ─── 4a. AJAX: add registration product to cart ──────────────────────────
+ *
+ * Bluehost has request_order=GP so $_REQUEST never contains POST data.
+ * WC's add_to_cart_action() uses $_REQUEST and never fires for our form POSTs.
+ * We bypass it with a custom WP AJAX action; our existing woocommerce_add_cart_item_data
+ * and woocommerce_add_to_cart_validation filters still fire and read from $_POST,
+ * which IS populated in AJAX requests.
+ */
+add_action( 'wp_ajax_fmdb_add_registration', 'fmdb_ajax_add_registration' );
+function fmdb_ajax_add_registration(): void {
+    check_ajax_referer( 'fmdb_add_registration', 'nonce' );
+
+    if ( ! is_user_logged_in() ) {
+        wp_send_json_error( [ 'message' => 'Debes iniciar sesión.' ] );
+    }
+
+    $prod_id = absint( $_POST['add-to-cart'] ?? 0 );
+    if ( ! $prod_id || ! wc_get_product( $prod_id ) ) {
+        wp_send_json_error( [ 'message' => 'Producto inválido.' ] );
+    }
+
+    $result = WC()->cart->add_to_cart( $prod_id, 1, 0, [], [] );
+
+    if ( $result === false ) {
+        $notices = wc_get_notices( 'error' );
+        $msg     = ! empty( $notices ) ? wp_strip_all_tags( $notices[0]['notice'] ) : 'No se pudo agregar al carrito. Intenta de nuevo.';
+        wc_clear_notices();
+        wp_send_json_error( [ 'message' => $msg ] );
+    }
+
+    wc_clear_notices();
+    wp_send_json_success( [ 'message' => 'Inscripción agregada.' ] );
 }
 
 // Shared helper: render Rama / Categoría / Modalidad selects.
