@@ -73,6 +73,12 @@ add_action( 'cmb2_init', function () {
         'options' => [ 'Foam' => 'Foam', 'Cloth' => 'Cloth' ],
     ] );
     $cmb->add_field( [
+        'name'       => __( 'Hospedaje – Habitación Sencilla (MXN)', 'fmdb' ),
+        'id'         => '_fmdb_hospedaje_sencilla_fee',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '1200' ],
+    ] );
+    $cmb->add_field( [
         'name'       => __( 'Hospedaje – Habitación Doble (MXN)', 'fmdb' ),
         'id'         => '_fmdb_hospedaje_doble_fee',
         'type'       => 'text_small',
@@ -83,24 +89,6 @@ add_action( 'cmb2_init', function () {
         'id'         => '_fmdb_hospedaje_triple_fee',
         'type'       => 'text_small',
         'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '1355' ],
-    ] );
-    $cmb->add_field( [
-        'name'       => __( 'Hospedaje – Habitación Doble Solo Cuarto (MXN)', 'fmdb' ),
-        'id'         => '_fmdb_hospedaje_doble_sc_fee',
-        'type'       => 'text_small',
-        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '800' ],
-    ] );
-    $cmb->add_field( [
-        'name'       => __( 'Hospedaje – Habitación Triple Solo Cuarto (MXN)', 'fmdb' ),
-        'id'         => '_fmdb_hospedaje_triple_sc_fee',
-        'type'       => 'text_small',
-        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '750' ],
-    ] );
-    $cmb->add_field( [
-        'name'       => __( 'Hospedaje – Habitación Sencilla (MXN)', 'fmdb' ),
-        'id'         => '_fmdb_hospedaje_sencilla_fee',
-        'type'       => 'text_small',
-        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '1200' ],
     ] );
     $cmb->add_field( [
         'name'       => __( 'Hospedaje – Habitación Cuádruple (MXN)', 'fmdb' ),
@@ -115,10 +103,29 @@ add_action( 'cmb2_init', function () {
         'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '700' ],
     ] );
     $cmb->add_field( [
+        'name'       => __( 'Hospedaje – Habitación Doble Solo Cuarto (MXN)', 'fmdb' ),
+        'id'         => '_fmdb_hospedaje_doble_sc_fee',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '800' ],
+    ] );
+    $cmb->add_field( [
+        'name'       => __( 'Hospedaje – Habitación Triple Solo Cuarto (MXN)', 'fmdb' ),
+        'id'         => '_fmdb_hospedaje_triple_sc_fee',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '750' ],
+    ] );
+    $cmb->add_field( [
         'name'       => __( 'Hospedaje – Habitación Cuádruple Solo Cuarto (MXN)', 'fmdb' ),
         'id'         => '_fmdb_hospedaje_cuadruple_sc_fee',
         'type'       => 'text_small',
         'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '900' ],
+    ] );
+    $cmb->add_field( [
+        'name'       => __( 'Hospedaje – Cupo Habitación Sencilla', 'fmdb' ),
+        'desc'       => __( '0 = sin límite.', 'fmdb' ),
+        'id'         => '_fmdb_hospedaje_sencilla_max',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0' ],
     ] );
     $cmb->add_field( [
         'name'       => __( 'Hospedaje – Cupo Habitación Doble', 'fmdb' ),
@@ -131,13 +138,6 @@ add_action( 'cmb2_init', function () {
         'name'       => __( 'Hospedaje – Cupo Habitación Triple', 'fmdb' ),
         'desc'       => __( '0 = sin límite.', 'fmdb' ),
         'id'         => '_fmdb_hospedaje_triple_max',
-        'type'       => 'text_small',
-        'attributes' => [ 'type' => 'number', 'min' => '0' ],
-    ] );
-    $cmb->add_field( [
-        'name'       => __( 'Hospedaje – Cupo Habitación Sencilla', 'fmdb' ),
-        'desc'       => __( '0 = sin límite.', 'fmdb' ),
-        'id'         => '_fmdb_hospedaje_sencilla_max',
         'type'       => 'text_small',
         'attributes' => [ 'type' => 'number', 'min' => '0' ],
     ] );
