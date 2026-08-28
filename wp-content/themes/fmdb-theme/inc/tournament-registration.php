@@ -85,6 +85,18 @@ add_action( 'cmb2_init', function () {
         'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '1355' ],
     ] );
     $cmb->add_field( [
+        'name'       => __( 'Hospedaje – Habitación Doble Solo Cuarto (MXN)', 'fmdb' ),
+        'id'         => '_fmdb_hospedaje_doble_sc_fee',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '800' ],
+    ] );
+    $cmb->add_field( [
+        'name'       => __( 'Hospedaje – Habitación Triple Solo Cuarto (MXN)', 'fmdb' ),
+        'id'         => '_fmdb_hospedaje_triple_sc_fee',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '750' ],
+    ] );
+    $cmb->add_field( [
         'name'       => __( 'Hospedaje – Cupo Habitación Doble', 'fmdb' ),
         'desc'       => __( '0 = sin límite.', 'fmdb' ),
         'id'         => '_fmdb_hospedaje_doble_max',
@@ -308,11 +320,14 @@ function fmdb_hospedaje_product_ids(): array {
     if ( $cache !== null ) return $cache;
     if ( ! class_exists( 'WC_Product_Simple' ) ) return $cache = [];
 
-    $inclusions = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)';
+    $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)';
+    $inc_sc   = '1 Noche de hospedaje';
 
     $defs = [
-        'doble'  => [ 'name' => 'Hospedaje – Habitación Doble',  'price' => '1415', 'opt' => 'fmdb_hospedaje_doble_id'  ],
-        'triple' => [ 'name' => 'Hospedaje – Habitación Triple', 'price' => '1355', 'opt' => 'fmdb_hospedaje_triple_id' ],
+        'doble'     => [ 'name' => 'Hospedaje – Habitación Doble',               'desc' => $inc_full, 'price' => '1415', 'opt' => 'fmdb_hospedaje_doble_id'     ],
+        'triple'    => [ 'name' => 'Hospedaje – Habitación Triple',              'desc' => $inc_full, 'price' => '1355', 'opt' => 'fmdb_hospedaje_triple_id'    ],
+        'doble_sc'  => [ 'name' => 'Hospedaje – Habitación Doble Solo Cuarto',  'desc' => $inc_sc,   'price' => '800',  'opt' => 'fmdb_hospedaje_doble_sc_id'  ],
+        'triple_sc' => [ 'name' => 'Hospedaje – Habitación Triple Solo Cuarto', 'desc' => $inc_sc,   'price' => '750',  'opt' => 'fmdb_hospedaje_triple_sc_id' ],
     ];
 
     $ids = [];
@@ -321,7 +336,7 @@ function fmdb_hospedaje_product_ids(): array {
         if ( ! $pid || ! wc_get_product( $pid ) ) {
             $p = new WC_Product_Simple();
             $p->set_name( $d['name'] );
-            $p->set_short_description( $inclusions );
+            $p->set_short_description( $d['desc'] );
             $p->set_regular_price( $d['price'] );
             $p->set_virtual( true );
             $p->set_catalog_visibility( 'hidden' );
@@ -357,7 +372,8 @@ function fmdb_ajax_hospedaje_avail(): void {
 // Returns count of hospedaje items sold for an event. Counts pending/on-hold too so slots don't race.
 function fmdb_hospedaje_sold_count( int $event_id, string $room_type ): int {
     if ( ! function_exists( 'wc_get_orders' ) ) return 0;
-    $label  = $room_type === 'doble' ? 'Doble' : 'Triple';
+    // Count both the full-board and room-only variants toward the same shared cap.
+    $labels = $room_type === 'doble' ? [ 'Doble', 'Doble SC' ] : [ 'Triple', 'Triple SC' ];
     $orders = wc_get_orders( [
         'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
         'limit'      => -1,
@@ -370,7 +386,7 @@ function fmdb_hospedaje_sold_count( int $event_id, string $room_type ): int {
     $count = 0;
     foreach ( $orders as $order ) {
         foreach ( $order->get_items() as $item ) {
-            if ( $item->get_meta( 'Habitación' ) === $label ) {
+            if ( in_array( $item->get_meta( 'Habitación' ), $labels, true ) ) {
                 $count++;
             }
         }
@@ -536,6 +552,8 @@ function fmdb_event_registration_box( int $event_id ): void {
     $h_max_triple   = (int) get_post_meta( $event_id, '_fmdb_hospedaje_triple_max', true );
     $h_avail_doble  = $h_max_doble  > 0 ? max( 0, $h_max_doble  - fmdb_hospedaje_sold_count( $event_id, 'doble' ) )  : -1;
     $h_avail_triple = $h_max_triple > 0 ? max( 0, $h_max_triple - fmdb_hospedaje_sold_count( $event_id, 'triple' ) ) : -1;
+    $h_price_doble_sc  = (float) get_post_meta( $event_id, '_fmdb_hospedaje_doble_sc_fee',  true ) ?: 800.0;
+    $h_price_triple_sc = (float) get_post_meta( $event_id, '_fmdb_hospedaje_triple_sc_fee', true ) ?: 750.0;
     ?>
     <div class="fmdb-evento-single__meta-card fmdb-reg-box">
         <h3 class="fmdb-evento-single__meta-title">Inscripción al torneo</h3>
@@ -780,37 +798,53 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 Hospedaje <span class="fmdb-reg-form__range">(opcional)</span>
             </div>
-            <p class="fmdb-reg-form__hint">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
-
             <div class="fmdb-reg-hospedaje" id="fmdb-hospedaje-opts-<?php echo $eid; ?>">
                 <label class="fmdb-reg-hospedaje__option">
                     <input type="radio" name="fmdb_hospedaje_pick_<?php echo $eid; ?>" value="" checked>
                     <span class="fmdb-reg-hospedaje__label">Sin hospedaje</span>
                 </label>
-                <label class="fmdb-reg-hospedaje__option<?php echo $h_avail_doble === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
-                    <input type="radio" name="fmdb_hospedaje_pick_<?php echo $eid; ?>" value="doble"<?php echo $h_avail_doble === 0 ? ' disabled' : ''; ?>>
-                    <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
+
+                <div class="fmdb-reg-hospedaje__group-label">Con 3 comidas</div>
+                <?php
+                $h_room_opts = [
+                    'doble'  => [ 'label' => 'Habitación Doble',  'price' => $h_price_doble,  'avail' => $h_avail_doble  ],
+                    'triple' => [ 'label' => 'Habitación Triple', 'price' => $h_price_triple, 'avail' => $h_avail_triple ],
+                ];
+                foreach ( $h_room_opts as $rv => $ro ) : ?>
+                <label class="fmdb-reg-hospedaje__option<?php echo $ro['avail'] === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
+                    <input type="radio" name="fmdb_hospedaje_pick_<?php echo $eid; ?>" value="<?php echo esc_attr( $rv ); ?>"<?php echo $ro['avail'] === 0 ? ' disabled' : ''; ?>>
+                    <span class="fmdb-reg-hospedaje__label"><?php echo esc_html( $ro['label'] ); ?></span>
                     <span class="fmdb-reg-hospedaje__meta">
-                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_doble, 0, '.', ',' ) ); ?> MXN</span>
-                        <?php if ( $h_avail_doble === 0 ) : ?>
+                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $ro['price'], 0, '.', ',' ) ); ?> MXN</span>
+                        <?php if ( $ro['avail'] === 0 ) : ?>
                             <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-                        <?php elseif ( $h_avail_doble > 0 ) : ?>
-                            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_doble ); ?> disponible<?php echo $h_avail_doble !== 1 ? 's' : ''; ?></span>
+                        <?php elseif ( $ro['avail'] > 0 ) : ?>
+                            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $ro['avail'] ); ?> disponible<?php echo $ro['avail'] !== 1 ? 's' : ''; ?></span>
                         <?php endif; ?>
                     </span>
                 </label>
-                <label class="fmdb-reg-hospedaje__option<?php echo $h_avail_triple === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
-                    <input type="radio" name="fmdb_hospedaje_pick_<?php echo $eid; ?>" value="triple"<?php echo $h_avail_triple === 0 ? ' disabled' : ''; ?>>
-                    <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
+                <?php endforeach; ?>
+
+                <div class="fmdb-reg-hospedaje__group-label">Solo cuarto</div>
+                <?php
+                $h_sc_opts = [
+                    'doble_sc'  => [ 'label' => 'Habitación Doble',  'price' => $h_price_doble_sc,  'avail' => $h_avail_doble  ],
+                    'triple_sc' => [ 'label' => 'Habitación Triple', 'price' => $h_price_triple_sc, 'avail' => $h_avail_triple ],
+                ];
+                foreach ( $h_sc_opts as $rv => $ro ) : ?>
+                <label class="fmdb-reg-hospedaje__option<?php echo $ro['avail'] === 0 ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
+                    <input type="radio" name="fmdb_hospedaje_pick_<?php echo $eid; ?>" value="<?php echo esc_attr( $rv ); ?>"<?php echo $ro['avail'] === 0 ? ' disabled' : ''; ?>>
+                    <span class="fmdb-reg-hospedaje__label"><?php echo esc_html( $ro['label'] ); ?></span>
                     <span class="fmdb-reg-hospedaje__meta">
-                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $h_price_triple, 0, '.', ',' ) ); ?> MXN</span>
-                        <?php if ( $h_avail_triple === 0 ) : ?>
+                        <span class="fmdb-reg-hospedaje__price">$<?php echo esc_html( number_format( $ro['price'], 0, '.', ',' ) ); ?> MXN</span>
+                        <?php if ( $ro['avail'] === 0 ) : ?>
                             <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-                        <?php elseif ( $h_avail_triple > 0 ) : ?>
-                            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $h_avail_triple ); ?> disponible<?php echo $h_avail_triple !== 1 ? 's' : ''; ?></span>
+                        <?php elseif ( $ro['avail'] > 0 ) : ?>
+                            <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $ro['avail'] ); ?> disponible<?php echo $ro['avail'] !== 1 ? 's' : ''; ?></span>
                         <?php endif; ?>
                     </span>
                 </label>
+                <?php endforeach; ?>
             </div>
 
             <button class="fmdb-btn fmdb-btn--secondary fmdb-reg-section__btn"
@@ -847,7 +881,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 var ajaxUrl   = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
                 var regNonce  = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_registration' ) ); ?>';
                 var hospNonce = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_hospedaje' ) ); ?>';
-                var hospPrices = { '': 0, 'doble': <?php echo (float) $h_price_doble; ?>, 'triple': <?php echo (float) $h_price_triple; ?> };
+                var hospPrices = { '': 0, 'doble': <?php echo (float) $h_price_doble; ?>, 'triple': <?php echo (float) $h_price_triple; ?>, 'doble_sc': <?php echo (float) $h_price_doble_sc; ?>, 'triple_sc': <?php echo (float) $h_price_triple_sc; ?> };
                 var catLabels  = <?php echo json_encode( $cat_labels ); ?>;
 
                 function fmtMXN(n) {
@@ -1046,8 +1080,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
                             if (!data.success) return;
-                            applyAvail('doble',  data.data.doble);
-                            applyAvail('triple', data.data.triple);
+                            applyAvail('doble',     data.data.doble);
+                            applyAvail('doble_sc',  data.data.doble);
+                            applyAvail('triple',    data.data.triple);
+                            applyAvail('triple_sc', data.data.triple);
                         })
                         .catch(function () { /* silent — static values remain */ });
                 }());
@@ -1456,12 +1492,17 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
     // Hospedaje-only: tag item and capture event-specific price for override.
     if ( ! empty( $_POST['fmdb_hospedaje_only'] ) ) {
         $room = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
-        if ( in_array( $room, [ 'doble', 'triple' ], true ) ) {
+        if ( in_array( $room, [ 'doble', 'triple', 'doble_sc', 'triple_sc' ], true ) ) {
             $cart_item_data['fmdb_hospedaje_type'] = $room;
-            $h_eid     = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
-            $h_meta_k  = $room === 'doble' ? '_fmdb_hospedaje_doble_fee' : '_fmdb_hospedaje_triple_fee';
-            $h_default = $room === 'doble' ? 1415.0 : 1355.0;
-            $h_price   = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta_k, true ) ?: $h_default ) : $h_default;
+            $h_eid    = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
+            $meta_map = [
+                'doble'     => [ '_fmdb_hospedaje_doble_fee',     1415.0 ],
+                'triple'    => [ '_fmdb_hospedaje_triple_fee',    1355.0 ],
+                'doble_sc'  => [ '_fmdb_hospedaje_doble_sc_fee',   800.0 ],
+                'triple_sc' => [ '_fmdb_hospedaje_triple_sc_fee',  750.0 ],
+            ];
+            [ $h_meta_k, $h_default ] = $meta_map[ $room ];
+            $h_price  = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta_k, true ) ?: $h_default ) : $h_default;
             $cart_item_data['fmdb_hospedaje_price']    = $h_price;
             $cart_item_data['fmdb_hospedaje_event_id'] = $h_eid;
         }
@@ -1568,11 +1609,12 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
 add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_id ) {
     // Hospedaje-only: only server-side capacity check needed; WC handles add-to-cart normally.
     if ( ! empty( $_POST['fmdb_hospedaje_only'] ) ) {
-        $room    = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
-        $h_eid   = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
-        $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
-        $max     = $h_eid ? (int) get_post_meta( $h_eid, $max_key, true ) : 0;
-        if ( $max > 0 && fmdb_hospedaje_sold_count( $h_eid, $room ) >= $max ) {
+        $room      = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
+        $h_eid     = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
+        $base_room = str_replace( '_sc', '', $room ); // doble_sc → doble, triple_sc → triple
+        $max_key   = $base_room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
+        $max       = $h_eid ? (int) get_post_meta( $h_eid, $max_key, true ) : 0;
+        if ( $max > 0 && fmdb_hospedaje_sold_count( $h_eid, $base_room ) >= $max ) {
             wc_add_notice( 'Lo sentimos, ya no hay disponibilidad para esa habitación.', 'error' );
             return false;
         }
@@ -1689,7 +1731,7 @@ function fmdb_ajax_add_hospedaje(): void {
     check_ajax_referer( 'fmdb_add_hospedaje', 'nonce' );
 
     $room = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
-    if ( ! in_array( $room, [ 'doble', 'triple' ], true ) ) {
+    if ( ! in_array( $room, [ 'doble', 'triple', 'doble_sc', 'triple_sc' ], true ) ) {
         wp_send_json_error( [ 'message' => 'Habitación inválida.' ] );
     }
 
@@ -1699,9 +1741,10 @@ function fmdb_ajax_add_hospedaje(): void {
         wp_send_json_error( [ 'message' => 'Producto no encontrado.' ] );
     }
 
-    $h_eid   = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
-    $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
-    $max     = $h_eid ? (int) get_post_meta( $h_eid, $max_key, true ) : 0;
+    $h_eid     = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
+    $base_room = str_replace( '_sc', '', $room ); // doble_sc → doble, triple_sc → triple
+    $max_key   = $base_room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
+    $max       = $h_eid ? (int) get_post_meta( $h_eid, $max_key, true ) : 0;
 
     // Prevent adding hospedaje twice for the same event.
     foreach ( WC()->cart->get_cart() as $_item ) {
@@ -1710,12 +1753,17 @@ function fmdb_ajax_add_hospedaje(): void {
         }
     }
 
-    if ( $max > 0 && fmdb_hospedaje_sold_count( $h_eid, $room ) >= $max ) {
+    if ( $max > 0 && fmdb_hospedaje_sold_count( $h_eid, $base_room ) >= $max ) {
         wp_send_json_error( [ 'message' => 'Lo sentimos, ya no hay disponibilidad para esa habitación.' ] );
     }
 
-    $h_meta    = $room === 'doble' ? '_fmdb_hospedaje_doble_fee' : '_fmdb_hospedaje_triple_fee';
-    $h_default = $room === 'doble' ? 1415.0 : 1355.0;
+    $meta_map  = [
+        'doble'     => [ '_fmdb_hospedaje_doble_fee',     1415.0 ],
+        'triple'    => [ '_fmdb_hospedaje_triple_fee',    1355.0 ],
+        'doble_sc'  => [ '_fmdb_hospedaje_doble_sc_fee',   800.0 ],
+        'triple_sc' => [ '_fmdb_hospedaje_triple_sc_fee',  750.0 ],
+    ];
+    [ $h_meta, $h_default ] = $meta_map[ $room ];
     $h_price   = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta, true ) ?: $h_default ) : $h_default;
 
     $result = WC()->cart->add_to_cart( $h_pid, 1, 0, [], [
@@ -1744,16 +1792,17 @@ add_action( 'woocommerce_checkout_order_created', function ( \WC_Order $order ) 
         $label = $item->get_meta( 'Habitación' );
         if ( ! $label ) continue;
 
-        $room  = $label === 'Doble' ? 'doble' : 'triple';
+        $base_room    = in_array( $label, [ 'Doble', 'Doble SC' ], true ) ? 'doble' : 'triple';
+        $match_labels = $base_room === 'doble' ? [ 'Doble', 'Doble SC' ] : [ 'Triple', 'Triple SC' ];
         $h_eid = (int) $order->get_meta( '_fmdb_hospedaje_event_id' )
               ?: (int) $order->get_meta( '_fmdb_reg_event_id' );
         if ( ! $h_eid ) continue;
 
-        $max_key = $room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
+        $max_key = $base_room === 'doble' ? '_fmdb_hospedaje_doble_max' : '_fmdb_hospedaje_triple_max';
         $max     = (int) get_post_meta( $h_eid, $max_key, true );
         if ( $max <= 0 ) continue;
 
-        // Collect all order IDs for this event+room (pending/on-hold/processing/completed).
+        // Collect all order IDs for this event+base-room (both variants count toward shared cap).
         $all_orders = wc_get_orders( [
             'limit'      => -1,
             'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
@@ -1767,7 +1816,7 @@ add_action( 'woocommerce_checkout_order_created', function ( \WC_Order $order ) 
         $matching_ids = [];
         foreach ( $all_orders as $o ) {
             foreach ( $o->get_items() as $it ) {
-                if ( $it->get_meta( 'Habitación' ) === $label ) {
+                if ( in_array( $it->get_meta( 'Habitación' ), $match_labels, true ) ) {
                     $matching_ids[] = $o->get_id();
                     break;
                 }
@@ -1878,16 +1927,31 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
 
 add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
     if ( empty( $cart_item['fmdb_hospedaje_type'] ) ) return $data;
-    $label = $cart_item['fmdb_hospedaje_type'] === 'doble' ? 'Habitación Doble' : 'Habitación Triple';
-    $data[] = [ 'name' => 'Habitación', 'value' => $label ];
-    $data[] = [ 'name' => 'Incluye',    'value' => '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)' ];
+    $type      = $cart_item['fmdb_hospedaje_type'];
+    $label_map = [
+        'doble'     => 'Habitación Doble',
+        'triple'    => 'Habitación Triple',
+        'doble_sc'  => 'Habitación Doble – Solo cuarto',
+        'triple_sc' => 'Habitación Triple – Solo cuarto',
+    ];
+    $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)';
+    $data[] = [ 'name' => 'Habitación', 'value' => $label_map[ $type ] ?? $type ];
+    $data[] = [ 'name' => 'Incluye',    'value' => in_array( $type, [ 'doble_sc', 'triple_sc' ], true ) ? '1 Noche de hospedaje' : $inc_full ];
     return $data;
 }, 10, 2 );
 
 add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $cart_item_key, $values, $order ) {
     if ( empty( $values['fmdb_hospedaje_type'] ) ) return;
-    $item->update_meta_data( 'Habitación', $values['fmdb_hospedaje_type'] === 'doble' ? 'Doble' : 'Triple' );
-    $item->update_meta_data( 'Incluye',    '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)' );
+    $type     = $values['fmdb_hospedaje_type'];
+    $hab_map  = [
+        'doble'     => 'Doble',
+        'triple'    => 'Triple',
+        'doble_sc'  => 'Doble SC',
+        'triple_sc' => 'Triple SC',
+    ];
+    $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)';
+    $item->update_meta_data( 'Habitación', $hab_map[ $type ] ?? $type );
+    $item->update_meta_data( 'Incluye', in_array( $type, [ 'doble_sc', 'triple_sc' ], true ) ? '1 Noche de hospedaje' : $inc_full );
     if ( ! empty( $values['fmdb_hospedaje_event_id'] ) ) {
         $order->update_meta_data( '_fmdb_hospedaje_event_id', (int) $values['fmdb_hospedaje_event_id'] );
     }

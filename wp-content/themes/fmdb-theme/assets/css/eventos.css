@@ -864,6 +864,8 @@
 .fmdb-reg-hospedaje__avail--soldout { background: color-mix(in srgb, currentColor 10%, transparent); color: var(--fmdb-neutral-fg, #888); }
 .fmdb-reg-hospedaje__option--soldout { opacity: 0.55; cursor: not-allowed; }
 .fmdb-reg-hospedaje__option--soldout input[type="radio"] { cursor: not-allowed; }
+.fmdb-reg-hospedaje__group-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--fmdb-text-muted, #777); margin: 12px 0 4px; padding-top: 10px; border-top: 1px dashed var(--fmdb-neutral); }
+.fmdb-reg-hospedaje__option:first-of-type + .fmdb-reg-hospedaje__group-label { border-top: none; padding-top: 0; margin-top: 8px; }
 .fmdb-hospedaje-ajax-error { font-size: 0.82rem; color: var(--fmdb-red, #c0392b); margin: 0 0 8px; }
 
 /* === Registration section headers === */
