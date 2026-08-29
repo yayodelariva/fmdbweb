@@ -1641,6 +1641,25 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
     return $cart_item_data;
 }, 10, 2 );
 
+/* ─── 6a. Venue entry fee ──────────────────────────────────────────────── */
+
+// $210 MXN when cart has a registration but no hospedaje; drops to $0 when hospedaje is added.
+add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
+    if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
+
+    $has_reg      = false;
+    $has_hospedaje = false;
+
+    foreach ( $cart->get_cart() as $item ) {
+        if ( ! empty( $item['fmdb_event_id'] ) )      $has_reg       = true;
+        if ( ! empty( $item['fmdb_hospedaje_type'] ) ) $has_hospedaje = true;
+    }
+
+    if ( $has_reg && ! $has_hospedaje ) {
+        $cart->add_fee( 'Entrada al venue', 210.0, false );
+    }
+} );
+
 /* ─── 6. Per-player price override ────────────────────────────────────── */
 
 add_action( 'woocommerce_before_calculate_totals', function ( $cart ) {
