@@ -52,6 +52,20 @@ add_action( 'cmb2_init', function () {
         'attributes' => [ 'type' => 'number', 'min' => '0' ],
     ] );
     $cmb->add_field( [
+        'name'       => __( 'Mínimo de jugadores por equipo', 'fmdb' ),
+        'desc'       => __( 'Jugadores necesarios para que el equipo sea confirmado. Vacío = 6.', 'fmdb' ),
+        'id'         => '_fmdb_reg_min_players',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '1', 'placeholder' => '6' ],
+    ] );
+    $cmb->add_field( [
+        'name'       => __( 'Máximo de jugadores por equipo', 'fmdb' ),
+        'desc'       => __( 'Límite del plantel; se rechazan registros adicionales. Vacío = 10.', 'fmdb' ),
+        'id'         => '_fmdb_reg_max_players',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '1', 'placeholder' => '10' ],
+    ] );
+    $cmb->add_field( [
         'name'    => __( 'Ramas', 'fmdb' ),
         'desc'    => __( 'Dejar vacío para mostrar todas.', 'fmdb' ),
         'id'      => '_fmdb_reg_ramas',
@@ -150,46 +164,15 @@ add_action( 'cmb2_init', function () {
     ] );
 } );
 
-/* ─── 1b. Global settings: player roster limits ────────────────────────── */
-
-add_action( 'cmb2_init', function () {
-    $cmb = new_cmb2_box( [
-        'id'           => 'fmdb_global_settings',
-        'title'        => __( 'Configuración FMDB', 'fmdb' ),
-        'object_types' => [ 'options-page' ],
-        'option_key'   => 'fmdb_global_settings',
-        'menu_title'   => __( 'Configuración FMDB', 'fmdb' ),
-        'parent_slug'  => 'options-general.php',
-        'capability'   => 'manage_options',
-        'position'     => 100,
-    ] );
-
-    $cmb->add_field( [
-        'name'       => __( 'Mínimo de jugadores por equipo', 'fmdb' ),
-        'desc'       => __( 'Un equipo necesita al menos este número de jugadores registrados y pagados para contarse como confirmado. Predeterminado: 6.', 'fmdb' ),
-        'id'         => 'fmdb_min_players',
-        'type'       => 'text_small',
-        'default'    => '6',
-        'attributes' => [ 'type' => 'number', 'min' => '1' ],
-    ] );
-    $cmb->add_field( [
-        'name'       => __( 'Máximo de jugadores por equipo', 'fmdb' ),
-        'desc'       => __( 'El sistema rechazará registros adicionales cuando un equipo ya tenga este número de jugadores. Predeterminado: 10.', 'fmdb' ),
-        'id'         => 'fmdb_max_players',
-        'type'       => 'text_small',
-        'default'    => '10',
-        'attributes' => [ 'type' => 'number', 'min' => '1' ],
-    ] );
-} );
-
 /**
  * Returns [ 'min' => int, 'max' => int ] for team player roster limits.
- * Reads from the FMDB global settings options page; falls back to 6/10.
+ * Reads from per-event meta; falls back to 6/10.
  */
-function fmdb_reg_player_limits(): array {
-    $min = (int) cmb2_get_option( 'fmdb_global_settings', 'fmdb_min_players', 6 );
-    $max = (int) cmb2_get_option( 'fmdb_global_settings', 'fmdb_max_players', 10 );
+function fmdb_reg_player_limits( int $event_id ): array {
+    $min = (int) get_post_meta( $event_id, '_fmdb_reg_min_players', true );
+    $max = (int) get_post_meta( $event_id, '_fmdb_reg_max_players', true );
     if ( $min < 1 ) $min = 6;
+    if ( $max < 1 ) $max = 10;
     if ( $max < $min ) $max = $min;
     return [ 'min' => $min, 'max' => $max ];
 }
@@ -319,7 +302,7 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
     }
 
     // Compute confirmed: paid + ≥ min players + not on waitlist.
-    $limits = fmdb_reg_player_limits();
+    $limits = fmdb_reg_player_limits( $event_id );
     $min_players = $limits['min'];
     foreach ( $teams as &$team ) {
         $total = $team['bulk_count'] + count( $team['players'] );
@@ -556,7 +539,7 @@ function fmdb_event_registration_box( int $event_id ): void {
     if ( empty( $mods ) )  $mods  = [ 'Foam', 'Cloth' ];
 
     $cat_labels    = [ 'Infantil' => 'Infantil (8-12 años)', 'Libre' => 'Libre (13+ años)' ];
-    $player_limits = fmdb_reg_player_limits();
+    $player_limits = fmdb_reg_player_limits( $event_id );
     $min_players   = $player_limits['min'];
     $max_players   = $player_limits['max'];
 
@@ -1480,7 +1463,7 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
     $teams = fmdb_reg_get_event_teams( $event_id );
     if ( empty( $teams ) ) return;
 
-    $limits      = fmdb_reg_player_limits();
+    $limits      = fmdb_reg_player_limits( $event_id );
     $min_players = $limits['min'];
 
     $pay_status_labels = [
@@ -1778,7 +1761,7 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
         // Determine waitlist status: slot at capacity → waitlist.
         // Teams below the player minimum go to "Equipos incompletos" and never to waitlist.
         $player_count   = $cart_item_data['fmdb_player_count'] ?? 0;
-        $_limits        = fmdb_reg_player_limits();
+        $_limits        = fmdb_reg_player_limits( $event_id );
         if ( $player_count < $_limits['min'] ) {
             $cart_item_data['fmdb_on_waitlist'] = '0';
         } else {
@@ -1937,7 +1920,7 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         }
         // Enforce roster cap per team.
         if ( $passed && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
-            $_ind_limits = fmdb_reg_player_limits();
+            $_ind_limits = fmdb_reg_player_limits( $event_id );
             $teams = fmdb_reg_get_event_teams( $event_id );
             $target = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
             foreach ( $teams as $t ) {
@@ -1991,7 +1974,7 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             $passed = false;
         }
         $count = (int) ( $_POST['fmdb_player_count'] ?? 0 );
-        $_team_limits = fmdb_reg_player_limits();
+        $_team_limits = fmdb_reg_player_limits( $event_id );
         if ( $count < 1 || $count > $_team_limits['max'] ) {
             wc_add_notice( 'El número de jugadores debe ser entre 1 y ' . $_team_limits['max'] . '.', 'error' );
             $passed = false;
