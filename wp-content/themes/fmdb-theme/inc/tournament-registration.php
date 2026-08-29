@@ -2043,11 +2043,13 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
 
 /* ─── 11. Hospedaje: cart display + order meta ──────────────────────────── */
 
-// Append meal indicator to the product name shown in the cart.
-add_filter( 'woocommerce_cart_item_name', function ( $name, $cart_item ) {
-    if ( empty( $cart_item['fmdb_hospedaje_type'] ) ) return $name;
+// Append meal indicator to the product name on cart load — works for both classic and Blocks cart.
+add_filter( 'woocommerce_get_cart_item_from_session', function ( $cart_item, $values ) {
+    if ( empty( $cart_item['fmdb_hospedaje_type'] ) ) return $cart_item;
+    if ( empty( $cart_item['data'] ) || ! is_object( $cart_item['data'] ) ) return $cart_item;
     $sc = in_array( $cart_item['fmdb_hospedaje_type'], [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true );
-    return $name . ( $sc ? ' – Solo habitación' : ' – Con comidas' );
+    $cart_item['data']->set_name( $cart_item['data']->get_name() . ( $sc ? ' – Solo habitación' : ' – Con comidas' ) );
+    return $cart_item;
 }, 10, 2 );
 
 add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
