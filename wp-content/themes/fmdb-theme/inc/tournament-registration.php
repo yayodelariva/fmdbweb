@@ -519,16 +519,18 @@ function fmdb_event_registration_box( int $event_id ): void {
     $mod_val       = sanitize_text_field( $_POST['fmdb_modalidad'] ?? '' );
 
     // Team form values
-    $team_post_id  = 0;
-    $team_name_val = esc_attr( $_POST['fmdb_team_name'] ?? '' );
-    $captain_val   = esc_attr( $_POST['fmdb_captain_name'] ?? '' );
-    $phone_val     = esc_attr( $_POST['fmdb_captain_phone'] ?? '' );
-    $count_val     = (int) ( $_POST['fmdb_player_count'] ?? 0 );
+    $team_post_id        = 0;
+    $team_name_val       = esc_attr( $_POST['fmdb_team_name'] ?? '' );
+    $captain_val         = esc_attr( $_POST['fmdb_captain_name'] ?? '' );
+    $captain_apellido_val = esc_attr( $_POST['fmdb_captain_apellido'] ?? '' );
+    $phone_val           = esc_attr( $_POST['fmdb_captain_phone'] ?? '' );
+    $count_val           = (int) ( $_POST['fmdb_player_count'] ?? 0 );
 
     // Individual form values
-    $ind_team_val    = esc_attr( $_POST['fmdb_ind_team_name'] ?? '' );
-    $player_name_val = esc_attr( $_POST['fmdb_player_name'] ?? '' );
-    $player_phone_val = esc_attr( $_POST['fmdb_player_phone'] ?? '' );
+    $ind_team_val        = esc_attr( $_POST['fmdb_ind_team_name'] ?? '' );
+    $player_name_val     = esc_attr( $_POST['fmdb_player_name'] ?? '' );
+    $player_apellido_val = esc_attr( $_POST['fmdb_player_apellido'] ?? '' );
+    $player_phone_val    = esc_attr( $_POST['fmdb_player_phone'] ?? '' );
 
     // Detect user's fmdb_team and pre-fill
     $user_team = null;
@@ -724,10 +726,14 @@ function fmdb_event_registration_box( int $event_id ): void {
                         <input type="text" name="fmdb_captain_name" required value="<?php echo $captain_val; ?>">
                     </div>
                     <div class="fmdb-reg-form__field">
-                        <label>Teléfono *</label>
-                        <input type="tel" name="fmdb_captain_phone" required
-                               value="<?php echo $phone_val; ?>" placeholder="55 xxxx xxxx">
+                        <label>Apellido *</label>
+                        <input type="text" name="fmdb_captain_apellido" required value="<?php echo $captain_apellido_val; ?>">
                     </div>
+                </div>
+                <div class="fmdb-reg-form__field">
+                    <label>Teléfono *</label>
+                    <input type="tel" name="fmdb_captain_phone" required
+                           value="<?php echo $phone_val; ?>" placeholder="55 xxxx xxxx">
                 </div>
 
                 <div class="fmdb-reg-form__section-title">División</div>
@@ -800,10 +806,14 @@ function fmdb_event_registration_box( int $event_id ): void {
                         <input type="text" name="fmdb_player_name" required value="<?php echo $player_name_val; ?>">
                     </div>
                     <div class="fmdb-reg-form__field">
-                        <label>Teléfono *</label>
-                        <input type="tel" name="fmdb_player_phone" required
-                               value="<?php echo $player_phone_val; ?>" placeholder="55 xxxx xxxx">
+                        <label>Apellido *</label>
+                        <input type="text" name="fmdb_player_apellido" required value="<?php echo $player_apellido_val; ?>">
                     </div>
+                </div>
+                <div class="fmdb-reg-form__field">
+                    <label>Teléfono *</label>
+                    <input type="tel" name="fmdb_player_phone" required
+                           value="<?php echo $player_phone_val; ?>" placeholder="55 xxxx xxxx">
                 </div>
 
                 <?php if ( ! empty( $registered_teams ) ) : ?>
@@ -1620,16 +1630,18 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
     $cart_item_data['fmdb_modalidad']  = sanitize_text_field( wp_unslash( $_POST['fmdb_modalidad'] ?? '' ) );
 
     if ( $type === 'individual' ) {
-        $cart_item_data['fmdb_team_name']    = sanitize_text_field( wp_unslash( $_POST['fmdb_ind_team_name'] ?? '' ) );
-        $cart_item_data['fmdb_player_name']  = sanitize_text_field( wp_unslash( $_POST['fmdb_player_name'] ?? '' ) );
-        $cart_item_data['fmdb_player_phone'] = sanitize_text_field( wp_unslash( $_POST['fmdb_player_phone'] ?? '' ) );
-        $cart_item_data['fmdb_player_count'] = 1;
+        $cart_item_data['fmdb_team_name']       = sanitize_text_field( wp_unslash( $_POST['fmdb_ind_team_name'] ?? '' ) );
+        $cart_item_data['fmdb_player_name']     = sanitize_text_field( wp_unslash( $_POST['fmdb_player_name'] ?? '' ) );
+        $cart_item_data['fmdb_player_apellido'] = sanitize_text_field( wp_unslash( $_POST['fmdb_player_apellido'] ?? '' ) );
+        $cart_item_data['fmdb_player_phone']    = sanitize_text_field( wp_unslash( $_POST['fmdb_player_phone'] ?? '' ) );
+        $cart_item_data['fmdb_player_count']    = 1;
     } else {
-        $cart_item_data['fmdb_team_post_id']  = (int) ( $_POST['fmdb_team_post_id'] ?? 0 );
-        $cart_item_data['fmdb_team_name']     = sanitize_text_field( wp_unslash( $_POST['fmdb_team_name'] ?? '' ) );
-        $cart_item_data['fmdb_captain_name']  = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_name'] ?? '' ) );
-        $cart_item_data['fmdb_captain_phone'] = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_phone'] ?? '' ) );
-        $cart_item_data['fmdb_player_count']  = absint( $_POST['fmdb_player_count'] ?? 0 );
+        $cart_item_data['fmdb_team_post_id']    = (int) ( $_POST['fmdb_team_post_id'] ?? 0 );
+        $cart_item_data['fmdb_team_name']       = sanitize_text_field( wp_unslash( $_POST['fmdb_team_name'] ?? '' ) );
+        $cart_item_data['fmdb_captain_name']    = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_name'] ?? '' ) );
+        $cart_item_data['fmdb_captain_apellido'] = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_apellido'] ?? '' ) );
+        $cart_item_data['fmdb_captain_phone']   = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_phone'] ?? '' ) );
+        $cart_item_data['fmdb_player_count']    = absint( $_POST['fmdb_player_count'] ?? 0 );
 
         // Determine waitlist status: slot at capacity → waitlist.
         // Teams with fewer than 7 players go to "Equipos incompletos" and never to waitlist.
@@ -1706,12 +1718,14 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
     $data[] = [ 'name' => 'División', 'value' => $div_str ];
 
     if ( $type === 'individual' ) {
-        $data[] = [ 'name' => 'Jugador',   'value' => $cart_item['fmdb_player_name'] ?? '' ];
+        $data[] = [ 'name' => 'Jugador',  'value' => $cart_item['fmdb_player_name'] ?? '' ];
+        $data[] = [ 'name' => 'Apellido', 'value' => $cart_item['fmdb_player_apellido'] ?? '' ];
         if ( ! empty( $cart_item['fmdb_player_phone'] ) ) {
             $data[] = [ 'name' => 'Teléfono', 'value' => $cart_item['fmdb_player_phone'] ];
         }
     } else {
         $data[] = [ 'name' => 'Capitán',   'value' => $cart_item['fmdb_captain_name'] ?? '' ];
+        $data[] = [ 'name' => 'Apellido',  'value' => $cart_item['fmdb_captain_apellido'] ?? '' ];
         $data[] = [ 'name' => 'Teléfono',  'value' => $cart_item['fmdb_captain_phone'] ?? '' ];
         $data[] = [ 'name' => 'Jugadores', 'value' => $cart_item['fmdb_player_count'] ?? 0 ];
     }
@@ -1774,6 +1788,10 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             wc_add_notice( 'Ingresa tu nombre.', 'error' );
             $passed = false;
         }
+        if ( empty( $_POST['fmdb_player_apellido'] ) ) {
+            wc_add_notice( 'Ingresa tu apellido.', 'error' );
+            $passed = false;
+        }
         if ( empty( $_POST['fmdb_player_phone'] ) ) {
             wc_add_notice( 'Ingresa tu teléfono.', 'error' );
             $passed = false;
@@ -1816,6 +1834,10 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         }
         if ( empty( $_POST['fmdb_captain_name'] ) ) {
             wc_add_notice( 'Ingresa el nombre del capitán.', 'error' );
+            $passed = false;
+        }
+        if ( empty( $_POST['fmdb_captain_apellido'] ) ) {
+            wc_add_notice( 'Ingresa el apellido del capitán.', 'error' );
             $passed = false;
         }
         if ( empty( $_POST['fmdb_captain_phone'] ) ) {
@@ -2034,12 +2056,14 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
     $item->update_meta_data( 'Tipo',      $type === 'individual' ? 'Individual' : 'Equipo' );
 
     if ( $type === 'individual' ) {
-        $item->update_meta_data( 'Jugador',   $values['fmdb_player_name'] ?? '' );
+        $item->update_meta_data( 'Jugador',  $values['fmdb_player_name'] ?? '' );
+        $item->update_meta_data( 'Apellido', $values['fmdb_player_apellido'] ?? '' );
         if ( ! empty( $values['fmdb_player_phone'] ) ) {
             $item->update_meta_data( 'Teléfono', $values['fmdb_player_phone'] );
         }
     } else {
         $item->update_meta_data( 'Capitán',   $values['fmdb_captain_name'] ?? '' );
+        $item->update_meta_data( 'Apellido',  $values['fmdb_captain_apellido'] ?? '' );
         $item->update_meta_data( 'Teléfono',  $values['fmdb_captain_phone'] ?? '' );
         $item->update_meta_data( 'Jugadores', $values['fmdb_player_count'] ?? 0 );
         if ( ! empty( $values['fmdb_team_post_id'] ) ) {
