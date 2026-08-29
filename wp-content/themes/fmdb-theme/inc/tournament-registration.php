@@ -38,14 +38,14 @@ add_action( 'cmb2_init', function () {
         'date_format' => 'Y-m-d',
     ] );
     $cmb->add_field( [
-        'name'       => __( 'Cupo por rama/modalidad (Libre)', 'fmdb' ),
+        'name'       => __( 'Cupo de equipos por rama/modalidad (Libre)', 'fmdb' ),
         'desc'       => __( '0 = sin límite. Aplica por cada Rama × Modalidad.', 'fmdb' ),
         'id'         => '_fmdb_reg_max_teams',
         'type'       => 'text_small',
         'attributes' => [ 'type' => 'number', 'min' => '0' ],
     ] );
     $cmb->add_field( [
-        'name'       => __( 'Cupo por rama/modalidad (Infantil)', 'fmdb' ),
+        'name'       => __( 'Cupo de equipos por rama/modalidad (Infantil)', 'fmdb' ),
         'desc'       => __( '0 = sin límite. Aplica por cada Rama × Modalidad en categoría Infantil.', 'fmdb' ),
         'id'         => '_fmdb_reg_max_teams_infantil',
         'type'       => 'text_small',
