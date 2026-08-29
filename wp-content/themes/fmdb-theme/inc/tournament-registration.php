@@ -723,11 +723,17 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <div class="fmdb-reg-form__row">
                     <div class="fmdb-reg-form__field">
                         <label>Nombre *</label>
-                        <input type="text" name="fmdb_captain_name" required value="<?php echo $captain_val; ?>">
+                        <input type="text" name="fmdb_captain_name" required
+                               pattern="[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+"
+                               title="Solo se permiten letras, espacios y guiones"
+                               value="<?php echo $captain_val; ?>">
                     </div>
                     <div class="fmdb-reg-form__field">
                         <label>Apellido *</label>
-                        <input type="text" name="fmdb_captain_apellido" required value="<?php echo $captain_apellido_val; ?>">
+                        <input type="text" name="fmdb_captain_apellido" required
+                               pattern="[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+"
+                               title="Solo se permiten letras, espacios y guiones"
+                               value="<?php echo $captain_apellido_val; ?>">
                     </div>
                 </div>
                 <div class="fmdb-reg-form__field">
@@ -803,11 +809,17 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <div class="fmdb-reg-form__row">
                     <div class="fmdb-reg-form__field">
                         <label>Tu nombre *</label>
-                        <input type="text" name="fmdb_player_name" required value="<?php echo $player_name_val; ?>">
+                        <input type="text" name="fmdb_player_name" required
+                               pattern="[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+"
+                               title="Solo se permiten letras, espacios y guiones"
+                               value="<?php echo $player_name_val; ?>">
                     </div>
                     <div class="fmdb-reg-form__field">
                         <label>Apellido *</label>
-                        <input type="text" name="fmdb_player_apellido" required value="<?php echo $player_apellido_val; ?>">
+                        <input type="text" name="fmdb_player_apellido" required
+                               pattern="[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+"
+                               title="Solo se permiten letras, espacios y guiones"
+                               value="<?php echo $player_apellido_val; ?>">
                     </div>
                 </div>
                 <div class="fmdb-reg-form__field">
@@ -1787,9 +1799,15 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         if ( empty( $_POST['fmdb_player_name'] ) ) {
             wc_add_notice( 'Ingresa tu nombre.', 'error' );
             $passed = false;
+        } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_player_name'] ) ) {
+            wc_add_notice( 'El nombre solo puede contener letras.', 'error' );
+            $passed = false;
         }
         if ( empty( $_POST['fmdb_player_apellido'] ) ) {
             wc_add_notice( 'Ingresa tu apellido.', 'error' );
+            $passed = false;
+        } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_player_apellido'] ) ) {
+            wc_add_notice( 'El apellido solo puede contener letras.', 'error' );
             $passed = false;
         }
         if ( empty( $_POST['fmdb_player_phone'] ) ) {
@@ -1835,9 +1853,15 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         if ( empty( $_POST['fmdb_captain_name'] ) ) {
             wc_add_notice( 'Ingresa el nombre del capitán.', 'error' );
             $passed = false;
+        } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_captain_name'] ) ) {
+            wc_add_notice( 'El nombre del capitán solo puede contener letras.', 'error' );
+            $passed = false;
         }
         if ( empty( $_POST['fmdb_captain_apellido'] ) ) {
             wc_add_notice( 'Ingresa el apellido del capitán.', 'error' );
+            $passed = false;
+        } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_captain_apellido'] ) ) {
+            wc_add_notice( 'El apellido del capitán solo puede contener letras.', 'error' );
             $passed = false;
         }
         if ( empty( $_POST['fmdb_captain_phone'] ) ) {
