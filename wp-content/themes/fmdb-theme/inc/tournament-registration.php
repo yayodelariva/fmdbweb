@@ -2056,9 +2056,9 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
         'sencilla_sc'  => 'Habitación Sencilla – Solo cuarto',
         'cuadruple_sc' => 'Habitación Cuádruple – Solo cuarto',
     ];
-    $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)';
+    $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos) · Acceso al venue';
     $data[] = [ 'name' => 'Habitación', 'value' => $label_map[ $type ] ?? $type ];
-    $data[] = [ 'name' => 'Incluye',    'value' => in_array( $type, [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true ) ? '1 Noche de hospedaje' : $inc_full ];
+    $data[] = [ 'name' => 'Incluye',    'value' => in_array( $type, [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true ) ? '1 Noche de hospedaje · Acceso al venue' : $inc_full ];
     return $data;
 }, 10, 2 );
 
@@ -2075,9 +2075,9 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
         'sencilla_sc'  => 'Sencilla SC',
         'cuadruple_sc' => 'Cuádruple SC',
     ];
-    $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos)';
+    $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos) · Acceso al venue';
     $item->update_meta_data( 'Habitación', $hab_map[ $type ] ?? $type );
-    $item->update_meta_data( 'Incluye', in_array( $type, [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true ) ? '1 Noche de hospedaje' : $inc_full );
+    $item->update_meta_data( 'Incluye', in_array( $type, [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true ) ? '1 Noche de hospedaje · Acceso al venue' : $inc_full );
     if ( ! empty( $values['fmdb_hospedaje_event_id'] ) ) {
         $order->update_meta_data( '_fmdb_hospedaje_event_id', (int) $values['fmdb_hospedaje_event_id'] );
     }
