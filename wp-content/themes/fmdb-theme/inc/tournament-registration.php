@@ -1069,7 +1069,11 @@ function fmdb_event_registration_box( int $event_id ): void {
                                     if (msgEl) { msgEl.textContent = (data.data && data.data.message) || 'Error al agregar. Intenta de nuevo.'; msgEl.classList.add('fmdb-reg-section__msg--err'); }
                                 }
                             })
-                            .catch(function () { btn.disabled = false; btn.textContent = origText; });
+                            .catch(function () {
+                                btn.disabled = false;
+                                btn.textContent = origText;
+                                if (msgEl) { msgEl.textContent = 'Error de conexión. Intenta de nuevo.'; msgEl.classList.add('fmdb-reg-section__msg--err'); }
+                            });
                     });
                 }
 
@@ -1254,7 +1258,17 @@ function fmdb_event_registration_box( int $event_id ): void {
  * We bypass it with a custom WP AJAX action; our existing woocommerce_add_cart_item_data
  * and woocommerce_add_to_cart_validation filters still fire and read from $_POST,
  * which IS populated in AJAX requests.
+ *
+ * On localhost (request_order=GCP), $_REQUEST includes $_POST, so WC's native
+ * add_to_cart_action() would fire on wp_loaded (priority 20) before our wp_ajax_*
+ * hook and preempt the response. We remove it during our AJAX calls.
  */
+add_action( 'wp_loaded', function () {
+    if ( ! wp_doing_ajax() ) return;
+    if ( ! in_array( $_POST['action'] ?? '', [ 'fmdb_add_registration', 'fmdb_add_hospedaje' ], true ) ) return;
+    remove_action( 'wp_loaded', [ 'WC_Form_Handler', 'add_to_cart_action' ], 20 );
+}, 15 );
+
 add_action( 'wp_ajax_fmdb_add_registration', 'fmdb_ajax_add_registration' );
 function fmdb_ajax_add_registration(): void {
     check_ajax_referer( 'fmdb_add_registration', 'nonce' );
