@@ -695,7 +695,7 @@
     border-color: var(--fmdb-green);
     box-shadow: 0 0 0 2px rgba(8,80,65,0.1);
 }
-.fmdb-reg-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fmdb-reg-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
 @media (max-width: 380px) { .fmdb-reg-form__row { grid-template-columns: 1fr; } }
 
 /* WC notices inside the registration box */
@@ -868,6 +868,7 @@
 .fmdb-reg-hospedaje__option:first-of-type + .fmdb-reg-hospedaje__group-label { border-top: none; padding-top: 0; margin-top: 8px; }
 .fmdb-reg-hospedaje__group-desc { font-size: 0.76rem; color: var(--fmdb-text-muted, #777); margin: 0 0 6px; line-height: 1.5; }
 .fmdb-reg-hospedaje__guests-title { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--fmdb-neutral); }
+.fmdb-reg-hospedaje__guest-label { margin: 10px 0 4px; font-size: 0.75rem; font-weight: 600; color: var(--fmdb-dark-green); text-transform: uppercase; letter-spacing: 0.04em; }
 .fmdb-hospedaje-ajax-error { font-size: 0.82rem; color: var(--fmdb-red, #c0392b); margin: 0 0 8px; }
 
 /* === Registration section headers === */

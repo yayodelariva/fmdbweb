@@ -930,9 +930,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <div class="fmdb-reg-form__section-title fmdb-reg-hospedaje__guests-title">Datos de huéspedes</div>
                 <?php for ( $g = 1; $g <= 3; $g++ ) : ?>
                 <div id="fmdb-hosp-guest-<?php echo $eid; ?>-<?php echo $g; ?>" hidden>
+                    <p class="fmdb-reg-hospedaje__guest-label">Huésped <?php echo $g; ?></p>
                     <div class="fmdb-reg-form__row">
                         <div class="fmdb-reg-form__field">
-                            <label>Huésped <?php echo $g; ?> – Nombre</label>
+                            <label>Nombre</label>
                             <input type="text" id="fmdb-hosp-gname-<?php echo $eid; ?>-<?php echo $g; ?>"
                                    pattern="[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+"
                                    title="Solo se permiten letras, espacios y guiones"
