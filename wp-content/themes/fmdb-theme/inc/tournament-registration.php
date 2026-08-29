@@ -2043,6 +2043,13 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
 
 /* ─── 11. Hospedaje: cart display + order meta ──────────────────────────── */
 
+// Append meal indicator to the product name shown in the cart.
+add_filter( 'woocommerce_cart_item_name', function ( $name, $cart_item ) {
+    if ( empty( $cart_item['fmdb_hospedaje_type'] ) ) return $name;
+    $sc = in_array( $cart_item['fmdb_hospedaje_type'], [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true );
+    return $name . ( $sc ? ' – Solo habitación' : ' – Con comidas' );
+}, 10, 2 );
+
 add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
     if ( empty( $cart_item['fmdb_hospedaje_type'] ) ) return $data;
     $type      = $cart_item['fmdb_hospedaje_type'];
@@ -2075,9 +2082,11 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
         'sencilla_sc'  => 'Sencilla SC',
         'cuadruple_sc' => 'Cuádruple SC',
     ];
+    $sc = in_array( $type, [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true );
+    $item->set_name( $item->get_name() . ( $sc ? ' – Solo habitación' : ' – Con comidas' ) );
     $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos) · Acceso al venue';
     $item->update_meta_data( 'Habitación', $hab_map[ $type ] ?? $type );
-    $item->update_meta_data( 'Incluye', in_array( $type, [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true ) ? '1 Noche de hospedaje · Acceso al venue' : $inc_full );
+    $item->update_meta_data( 'Incluye', $sc ? '1 Noche de hospedaje · Acceso al venue' : $inc_full );
     if ( ! empty( $values['fmdb_hospedaje_event_id'] ) ) {
         $order->update_meta_data( '_fmdb_hospedaje_event_id', (int) $values['fmdb_hospedaje_event_id'] );
     }
