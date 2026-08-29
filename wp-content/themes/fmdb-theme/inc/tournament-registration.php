@@ -2248,6 +2248,20 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
     }
 }, 10, 4 );
 
+// Suppress quantity selector for hospedaje items (classic cart).
+add_filter( 'woocommerce_cart_item_quantity', function ( $product_quantity, $cart_item_key, $cart_item ) {
+    if ( isset( $cart_item['fmdb_hospedaje_type'] ) ) {
+        return (string) $cart_item['quantity'];
+    }
+    return $product_quantity;
+}, 10, 3 );
+
+// Mark hospedaje products as sold-individually so WC Blocks hides the quantity stepper.
+add_filter( 'woocommerce_is_sold_individually', function ( $sold_individually, $product ) {
+    if ( $sold_individually ) return true;
+    return in_array( $product->get_id(), array_values( fmdb_hospedaje_product_ids() ), true );
+}, 10, 2 );
+
 /* ─── 12. Bank transfer instructions on order confirmation ─────────────── */
 
 add_action( 'woocommerce_thankyou', function ( $order_id ) {
