@@ -916,6 +916,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <span class="fmdb-reg-total__val" id="fmdb-total-reg-<?php echo $eid; ?>">—</span>
                 </div>
                 <div class="fmdb-reg-total__row">
+                    <span class="fmdb-reg-total__label">Entrada al venue</span>
+                    <span class="fmdb-reg-total__val" id="fmdb-total-venue-<?php echo $eid; ?>">$210 MXN</span>
+                </div>
+                <div class="fmdb-reg-total__row">
                     <span class="fmdb-reg-total__label">Hospedaje</span>
                     <span class="fmdb-reg-total__val" id="fmdb-total-hosp-<?php echo $eid; ?>">—</span>
                 </div>
@@ -955,16 +959,19 @@ function fmdb_event_registration_box( int $event_id ): void {
                 }
 
                 // ── Grand total ──
-                var regAmt  = 0;
-                var hospAmt = 0;
+                var regAmt   = 0;
+                var hospAmt  = 0;
+                var venueAmt = 210; // $210 MXN if no hospedaje; included (free) with any hospedaje
 
                 function updateGrandTotal() {
                     var regEl   = document.getElementById('fmdb-total-reg-'   + eid);
+                    var venueEl = document.getElementById('fmdb-total-venue-' + eid);
                     var hospEl  = document.getElementById('fmdb-total-hosp-'  + eid);
                     var grandEl = document.getElementById('fmdb-total-grand-' + eid);
                     if (regEl)   regEl.textContent   = regAmt  > 0 ? fmtMXN(regAmt)  : '—';
-                    if (hospEl)  hospEl.textContent   = hospAmt > 0 ? fmtMXN(hospAmt) : '—';
-                    if (grandEl) grandEl.textContent  = (regAmt + hospAmt) > 0 ? fmtMXN(regAmt + hospAmt) : '—';
+                    if (venueEl) venueEl.textContent = venueAmt > 0 ? fmtMXN(venueAmt) : 'Incluido';
+                    if (hospEl)  hospEl.textContent  = hospAmt > 0 ? fmtMXN(hospAmt) : '—';
+                    if (grandEl) grandEl.textContent = (regAmt + venueAmt + hospAmt) > 0 ? fmtMXN(regAmt + venueAmt + hospAmt) : '—';
                 }
 
                 // ── Tab switching ──
@@ -1015,7 +1022,8 @@ function fmdb_event_registration_box( int $event_id ): void {
                 if (hospOpts) {
                     hospOpts.querySelectorAll('input[type="radio"]').forEach(function (r) {
                         r.addEventListener('change', function () {
-                            hospAmt = hospPrices[r.value] || 0;
+                            hospAmt  = hospPrices[r.value] || 0;
+                            venueAmt = r.value === '' ? 210 : 0; // included with any hospedaje
                             if (hospBtn) hospBtn.disabled = (r.value === '');
                             updateGrandTotal();
                         });
