@@ -150,6 +150,50 @@ add_action( 'cmb2_init', function () {
     ] );
 } );
 
+/* ─── 1b. Global settings: player roster limits ────────────────────────── */
+
+add_action( 'cmb2_init', function () {
+    $cmb = new_cmb2_box( [
+        'id'           => 'fmdb_global_settings',
+        'title'        => __( 'Configuración FMDB', 'fmdb' ),
+        'object_types' => [ 'options-page' ],
+        'option_key'   => 'fmdb_global_settings',
+        'menu_title'   => __( 'Configuración FMDB', 'fmdb' ),
+        'parent_slug'  => 'options-general.php',
+        'capability'   => 'manage_options',
+        'position'     => 100,
+    ] );
+
+    $cmb->add_field( [
+        'name'       => __( 'Mínimo de jugadores por equipo', 'fmdb' ),
+        'desc'       => __( 'Un equipo necesita al menos este número de jugadores registrados y pagados para contarse como confirmado. Predeterminado: 6.', 'fmdb' ),
+        'id'         => 'fmdb_min_players',
+        'type'       => 'text_small',
+        'default'    => '6',
+        'attributes' => [ 'type' => 'number', 'min' => '1' ],
+    ] );
+    $cmb->add_field( [
+        'name'       => __( 'Máximo de jugadores por equipo', 'fmdb' ),
+        'desc'       => __( 'El sistema rechazará registros adicionales cuando un equipo ya tenga este número de jugadores. Predeterminado: 10.', 'fmdb' ),
+        'id'         => 'fmdb_max_players',
+        'type'       => 'text_small',
+        'default'    => '10',
+        'attributes' => [ 'type' => 'number', 'min' => '1' ],
+    ] );
+} );
+
+/**
+ * Returns [ 'min' => int, 'max' => int ] for team player roster limits.
+ * Reads from the FMDB global settings options page; falls back to 6/10.
+ */
+function fmdb_reg_player_limits(): array {
+    $min = (int) cmb2_get_option( 'fmdb_global_settings', 'fmdb_min_players', 6 );
+    $max = (int) cmb2_get_option( 'fmdb_global_settings', 'fmdb_max_players', 10 );
+    if ( $min < 1 ) $min = 6;
+    if ( $max < $min ) $max = $min;
+    return [ 'min' => $min, 'max' => $max ];
+}
+
 /* ─── 2. Sync WC product on event save ────────────────────────────────── */
 
 // Explicitly save hospedaje capacity fields from $_POST — CMB2 saves at priority 10
@@ -274,11 +318,13 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
         }
     }
 
-    // Compute confirmed: paid + ≥7 players + not on waitlist.
+    // Compute confirmed: paid + ≥ min players + not on waitlist.
+    $limits = fmdb_reg_player_limits();
+    $min_players = $limits['min'];
     foreach ( $teams as &$team ) {
         $total = $team['bulk_count'] + count( $team['players'] );
         $team['confirmed'] = in_array( $team['status'], [ 'processing', 'completed' ], true )
-                          && $total >= 7
+                          && $total >= $min_players
                           && ! ( $team['on_waitlist'] ?? false );
     }
     unset( $team );
@@ -286,12 +332,12 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
     $all = apply_filters( 'fmdb_reg_event_teams', array_values( $teams ), $event_id );
 
     // Normalize fixture/filtered data that may be missing computed fields.
-    return array_map( function ( $t ) {
+    return array_map( function ( $t ) use ( $min_players ) {
         $t['on_waitlist'] = $t['on_waitlist'] ?? false;
         if ( ! isset( $t['confirmed'] ) ) {
             $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
             $t['confirmed'] = in_array( $t['status'] ?? '', [ 'processing', 'completed' ], true )
-                           && $total >= 7
+                           && $total >= $min_players
                            && ! $t['on_waitlist'];
         }
         return $t;
@@ -509,7 +555,10 @@ function fmdb_event_registration_box( int $event_id ): void {
     if ( empty( $cats ) )  $cats  = [ 'Infantil', 'Libre' ];
     if ( empty( $mods ) )  $mods  = [ 'Foam', 'Cloth' ];
 
-    $cat_labels = [ 'Infantil' => 'Infantil (8-12 años)', 'Libre' => 'Libre (13+ años)' ];
+    $cat_labels    = [ 'Infantil' => 'Infantil (8-12 años)', 'Libre' => 'Libre (13+ años)' ];
+    $player_limits = fmdb_reg_player_limits();
+    $min_players   = $player_limits['min'];
+    $max_players   = $player_limits['max'];
 
     // Shared POST values (restored on validation error)
     $active_tab    = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
@@ -748,8 +797,8 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <div class="fmdb-reg-form__section-title">Plantel</div>
 
                 <div class="fmdb-reg-form__field">
-                    <label>Número de jugadores * <span class="fmdb-reg-form__range">(mín. 1, máx. 9)</span></label>
-                    <input type="number" name="fmdb_player_count" required min="1" max="9"
+                    <label>Número de jugadores * <span class="fmdb-reg-form__range">(mín. 1, máx. <?php echo $max_players; ?>)</span></label>
+                    <input type="number" name="fmdb_player_count" required min="1" max="<?php echo $max_players; ?>"
                            value="<?php echo $count_val > 0 ? $count_val : ''; ?>"
                            class="fmdb-reg-count-input" id="fmdb-count-<?php echo $eid; ?>">
                     <span class="fmdb-reg-form__hint">El coach no cuenta como jugador.</span>
@@ -1431,6 +1480,9 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
     $teams = fmdb_reg_get_event_teams( $event_id );
     if ( empty( $teams ) ) return;
 
+    $limits      = fmdb_reg_player_limits();
+    $min_players = $limits['min'];
+
     $pay_status_labels = [
         'pending'    => [ 'label' => 'Pendiente de pago', 'mod' => 'pending' ],
         'on-hold'    => [ 'label' => 'Pendiente de pago', 'mod' => 'pending' ],
@@ -1439,13 +1491,13 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
     ];
 
     $confirmed  = array_values( array_filter( $teams, fn( $t ) => $t['confirmed'] ?? false ) );
-    $waitlisted = array_values( array_filter( $teams, function ( $t ) {
+    $waitlisted = array_values( array_filter( $teams, function ( $t ) use ( $min_players ) {
         $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
-        return ! ( $t['confirmed'] ?? false ) && ( $t['on_waitlist'] ?? false ) && $total >= 7;
+        return ! ( $t['confirmed'] ?? false ) && ( $t['on_waitlist'] ?? false ) && $total >= $min_players;
     } ) );
-    $incomplete = array_values( array_filter( $teams, function ( $t ) {
+    $incomplete = array_values( array_filter( $teams, function ( $t ) use ( $min_players ) {
         $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
-        return ! ( $t['confirmed'] ?? false ) && $total < 7;
+        return ! ( $t['confirmed'] ?? false ) && $total < $min_players;
     } ) );
 
     // Use event-configured options for filters (fallback to full list).
@@ -1459,14 +1511,14 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
     $sid = 'fmdb-teams-' . $event_id;
 
     // Helper: render a single team card.
-    $render_card = function ( array $team ) use ( $pay_status_labels ): void {
+    $render_card = function ( array $team ) use ( $pay_status_labels, $min_players ): void {
         $ind_count = count( $team['players'] );
         $total     = $team['bulk_count'] + $ind_count;
 
         $total = $team['bulk_count'] + $ind_count;
         if ( $team['confirmed'] ?? false ) {
             $st = [ 'label' => 'Confirmado', 'mod' => 'confirmed' ];
-        } elseif ( $total < 7 ) {
+        } elseif ( $total < $min_players ) {
             $st = [ 'label' => 'Incompleto', 'mod' => 'incomplete' ];
         } elseif ( $team['on_waitlist'] ?? false ) {
             $st = [ 'label' => 'Lista de espera', 'mod' => 'waitlist' ];
@@ -1724,9 +1776,10 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
         $cart_item_data['fmdb_player_count']    = absint( $_POST['fmdb_player_count'] ?? 0 );
 
         // Determine waitlist status: slot at capacity → waitlist.
-        // Teams with fewer than 7 players go to "Equipos incompletos" and never to waitlist.
-        $player_count = $cart_item_data['fmdb_player_count'] ?? 0;
-        if ( $player_count < 7 ) {
+        // Teams below the player minimum go to "Equipos incompletos" and never to waitlist.
+        $player_count   = $cart_item_data['fmdb_player_count'] ?? 0;
+        $_limits        = fmdb_reg_player_limits();
+        if ( $player_count < $_limits['min'] ) {
             $cart_item_data['fmdb_on_waitlist'] = '0';
         } else {
             $slot_cap = fmdb_reg_slot_cap( $event_id, $cart_item_data['fmdb_categoria'] );
@@ -1882,15 +1935,16 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             wc_add_notice( 'Ingresa tu teléfono.', 'error' );
             $passed = false;
         }
-        // Enforce 9-player roster cap per team.
+        // Enforce roster cap per team.
         if ( $passed && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
+            $_ind_limits = fmdb_reg_player_limits();
             $teams = fmdb_reg_get_event_teams( $event_id );
             $target = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
             foreach ( $teams as $t ) {
                 if ( mb_strtolower( trim( $t['name'] ) ) === $target ) {
                     $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
-                    if ( $total >= 9 ) {
-                        wc_add_notice( 'Este equipo ya alcanzó el límite de 9 jugadores.', 'error' );
+                    if ( $total >= $_ind_limits['max'] ) {
+                        wc_add_notice( 'Este equipo ya alcanzó el límite de ' . $_ind_limits['max'] . ' jugadores.', 'error' );
                         $passed = false;
                     }
                     break;
@@ -1937,8 +1991,9 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             $passed = false;
         }
         $count = (int) ( $_POST['fmdb_player_count'] ?? 0 );
-        if ( $count < 1 || $count > 9 ) {
-            wc_add_notice( 'El número de jugadores debe ser entre 1 y 9.', 'error' );
+        $_team_limits = fmdb_reg_player_limits();
+        if ( $count < 1 || $count > $_team_limits['max'] ) {
+            wc_add_notice( 'El número de jugadores debe ser entre 1 y ' . $_team_limits['max'] . '.', 'error' );
             $passed = false;
         }
     }
