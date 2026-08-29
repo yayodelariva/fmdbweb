@@ -925,6 +925,31 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <?php endforeach; ?>
             </div>
 
+            <!-- ── Guest names: doble=1, triple=2, cuádruple=3 ── -->
+            <div id="fmdb-hospedaje-guests-<?php echo $eid; ?>" hidden>
+                <div class="fmdb-reg-form__section-title fmdb-reg-hospedaje__guests-title">Datos de huéspedes</div>
+                <?php for ( $g = 1; $g <= 3; $g++ ) : ?>
+                <div id="fmdb-hosp-guest-<?php echo $eid; ?>-<?php echo $g; ?>" hidden>
+                    <div class="fmdb-reg-form__row">
+                        <div class="fmdb-reg-form__field">
+                            <label>Huésped <?php echo $g; ?> – Nombre</label>
+                            <input type="text" id="fmdb-hosp-gname-<?php echo $eid; ?>-<?php echo $g; ?>"
+                                   pattern="[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+"
+                                   title="Solo se permiten letras, espacios y guiones"
+                                   placeholder="Nombre">
+                        </div>
+                        <div class="fmdb-reg-form__field">
+                            <label>Apellido</label>
+                            <input type="text" id="fmdb-hosp-gapellido-<?php echo $eid; ?>-<?php echo $g; ?>"
+                                   pattern="[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+"
+                                   title="Solo se permiten letras, espacios y guiones"
+                                   placeholder="Apellido">
+                        </div>
+                    </div>
+                </div>
+                <?php endfor; ?>
+            </div>
+
             <button class="fmdb-btn fmdb-btn--secondary fmdb-reg-section__btn"
                     id="fmdb-hospedaje-submit-<?php echo $eid; ?>" type="button" disabled>
                 Agregar hospedaje →
@@ -1041,12 +1066,33 @@ function fmdb_event_registration_box( int $event_id ): void {
                 // ── Hospedaje radio → hospAmt + enable button ──
                 var hospOpts = document.getElementById('fmdb-hospedaje-opts-' + eid);
                 var hospBtn  = document.getElementById('fmdb-hospedaje-submit-' + eid);
+
+                // ── Guest fields ──
+                var guestCounts = { '': 0, 'sencilla': 0, 'sencilla_sc': 0, 'doble': 1, 'doble_sc': 1, 'triple': 2, 'triple_sc': 2, 'cuadruple': 3, 'cuadruple_sc': 3 };
+                var namePattern = /^[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+$/;
+
+                function showGuestFields(roomVal) {
+                    var count = guestCounts[roomVal] !== undefined ? guestCounts[roomVal] : 0;
+                    var section = document.getElementById('fmdb-hospedaje-guests-' + eid);
+                    if (section) section.hidden = (count === 0);
+                    for (var g = 1; g <= 3; g++) {
+                        var row   = document.getElementById('fmdb-hosp-guest-' + eid + '-' + g);
+                        var nameI = document.getElementById('fmdb-hosp-gname-' + eid + '-' + g);
+                        var apeI  = document.getElementById('fmdb-hosp-gapellido-' + eid + '-' + g);
+                        var show  = g <= count;
+                        if (row)   row.hidden = !show;
+                        if (nameI) { if (!show) nameI.value = ''; }
+                        if (apeI)  { if (!show) apeI.value  = ''; }
+                    }
+                }
+
                 if (hospOpts) {
                     hospOpts.querySelectorAll('input[type="radio"]').forEach(function (r) {
                         r.addEventListener('change', function () {
                             hospAmt  = hospPrices[r.value] || 0;
                             venueAmt = r.value === '' ? 210 : 0; // included with any hospedaje
                             if (hospBtn) hospBtn.disabled = (r.value === '');
+                            showGuestFields(r.value);
                             updateGrandTotal();
                         });
                     });
@@ -1111,6 +1157,20 @@ function fmdb_event_registration_box( int $event_id ): void {
                         if (!room || !room.value) return;
                         var msgEl    = document.getElementById('fmdb-hospedaje-msg-' + eid);
                         var origText = hospBtn.textContent;
+
+                        // Validate guest fields before submitting
+                        var gCount = guestCounts[room.value] || 0;
+                        for (var g = 1; g <= gCount; g++) {
+                            var gn = document.getElementById('fmdb-hosp-gname-' + eid + '-' + g);
+                            var ga = document.getElementById('fmdb-hosp-gapellido-' + eid + '-' + g);
+                            var nv = gn ? gn.value.trim() : '';
+                            var av = ga ? ga.value.trim() : '';
+                            if (!nv || !namePattern.test(nv) || !av || !namePattern.test(av)) {
+                                if (msgEl) { msgEl.textContent = 'Ingresa nombre y apellido de todos los huéspedes (solo letras).'; msgEl.className = 'fmdb-reg-section__msg fmdb-reg-section__msg--err'; }
+                                return;
+                            }
+                        }
+
                         hospBtn.disabled = true;
                         hospBtn.textContent = 'Agregando…';
                         if (msgEl) { msgEl.textContent = ''; msgEl.className = 'fmdb-reg-section__msg'; }
@@ -1120,6 +1180,13 @@ function fmdb_event_registration_box( int $event_id ): void {
                         fd.append('nonce',                   hospNonce);
                         fd.append('fmdb_hospedaje_room',     room.value);
                         fd.append('fmdb_hospedaje_event_id', eid);
+                        fd.append('fmdb_guest_count',        gCount);
+                        for (var g2 = 1; g2 <= gCount; g2++) {
+                            var gn2 = document.getElementById('fmdb-hosp-gname-' + eid + '-' + g2);
+                            var ga2 = document.getElementById('fmdb-hosp-gapellido-' + eid + '-' + g2);
+                            if (gn2) fd.append('fmdb_guest_name_' + g2,     gn2.value.trim());
+                            if (ga2) fd.append('fmdb_guest_apellido_' + g2, ga2.value.trim());
+                        }
 
                         fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
                             .then(function (r) { return r.json(); })
@@ -1918,6 +1985,23 @@ function fmdb_ajax_add_hospedaje(): void {
         wp_send_json_error( [ 'message' => 'Lo sentimos, ya no hay disponibilidad para esa habitación.' ] );
     }
 
+    // Validate and collect guest names (doble=1, triple=2, cuádruple=3; sencilla=0).
+    $guest_count_map = [ 'doble' => 1, 'triple' => 2, 'cuadruple' => 3, 'doble_sc' => 1, 'triple_sc' => 2, 'cuadruple_sc' => 3 ];
+    $expected_guests = $guest_count_map[ $room ] ?? 0;
+    $guests          = [];
+    $name_rx         = '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u';
+    for ( $g = 1; $g <= $expected_guests; $g++ ) {
+        $gname = sanitize_text_field( wp_unslash( $_POST["fmdb_guest_name_{$g}"] ?? '' ) );
+        $gape  = sanitize_text_field( wp_unslash( $_POST["fmdb_guest_apellido_{$g}"] ?? '' ) );
+        if ( empty( $gname ) || ! preg_match( $name_rx, $gname ) ) {
+            wp_send_json_error( [ 'message' => "Ingresa un nombre válido para el huésped {$g}." ] );
+        }
+        if ( empty( $gape ) || ! preg_match( $name_rx, $gape ) ) {
+            wp_send_json_error( [ 'message' => "Ingresa un apellido válido para el huésped {$g}." ] );
+        }
+        $guests[] = [ 'nombre' => $gname, 'apellido' => $gape ];
+    }
+
     $meta_map  = [
         'doble'        => [ '_fmdb_hospedaje_doble_fee',        1415.0 ],
         'triple'       => [ '_fmdb_hospedaje_triple_fee',       1355.0 ],
@@ -1935,6 +2019,7 @@ function fmdb_ajax_add_hospedaje(): void {
         'fmdb_hospedaje_type'     => $room,
         'fmdb_hospedaje_price'    => $h_price,
         'fmdb_hospedaje_event_id' => $h_eid,
+        'fmdb_hospedaje_guests'   => $guests,
     ] );
 
     if ( $result === false ) {
@@ -2130,6 +2215,9 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
     $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos) · Acceso al venue';
     $data[] = [ 'name' => 'Habitación', 'value' => $label_map[ $type ] ?? $type ];
     $data[] = [ 'name' => 'Incluye',    'value' => in_array( $type, [ 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true ) ? '1 Noche de hospedaje · Acceso al venue' : $inc_full ];
+    foreach ( $cart_item['fmdb_hospedaje_guests'] ?? [] as $i => $guest ) {
+        $data[] = [ 'name' => 'Huésped ' . ( $i + 1 ), 'value' => $guest['nombre'] . ' ' . $guest['apellido'] ];
+    }
     return $data;
 }, 10, 2 );
 
@@ -2151,6 +2239,9 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
     $inc_full = '1 Noche de hospedaje · 1 Desayuno Americano · 1 Comida Emplatada (3 tiempos) · 1 Cena Emplatada (3 tiempos) · Acceso al venue';
     $item->update_meta_data( 'Habitación', $hab_map[ $type ] ?? $type );
     $item->update_meta_data( 'Incluye', $sc ? '1 Noche de hospedaje · Acceso al venue' : $inc_full );
+    foreach ( $values['fmdb_hospedaje_guests'] ?? [] as $i => $guest ) {
+        $item->update_meta_data( 'Huésped ' . ( $i + 1 ), $guest['nombre'] . ' ' . $guest['apellido'] );
+    }
     if ( ! empty( $values['fmdb_hospedaje_event_id'] ) ) {
         $order->update_meta_data( '_fmdb_hospedaje_event_id', (int) $values['fmdb_hospedaje_event_id'] );
     }
