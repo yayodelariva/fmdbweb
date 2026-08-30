@@ -448,8 +448,7 @@ add_action( 'woocommerce_thankyou', function( $order_id ) {
     if ( ! $order ) return;
 
     // Only OXXO pending orders.
-    if ( 'stripe' !== $order->get_payment_method() ) return;
-    if ( 'oxxo' !== $order->get_meta( '_stripe_upe_payment_type' ) ) return;
+    if ( 'stripe_oxxo' !== $order->get_payment_method() ) return;
     if ( ! $order->has_status( 'pending' ) ) return;
 
     // Send only once — mark first to avoid double-send on page refresh.
@@ -468,6 +467,14 @@ add_action( 'woocommerce_thankyou', function( $order_id ) {
     }
 
     if ( is_wp_error( $intent ) || empty( $intent->next_action->oxxo_display_details->hosted_voucher_url ) ) return;
+
+    // Ensure the Stripe customer sees the voucher in Spanish.
+    if ( ! empty( $intent->customer ) ) {
+        try {
+            WC_Stripe_API::request( [ 'preferred_locales' => [ 'es-419' ] ], 'customers/' . $intent->customer, 'POST' );
+        } catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+        }
+    }
 
     $voucher_url    = $intent->next_action->oxxo_display_details->hosted_voucher_url;
     $expires_after  = $intent->next_action->oxxo_display_details->expires_after ?? 0;
