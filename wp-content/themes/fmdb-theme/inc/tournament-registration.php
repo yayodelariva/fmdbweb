@@ -1122,13 +1122,13 @@ function fmdb_event_registration_box( int $event_id ): void {
                             var n = countInput ? parseInt(countInput.value, 10) : 0;
                             if (n >= 1 && n <= maxPlayers) {
                                 regAmt   = fee * n;
-                                venueAmt = 210 + entradaFee * Math.max(0, n - 1);
+                                venueAmt = computeVenueAmt(n, currentRoomCoverage);
                             } else {
                                 regAmt = venueAmt = 0;
                             }
                         } else {
                             regAmt   = fee;
-                            venueAmt = 210;
+                            venueAmt = computeVenueAmt(1, currentRoomCoverage);
                         }
                         updateGrandTotal();
                     });
@@ -1140,7 +1140,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                         var n = parseInt(countInput.value, 10);
                         if (n >= 1 && n <= maxPlayers) {
                             regAmt   = fee * n;
-                            venueAmt = 210 + entradaFee * Math.max(0, n - 1);
+                            venueAmt = computeVenueAmt(n, currentRoomCoverage);
                         } else {
                             regAmt = venueAmt = 0;
                         }
@@ -1150,7 +1150,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                     var initN = parseInt(countInput.value, 10);
                     if (initN >= 1 && initN <= maxPlayers) {
                         regAmt   = fee * initN;
-                        venueAmt = 210 + entradaFee * Math.max(0, initN - 1);
+                        venueAmt = computeVenueAmt(initN, currentRoomCoverage);
                         renderExtraPlayers(initN);
                         updateGrandTotal();
                     }
@@ -1168,8 +1168,24 @@ function fmdb_event_registration_box( int $event_id ): void {
                 var hospBtn  = document.getElementById('fmdb-hospedaje-submit-' + eid);
 
                 // ── Guest fields ──
-                var guestCounts = { '': 0, 'sencilla': 0, 'sencilla_sc': 0, 'doble': 1, 'doble_sc': 1, 'triple': 2, 'triple_sc': 2, 'cuadruple': 3, 'cuadruple_sc': 3 };
-                var namePattern = /^[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+$/;
+                var guestCounts   = { '': 0, 'sencilla': 0, 'sencilla_sc': 0, 'doble': 1, 'doble_sc': 1, 'triple': 2, 'triple_sc': 2, 'cuadruple': 3, 'cuadruple_sc': 3 };
+                var roomCapacities = { '': 0, 'sencilla': 1, 'sencilla_sc': 1, 'doble': 2, 'doble_sc': 2, 'triple': 3, 'triple_sc': 3, 'cuadruple': 4, 'cuadruple_sc': 4 };
+                var namePattern   = /^[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\-]+$/;
+                var currentRoomCoverage = 0;
+
+                function computeVenueAmt(playerCount, coverage) {
+                    var uncovered = Math.max(0, playerCount - coverage);
+                    if (uncovered === playerCount) {
+                        // No coverage — full fee
+                        return 210 + entradaFee * Math.max(0, playerCount - 1);
+                    } else if (uncovered === 0) {
+                        // Fully covered
+                        return 0;
+                    } else {
+                        // Captain covered, extras partially covered
+                        return entradaFee * uncovered;
+                    }
+                }
 
                 function showGuestFields(roomVal) {
                     var count = guestCounts[roomVal] !== undefined ? guestCounts[roomVal] : 0;
@@ -1189,8 +1205,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                 if (hospOpts) {
                     hospOpts.querySelectorAll('input[type="radio"]').forEach(function (r) {
                         r.addEventListener('change', function () {
-                            hospAmt  = hospPrices[r.value] || 0;
-                            venueAmt = r.value === '' ? 210 : 0; // included with any hospedaje
+                            hospAmt             = hospPrices[r.value] || 0;
+                            currentRoomCoverage = roomCapacities[r.value] || 0;
+                            var n = countInput ? parseInt(countInput.value, 10) : 1;
+                            venueAmt = computeVenueAmt(isNaN(n) || n < 1 ? 1 : n, currentRoomCoverage);
                             if (hospBtn) hospBtn.disabled = (r.value === '');
                             showGuestFields(r.value);
                             updateGrandTotal();
@@ -1866,29 +1884,52 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
 
 /* ─── 6a. Venue entry fee ──────────────────────────────────────────────── */
 
-// $210 MXN base + configurable fee per extra player; drops to $0 when hospedaje is added.
+// Venue fee: $210 captain + entradaFee × extras, discounted by hospedaje room capacity.
 add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
     if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
 
-    $has_reg       = false;
-    $has_hospedaje = false;
-    $extra_entrada = 0.0;
+    $room_cap = [
+        'sencilla' => 1, 'sencilla_sc' => 1,
+        'doble'    => 2, 'doble_sc'    => 2,
+        'triple'   => 3, 'triple_sc'   => 3,
+        'cuadruple'=> 4, 'cuadruple_sc'=> 4,
+    ];
+
+    $total_players  = 0;
+    $total_coverage = 0;
+    $entrada_fee    = 0.0;
+    $has_reg        = false;
 
     foreach ( $cart->get_cart() as $item ) {
         if ( ! empty( $item['fmdb_hospedaje_type'] ) ) {
-            $has_hospedaje = true;
+            $total_coverage += $room_cap[ $item['fmdb_hospedaje_type'] ] ?? 0;
             continue;
         }
         if ( empty( $item['fmdb_event_id'] ) ) continue;
         $has_reg = true;
+        $total_players += max( 1, (int) ( $item['fmdb_player_count'] ?? 1 ) );
         if ( ( $item['fmdb_reg_type'] ?? 'team' ) === 'team' ) {
-            $count         = max( 1, (int) ( $item['fmdb_player_count'] ?? 1 ) );
-            $extra_entrada += (float) ( $item['fmdb_entrada_fee'] ?? 0 ) * max( 0, $count - 1 );
+            $entrada_fee = (float) ( $item['fmdb_entrada_fee'] ?? 0 );
         }
     }
 
-    if ( $has_reg && ! $has_hospedaje ) {
-        $cart->add_fee( 'Entrada al venue', 210.0 + $extra_entrada, false );
+    if ( ! $has_reg || $total_players === 0 ) return;
+
+    $uncovered = max( 0, $total_players - $total_coverage );
+
+    if ( $uncovered === $total_players ) {
+        // No hospedaje coverage — full fee.
+        $venue_fee = 210.0 + $entrada_fee * max( 0, $total_players - 1 );
+    } elseif ( $uncovered === 0 ) {
+        // All players covered — no fee.
+        return;
+    } else {
+        // Partial coverage: captain's entry is covered (≥1 bed), extras partially covered.
+        $venue_fee = $entrada_fee * $uncovered;
+    }
+
+    if ( $venue_fee > 0 ) {
+        $cart->add_fee( 'Entrada al venue', $venue_fee, false );
     }
 } );
 
@@ -1961,6 +2002,14 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
 
     $event_id = (int) get_post_meta( $product_id, '_fmdb_reg_event_id', true );
     if ( ! $event_id ) return $passed;
+
+    // Limit: only 1 registration per cart to prevent venue-fee gaming.
+    foreach ( WC()->cart->get_cart() as $_existing ) {
+        if ( ! empty( $_existing['fmdb_event_id'] ) ) {
+            wc_add_notice( 'Ya tienes una inscripción en el carrito. Finaliza el pago antes de agregar otra.', 'error' );
+            return false;
+        }
+    }
 
     if ( get_post_meta( $event_id, '_fmdb_reg_open', true ) !== 'on' ) {
         wc_add_notice( 'La inscripción para este torneo no está abierta.', 'error' );
