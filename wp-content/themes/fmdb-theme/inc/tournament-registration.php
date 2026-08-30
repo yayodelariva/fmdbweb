@@ -32,15 +32,8 @@ add_action( 'cmb2_init', function () {
         'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01' ],
     ] );
     $cmb->add_field( [
-        'name'       => __( 'Acceso al venue - Capitán (MXN)', 'fmdb' ),
-        'desc'       => __( 'Cobro de entrada al venue para el capitán. Vacío = 210.', 'fmdb' ),
-        'id'         => '_fmdb_reg_venue_fee',
-        'type'       => 'text_small',
-        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01', 'placeholder' => '210' ],
-    ] );
-    $cmb->add_field( [
-        'name'       => __( 'Entrada al venue por jugador extra (MXN)', 'fmdb' ),
-        'desc'       => __( 'Cobro adicional por cada jugador más allá del capitán. 0 = sin cobro.', 'fmdb' ),
+        'name'       => __( 'Acceso al venue por jugador (MXN)', 'fmdb' ),
+        'desc'       => __( 'Cobro de entrada al venue. Se aplica igual a todos los jugadores. 0 = sin cobro.', 'fmdb' ),
         'id'         => '_fmdb_reg_entrada_fee',
         'type'       => 'text_small',
         'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01' ],
@@ -533,8 +526,6 @@ function fmdb_event_registration_box( int $event_id ): void {
     $open        = get_post_meta( $event_id, '_fmdb_reg_open', true ) === 'on';
     $fee         = (float) get_post_meta( $event_id, '_fmdb_reg_fee', true );
     $entrada_fee = (float) get_post_meta( $event_id, '_fmdb_reg_entrada_fee', true );
-    $venue_fee   = (float) get_post_meta( $event_id, '_fmdb_reg_venue_fee', true );
-    if ( $venue_fee <= 0 ) $venue_fee = 210.0;
     $prod_id     = (int) get_post_meta( $event_id, '_fmdb_reg_product_id', true );
     $deadline = get_post_meta( $event_id, '_fmdb_reg_deadline', true );
     $max      = (int) get_post_meta( $event_id, '_fmdb_reg_max_teams', true );
@@ -673,7 +664,7 @@ function fmdb_event_registration_box( int $event_id ): void {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <div>
                 <strong>Acceso al venue</strong>
-                <span>$<?php echo esc_html( number_format( $venue_fee, 2 ) ); ?> MXN</span>
+                <span><?php echo $entrada_fee > 0 ? '$' . esc_html( number_format( $entrada_fee, 2 ) ) . ' MXN' : 'Incluido'; ?></span>
             </div>
         </div>
 
@@ -1024,7 +1015,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 </div>
                 <div class="fmdb-reg-total__row">
                     <span class="fmdb-reg-total__label">Entrada al venue</span>
-                    <span class="fmdb-reg-total__val" id="fmdb-total-venue-<?php echo $eid; ?>">$<?php echo esc_html( number_format( $venue_fee, 2 ) ); ?> MXN</span>
+                    <span class="fmdb-reg-total__val" id="fmdb-total-venue-<?php echo $eid; ?>">$<?php echo esc_html( number_format( $entrada_fee, 2 ) ); ?> MXN</span>
                 </div>
                 <div class="fmdb-reg-total__row">
                     <span class="fmdb-reg-total__label">Hospedaje</span>
@@ -1046,7 +1037,6 @@ function fmdb_event_registration_box( int $event_id ): void {
                 var eid        = <?php echo $eid; ?>;
                 var fee        = <?php echo (float) $fee; ?>;
                 var entradaFee = <?php echo (float) $entrada_fee; ?>;
-                var venueFee   = <?php echo (float) $venue_fee; ?>;
                 var maxPlayers = <?php echo (int) $max_players; ?>;
                 var ajaxUrl    = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
                 var regNonce  = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_registration' ) ); ?>';
@@ -1193,16 +1183,7 @@ function fmdb_event_registration_box( int $event_id ): void {
 
                 function computeVenueAmt(playerCount, coverage) {
                     var uncovered = Math.max(0, playerCount - coverage);
-                    if (uncovered === playerCount) {
-                        // No coverage — full fee
-                        return venueFee + entradaFee * Math.max(0, playerCount - 1);
-                    } else if (uncovered === 0) {
-                        // Fully covered
-                        return 0;
-                    } else {
-                        // Captain covered, extras partially covered
-                        return entradaFee * uncovered;
-                    }
+                    return entradaFee * uncovered;
                 }
 
                 function showGuestFields(roomVal) {
@@ -1846,15 +1827,12 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
 
     $fee         = (float) get_post_meta( $event_id, '_fmdb_reg_fee', true );
     $entrada_fee = (float) get_post_meta( $event_id, '_fmdb_reg_entrada_fee', true );
-    $venue_fee   = (float) get_post_meta( $event_id, '_fmdb_reg_venue_fee', true );
-    if ( $venue_fee <= 0 ) $venue_fee = 210.0;
     $type        = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
                    ? $_POST['fmdb_reg_type'] : 'team';
 
     $cart_item_data['fmdb_event_id']    = $event_id;
     $cart_item_data['fmdb_unit_fee']    = $fee;
     $cart_item_data['fmdb_entrada_fee'] = $entrada_fee;
-    $cart_item_data['fmdb_venue_fee']   = $venue_fee;
     $cart_item_data['fmdb_reg_type']   = $type;
     $cart_item_data['fmdb_rama']       = sanitize_text_field( wp_unslash( $_POST['fmdb_rama'] ?? '' ) );
     $cart_item_data['fmdb_categoria']  = sanitize_text_field( wp_unslash( $_POST['fmdb_categoria'] ?? '' ) );
@@ -1931,12 +1909,11 @@ add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
         'cuadruple'   => 'habitación cuádruple',  'cuadruple_sc' => 'habitación cuádruple',
     ];
 
-    $total_players    = 0;
-    $total_coverage   = 0;
-    $coverage_label   = '';
-    $entrada_fee      = 0.0;
-    $captain_venue    = 210.0;
-    $has_reg          = false;
+    $total_players  = 0;
+    $total_coverage = 0;
+    $coverage_label = '';
+    $venue_fee      = 0.0;
+    $has_reg        = false;
 
     foreach ( $cart->get_cart() as $item ) {
         if ( ! empty( $item['fmdb_hospedaje_type'] ) ) {
@@ -1952,32 +1929,19 @@ add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
         if ( empty( $item['fmdb_event_id'] ) ) continue;
         $has_reg        = true;
         $total_players += max( 1, (int) ( $item['fmdb_player_count'] ?? 1 ) );
-        if ( ( $item['fmdb_reg_type'] ?? 'team' ) === 'team' ) {
-            $entrada_fee   = (float) ( $item['fmdb_entrada_fee'] ?? 0 );
-            $captain_venue = (float) ( $item['fmdb_venue_fee']   ?? 210.0 );
-            if ( $captain_venue <= 0 ) $captain_venue = 210.0;
-        }
+        $venue_fee      = (float) ( $item['fmdb_entrada_fee'] ?? 0 );
     }
 
-    if ( ! $has_reg || $total_players === 0 ) return;
+    if ( ! $has_reg || $total_players === 0 || $venue_fee <= 0 ) return;
 
-    // Captain (player 1).
-    $captain_covered = $total_coverage >= 1;
-    if ( $captain_covered ) {
-        $cart->add_fee( "Entrada al venue - Capitán (incluida en {$coverage_label})", 0.0, false );
-    } else {
-        $cart->add_fee( 'Entrada al venue - Capitán', $captain_venue, false );
-    }
-
-    // Extra players (players 2..N) — only relevant when evento charges entrada_fee.
-    if ( $entrada_fee > 0 || $total_coverage > 1 ) {
-        for ( $i = 2; $i <= $total_players; $i++ ) {
-            $player_covered = $total_coverage >= $i;
-            if ( $player_covered ) {
-                $cart->add_fee( "Entrada al venue - Jugador {$i} (incluida en {$coverage_label})", 0.0, false );
-            } else {
-                $cart->add_fee( "Entrada al venue - Jugador {$i}", $entrada_fee, false );
-            }
+    // One line per player; each covered by hospedaje pays $0.
+    for ( $i = 1; $i <= $total_players; $i++ ) {
+        $label   = $i === 1 ? 'Capitán' : "Jugador {$i}";
+        $covered = $total_coverage >= $i;
+        if ( $covered ) {
+            $cart->add_fee( "Entrada al venue - {$label} (incluida en {$coverage_label})", 0.0, false );
+        } else {
+            $cart->add_fee( "Entrada al venue - {$label}", $venue_fee, false );
         }
     }
 } );
