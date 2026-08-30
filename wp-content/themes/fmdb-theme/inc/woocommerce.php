@@ -431,3 +431,13 @@ add_filter( 'wc_stripe_params', function( $params ) {
     $params['stripe_locale'] = 'es-419';
     return $params;
 } );
+
+// Force Stripe Customer preferred_locales to Spanish so hosted OXXO voucher pages render in Spanish.
+add_filter( 'wc_stripe_create_customer_args', function( $args ) {
+    $args['preferred_locales'] = [ 'es-419' ];
+    return $args;
+} );
+add_filter( 'wc_stripe_update_customer_args', function( $args ) {
+    $args['preferred_locales'] = [ 'es-419' ];
+    return $args;
+} );
