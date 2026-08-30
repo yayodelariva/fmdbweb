@@ -1895,18 +1895,32 @@ add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
         'cuadruple'=> 4, 'cuadruple_sc'=> 4,
     ];
 
-    $total_players  = 0;
-    $total_coverage = 0;
-    $entrada_fee    = 0.0;
-    $has_reg        = false;
+    $room_label = [
+        'sencilla'    => 'habitación sencilla',  'sencilla_sc'  => 'habitación sencilla',
+        'doble'       => 'habitación doble',      'doble_sc'     => 'habitación doble',
+        'triple'      => 'habitación triple',     'triple_sc'    => 'habitación triple',
+        'cuadruple'   => 'habitación cuádruple',  'cuadruple_sc' => 'habitación cuádruple',
+    ];
+
+    $total_players    = 0;
+    $total_coverage   = 0;
+    $coverage_label   = '';
+    $entrada_fee      = 0.0;
+    $has_reg          = false;
 
     foreach ( $cart->get_cart() as $item ) {
         if ( ! empty( $item['fmdb_hospedaje_type'] ) ) {
-            $total_coverage += $room_cap[ $item['fmdb_hospedaje_type'] ] ?? 0;
+            $htype           = $item['fmdb_hospedaje_type'];
+            $total_coverage += $room_cap[ $htype ] ?? 0;
+            if ( ! $coverage_label ) {
+                $coverage_label = $room_label[ $htype ] ?? 'hospedaje';
+            } else {
+                $coverage_label = 'hospedaje'; // multiple rooms — use generic label
+            }
             continue;
         }
         if ( empty( $item['fmdb_event_id'] ) ) continue;
-        $has_reg = true;
+        $has_reg        = true;
         $total_players += max( 1, (int) ( $item['fmdb_player_count'] ?? 1 ) );
         if ( ( $item['fmdb_reg_type'] ?? 'team' ) === 'team' ) {
             $entrada_fee = (float) ( $item['fmdb_entrada_fee'] ?? 0 );
@@ -1915,21 +1929,24 @@ add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
 
     if ( ! $has_reg || $total_players === 0 ) return;
 
-    $uncovered = max( 0, $total_players - $total_coverage );
-
-    if ( $uncovered === $total_players ) {
-        // No hospedaje coverage — full fee.
-        $venue_fee = 210.0 + $entrada_fee * max( 0, $total_players - 1 );
-    } elseif ( $uncovered === 0 ) {
-        // All players covered — no fee.
-        return;
+    // Captain (player 1).
+    $captain_covered = $total_coverage >= 1;
+    if ( $captain_covered ) {
+        $cart->add_fee( "Entrada al venue - Capitán (incluida en {$coverage_label})", 0.0, false );
     } else {
-        // Partial coverage: captain's entry is covered (≥1 bed), extras partially covered.
-        $venue_fee = $entrada_fee * $uncovered;
+        $cart->add_fee( 'Entrada al venue - Capitán', 210.0, false );
     }
 
-    if ( $venue_fee > 0 ) {
-        $cart->add_fee( 'Entrada al venue', $venue_fee, false );
+    // Extra players (players 2..N) — only relevant when evento charges entrada_fee.
+    if ( $entrada_fee > 0 || $total_coverage > 1 ) {
+        for ( $i = 2; $i <= $total_players; $i++ ) {
+            $player_covered = $total_coverage >= $i;
+            if ( $player_covered ) {
+                $cart->add_fee( "Entrada al venue - Jugador {$i} (incluida en {$coverage_label})", 0.0, false );
+            } else {
+                $cart->add_fee( "Entrada al venue - Jugador {$i}", $entrada_fee, false );
+            }
+        }
     }
 } );
 
