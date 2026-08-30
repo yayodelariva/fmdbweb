@@ -32,6 +32,13 @@ add_action( 'cmb2_init', function () {
         'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01' ],
     ] );
     $cmb->add_field( [
+        'name'       => __( 'Entrada al venue por jugador extra (MXN)', 'fmdb' ),
+        'desc'       => __( 'Cobro adicional por cada jugador más allá del capitán. 0 = sin cobro.', 'fmdb' ),
+        'id'         => '_fmdb_reg_entrada_fee',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'step' => '0.01' ],
+    ] );
+    $cmb->add_field( [
         'name'        => __( 'Fecha límite inscripción', 'fmdb' ),
         'id'          => '_fmdb_reg_deadline',
         'type'        => 'text_date',
@@ -516,9 +523,10 @@ function fmdb_hospedaje_form_section( float $price_doble = 1415.0, float $price_
 function fmdb_event_registration_box( int $event_id ): void {
     if ( ! function_exists( 'wc_get_product' ) ) return;
 
-    $open     = get_post_meta( $event_id, '_fmdb_reg_open', true ) === 'on';
-    $fee      = (float) get_post_meta( $event_id, '_fmdb_reg_fee', true );
-    $prod_id  = (int) get_post_meta( $event_id, '_fmdb_reg_product_id', true );
+    $open        = get_post_meta( $event_id, '_fmdb_reg_open', true ) === 'on';
+    $fee         = (float) get_post_meta( $event_id, '_fmdb_reg_fee', true );
+    $entrada_fee = (float) get_post_meta( $event_id, '_fmdb_reg_entrada_fee', true );
+    $prod_id     = (int) get_post_meta( $event_id, '_fmdb_reg_product_id', true );
     $deadline = get_post_meta( $event_id, '_fmdb_reg_deadline', true );
     $max      = (int) get_post_meta( $event_id, '_fmdb_reg_max_teams', true );
     $ramas    = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_ramas', true ) ) );
@@ -787,6 +795,8 @@ function fmdb_event_registration_box( int $event_id ): void {
                     <span class="fmdb-reg-form__hint">El coach no cuenta como jugador.</span>
                 </div>
 
+                <div id="fmdb-extra-players-<?php echo $eid; ?>" class="fmdb-reg-extra-players"></div>
+
                 <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-section__btn">
                     Agregar inscripción →
                 </button>
@@ -1016,9 +1026,11 @@ function fmdb_event_registration_box( int $event_id ): void {
 
             <script>
             (function () {
-                var eid       = <?php echo $eid; ?>;
-                var fee       = <?php echo (float) $fee; ?>;
-                var ajaxUrl   = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+                var eid        = <?php echo $eid; ?>;
+                var fee        = <?php echo (float) $fee; ?>;
+                var entradaFee = <?php echo (float) $entrada_fee; ?>;
+                var maxPlayers = <?php echo (int) $max_players; ?>;
+                var ajaxUrl    = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
                 var regNonce  = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_registration' ) ); ?>';
                 var hospNonce = '<?php echo esc_js( wp_create_nonce( 'fmdb_add_hospedaje' ) ); ?>';
                 var hospPrices = {
@@ -1038,10 +1050,48 @@ function fmdb_event_registration_box( int $event_id ): void {
                     return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
                 }
 
+                // ── Extra player forms ──
+                function renderExtraPlayers(n) {
+                    var container = document.getElementById('fmdb-extra-players-' + eid);
+                    if (!container) return;
+                    // Preserve existing values so re-renders on validation error don't wipe names.
+                    var prev = {};
+                    container.querySelectorAll('input').forEach(function (inp) { prev[inp.name] = inp.value; });
+                    container.innerHTML = '';
+                    if (n < 2) return;
+                    var pat = "[A-Za-záéíóúüñÁÉÍÓÚÜÑ '\\-]+";
+                    for (var i = 2; i <= n; i++) {
+                        var lbl = document.createElement('p');
+                        lbl.className = 'fmdb-reg-extra-player__label';
+                        lbl.textContent = 'Jugador ' + i;
+                        container.appendChild(lbl);
+                        var row = document.createElement('div');
+                        row.className = 'fmdb-reg-form__row';
+                        ['nombre', 'apellido'].forEach(function (field) {
+                            var wrap = document.createElement('div');
+                            wrap.className = 'fmdb-reg-form__field';
+                            var label = document.createElement('label');
+                            label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+                            var input = document.createElement('input');
+                            input.type        = 'text';
+                            input.name        = 'fmdb_extra_player[' + i + '][' + field + ']';
+                            input.required    = true;
+                            input.pattern     = pat;
+                            input.title       = 'Solo se permiten letras, espacios y guiones';
+                            input.placeholder = label.textContent;
+                            input.value       = prev[input.name] || '';
+                            wrap.appendChild(label);
+                            wrap.appendChild(input);
+                            row.appendChild(wrap);
+                        });
+                        container.appendChild(row);
+                    }
+                }
+
                 // ── Grand total ──
                 var regAmt   = 0;
                 var hospAmt  = 0;
-                var venueAmt = 210; // $210 MXN if no hospedaje; included (free) with any hospedaje
+                var venueAmt = 210; // updated dynamically; $210 base + entradaFee × extra players
 
                 function updateGrandTotal() {
                     var regEl   = document.getElementById('fmdb-total-reg-'   + eid);
@@ -1070,23 +1120,40 @@ function fmdb_event_registration_box( int $event_id ): void {
                         // Recompute regAmt for active tab
                         if (target === 'fmdb-form-team-' + eid) {
                             var n = countInput ? parseInt(countInput.value, 10) : 0;
-                            regAmt = (n >= 1 && n <= 9) ? fee * n : 0;
+                            if (n >= 1 && n <= maxPlayers) {
+                                regAmt   = fee * n;
+                                venueAmt = 210 + entradaFee * Math.max(0, n - 1);
+                            } else {
+                                regAmt = venueAmt = 0;
+                            }
                         } else {
-                            regAmt = fee;
+                            regAmt   = fee;
+                            venueAmt = 210;
                         }
                         updateGrandTotal();
                     });
                 });
 
-                // Team: player count drives regAmt
+                // Team: player count drives regAmt, venueAmt, and extra player forms
                 if (countInput) {
                     countInput.addEventListener('input', function () {
                         var n = parseInt(countInput.value, 10);
-                        regAmt = (n >= 1 && n <= 9) ? fee * n : 0;
+                        if (n >= 1 && n <= maxPlayers) {
+                            regAmt   = fee * n;
+                            venueAmt = 210 + entradaFee * Math.max(0, n - 1);
+                        } else {
+                            regAmt = venueAmt = 0;
+                        }
+                        renderExtraPlayers(isNaN(n) ? 0 : n);
                         updateGrandTotal();
                     });
                     var initN = parseInt(countInput.value, 10);
-                    if (initN >= 1 && initN <= 9) { regAmt = fee * initN; updateGrandTotal(); }
+                    if (initN >= 1 && initN <= maxPlayers) {
+                        regAmt   = fee * initN;
+                        venueAmt = 210 + entradaFee * Math.max(0, initN - 1);
+                        renderExtraPlayers(initN);
+                        updateGrandTotal();
+                    }
                 } else {
                     // Individual tab is active (no count input) — regAmt = fee × 1
                     var activeTabEl = document.querySelector('#fmdb-reg-tabs-' + eid + ' .fmdb-reg-tab.is-active');
@@ -1733,12 +1800,14 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
     $event_id = (int) get_post_meta( $product_id, '_fmdb_reg_event_id', true );
     if ( ! $event_id ) return $cart_item_data;
 
-    $fee  = (float) get_post_meta( $event_id, '_fmdb_reg_fee', true );
-    $type = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
-            ? $_POST['fmdb_reg_type'] : 'team';
+    $fee         = (float) get_post_meta( $event_id, '_fmdb_reg_fee', true );
+    $entrada_fee = (float) get_post_meta( $event_id, '_fmdb_reg_entrada_fee', true );
+    $type        = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
+                   ? $_POST['fmdb_reg_type'] : 'team';
 
-    $cart_item_data['fmdb_event_id']   = $event_id;
-    $cart_item_data['fmdb_unit_fee']   = $fee;
+    $cart_item_data['fmdb_event_id']    = $event_id;
+    $cart_item_data['fmdb_unit_fee']    = $fee;
+    $cart_item_data['fmdb_entrada_fee'] = $entrada_fee;
     $cart_item_data['fmdb_reg_type']   = $type;
     $cart_item_data['fmdb_rama']       = sanitize_text_field( wp_unslash( $_POST['fmdb_rama'] ?? '' ) );
     $cart_item_data['fmdb_categoria']  = sanitize_text_field( wp_unslash( $_POST['fmdb_categoria'] ?? '' ) );
@@ -1757,6 +1826,18 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
         $cart_item_data['fmdb_captain_apellido'] = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_apellido'] ?? '' ) );
         $cart_item_data['fmdb_captain_phone']   = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_phone'] ?? '' ) );
         $cart_item_data['fmdb_player_count']    = absint( $_POST['fmdb_player_count'] ?? 0 );
+
+        // Capture extra player names (players 2..N).
+        $extra_players = [];
+        $raw_extra = isset( $_POST['fmdb_extra_player'] ) && is_array( $_POST['fmdb_extra_player'] )
+                     ? $_POST['fmdb_extra_player'] : [];
+        foreach ( $raw_extra as $p ) {
+            if ( ! is_array( $p ) ) continue;
+            $nombre   = sanitize_text_field( wp_unslash( $p['nombre']   ?? '' ) );
+            $apellido = sanitize_text_field( wp_unslash( $p['apellido'] ?? '' ) );
+            $extra_players[] = [ 'nombre' => $nombre, 'apellido' => $apellido ];
+        }
+        $cart_item_data['fmdb_extra_players'] = $extra_players;
 
         // Determine waitlist status: slot at capacity → waitlist.
         // Teams below the player minimum go to "Equipos incompletos" and never to waitlist.
@@ -1785,20 +1866,29 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
 
 /* ─── 6a. Venue entry fee ──────────────────────────────────────────────── */
 
-// $210 MXN when cart has a registration but no hospedaje; drops to $0 when hospedaje is added.
+// $210 MXN base + configurable fee per extra player; drops to $0 when hospedaje is added.
 add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
     if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
 
-    $has_reg      = false;
+    $has_reg       = false;
     $has_hospedaje = false;
+    $extra_entrada = 0.0;
 
     foreach ( $cart->get_cart() as $item ) {
-        if ( ! empty( $item['fmdb_event_id'] ) )      $has_reg       = true;
-        if ( ! empty( $item['fmdb_hospedaje_type'] ) ) $has_hospedaje = true;
+        if ( ! empty( $item['fmdb_hospedaje_type'] ) ) {
+            $has_hospedaje = true;
+            continue;
+        }
+        if ( empty( $item['fmdb_event_id'] ) ) continue;
+        $has_reg = true;
+        if ( ( $item['fmdb_reg_type'] ?? 'team' ) === 'team' ) {
+            $count         = max( 1, (int) ( $item['fmdb_player_count'] ?? 1 ) );
+            $extra_entrada += (float) ( $item['fmdb_entrada_fee'] ?? 0 ) * max( 0, $count - 1 );
+        }
     }
 
     if ( $has_reg && ! $has_hospedaje ) {
-        $cart->add_fee( 'Entrada al venue', 210.0, false );
+        $cart->add_fee( 'Entrada al venue', 210.0 + $extra_entrada, false );
     }
 } );
 
@@ -1844,6 +1934,9 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
         $data[] = [ 'name' => 'Apellido',  'value' => $cart_item['fmdb_captain_apellido'] ?? '' ];
         $data[] = [ 'name' => 'Teléfono',  'value' => $cart_item['fmdb_captain_phone'] ?? '' ];
         $data[] = [ 'name' => 'Jugadores', 'value' => $cart_item['fmdb_player_count'] ?? 0 ];
+        foreach ( $cart_item['fmdb_extra_players'] ?? [] as $i => $p ) {
+            $data[] = [ 'name' => 'Jugador ' . ( $i + 2 ), 'value' => trim( $p['nombre'] . ' ' . $p['apellido'] ) ];
+        }
     }
 
     return $data;
@@ -1978,6 +2071,29 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         if ( $count < 1 || $count > $_team_limits['max'] ) {
             wc_add_notice( 'El número de jugadores debe ser entre 1 y ' . $_team_limits['max'] . '.', 'error' );
             $passed = false;
+        }
+
+        // Validate extra player names (jugadores 2..N).
+        $raw_extra = isset( $_POST['fmdb_extra_player'] ) && is_array( $_POST['fmdb_extra_player'] )
+                     ? $_POST['fmdb_extra_player'] : [];
+        for ( $i = 2; $i <= $count; $i++ ) {
+            $p        = $raw_extra[ $i ] ?? [];
+            $nombre   = trim( $p['nombre']   ?? '' );
+            $apellido = trim( $p['apellido'] ?? '' );
+            if ( empty( $nombre ) ) {
+                wc_add_notice( "Ingresa el nombre del jugador $i.", 'error' );
+                $passed = false;
+            } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $nombre ) ) {
+                wc_add_notice( "El nombre del jugador $i solo puede contener letras.", 'error' );
+                $passed = false;
+            }
+            if ( empty( $apellido ) ) {
+                wc_add_notice( "Ingresa el apellido del jugador $i.", 'error' );
+                $passed = false;
+            } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $apellido ) ) {
+                wc_add_notice( "El apellido del jugador $i solo puede contener letras.", 'error' );
+                $passed = false;
+            }
         }
     }
 
@@ -2214,6 +2330,9 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
         $item->update_meta_data( 'Apellido',  $values['fmdb_captain_apellido'] ?? '' );
         $item->update_meta_data( 'Teléfono',  $values['fmdb_captain_phone'] ?? '' );
         $item->update_meta_data( 'Jugadores', $values['fmdb_player_count'] ?? 0 );
+        foreach ( $values['fmdb_extra_players'] ?? [] as $i => $p ) {
+            $item->update_meta_data( 'Jugador ' . ( $i + 2 ), trim( $p['nombre'] . ' ' . $p['apellido'] ) );
+        }
         if ( ! empty( $values['fmdb_team_post_id'] ) ) {
             $item->update_meta_data( '_fmdb_team_post_id', $values['fmdb_team_post_id'] );
         }

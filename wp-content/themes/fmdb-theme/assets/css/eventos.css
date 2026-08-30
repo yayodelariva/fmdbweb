@@ -869,6 +869,8 @@
 .fmdb-reg-hospedaje__group-desc { font-size: 0.76rem; color: var(--fmdb-text-muted, #777); margin: 0 0 6px; line-height: 1.5; }
 .fmdb-reg-hospedaje__guests-title { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--fmdb-neutral); }
 .fmdb-reg-hospedaje__guest-label { margin: 10px 0 4px; font-size: 0.75rem; font-weight: 600; color: var(--fmdb-dark-green); text-transform: uppercase; letter-spacing: 0.04em; }
+.fmdb-reg-extra-players { margin-top: 8px; }
+.fmdb-reg-extra-player__label { margin: 12px 0 4px; font-size: 0.75rem; font-weight: 600; color: var(--fmdb-dark-green); text-transform: uppercase; letter-spacing: 0.04em; }
 .fmdb-hospedaje-ajax-error { font-size: 0.82rem; color: var(--fmdb-red, #c0392b); margin: 0 0 8px; }
 
 /* === Registration section headers === */
