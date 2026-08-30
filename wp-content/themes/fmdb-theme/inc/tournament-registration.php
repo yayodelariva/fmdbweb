@@ -1489,6 +1489,14 @@ function fmdb_ajax_add_registration(): void {
         wp_send_json_error( [ 'message' => 'Producto inválido.' ] );
     }
 
+    // Enforce 1 registration per cart regardless of type (team or individual).
+    foreach ( WC()->cart->get_cart() as $_existing ) {
+        if ( ! empty( $_existing['fmdb_event_id'] ) ) {
+            wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en el carrito. Finaliza el pago antes de agregar otra.' ] );
+            return;
+        }
+    }
+
     $result = WC()->cart->add_to_cart( $prod_id, 1, 0, [], [] );
 
     if ( $result === false ) {
