@@ -441,3 +441,59 @@ add_filter( 'wc_stripe_update_customer_args', function( $args ) {
     $args['preferred_locales'] = [ 'es-419' ];
     return $args;
 } );
+
+// Send customer a one-time email with the OXXO voucher link after checkout.
+add_action( 'woocommerce_thankyou', function( $order_id ) {
+    $order = wc_get_order( $order_id );
+    if ( ! $order ) return;
+
+    // Only OXXO pending orders.
+    if ( 'stripe' !== $order->get_payment_method() ) return;
+    if ( 'oxxo' !== $order->get_meta( '_stripe_upe_payment_type' ) ) return;
+    if ( ! $order->has_status( 'pending' ) ) return;
+
+    // Send only once — mark first to avoid double-send on page refresh.
+    if ( $order->get_meta( '_fmdb_oxxo_voucher_email_sent' ) ) return;
+    $order->update_meta_data( '_fmdb_oxxo_voucher_email_sent', '1' );
+    $order->save();
+
+    // Fetch the payment intent to get the hosted voucher URL.
+    $intent_id = $order->get_meta( '_stripe_intent_id' );
+    if ( ! $intent_id ) return;
+
+    try {
+        $intent = WC_Stripe_API::retrieve( 'payment_intents/' . $intent_id );
+    } catch ( Exception $e ) {
+        return;
+    }
+
+    if ( is_wp_error( $intent ) || empty( $intent->next_action->oxxo_display_details->hosted_voucher_url ) ) return;
+
+    $voucher_url    = $intent->next_action->oxxo_display_details->hosted_voucher_url;
+    $expires_after  = $intent->next_action->oxxo_display_details->expires_after ?? 0;
+    $expires_line   = $expires_after
+        ? '<p style="margin:0 0 16px;">Tu voucher vence el <strong>' . date_i18n( 'j \d\e F \d\e Y \a \l\a\s H:i', $expires_after ) . '</strong>. Paga antes de esa fecha para completar tu pedido.</p>'
+        : '';
+
+    $first_name  = esc_html( $order->get_billing_first_name() );
+    $order_num   = $order->get_order_number();
+    $order_total = $order->get_formatted_order_total();
+    $site_name   = esc_html( get_bloginfo( 'name' ) );
+    $subject     = 'Tu voucher OXXO — Pedido #' . $order_num;
+    $heading     = 'Tu voucher OXXO';
+
+    $body = '
+        <p>Hola ' . $first_name . ',</p>
+        <p>Gracias por tu pedido <strong>#' . $order_num . '</strong> en ' . $site_name . '. Para completar tu compra paga en efectivo en cualquier tienda OXXO presentando el siguiente voucher:</p>
+        <p style="text-align:center;margin:24px 0;">
+            <a href="' . esc_url( $voucher_url ) . '" style="background:#d32f2f;color:#fff;padding:14px 32px;text-decoration:none;border-radius:4px;font-size:16px;font-weight:bold;display:inline-block;">Ver mi voucher OXXO</a>
+        </p>
+        ' . $expires_line . '
+        <p>Total a pagar: <strong>' . $order_total . '</strong></p>
+        <p>Una vez que realices el pago en OXXO recibirás un correo de confirmación en cuanto procesemos tu pago (normalmente en unas horas).</p>
+    ';
+
+    $mailer  = WC()->mailer();
+    $message = $mailer->wrap_message( $heading, $body );
+    $mailer->send( $order->get_billing_email(), $subject, $message, '', [] );
+}, 20, 1 );
