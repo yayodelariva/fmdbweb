@@ -425,3 +425,9 @@ add_filter( 'woocommerce_email_order_meta_fields', function ( $fields, $sent_to_
     }
     return $fields;
 }, 10, 3 );
+
+// Force Stripe.js (and OXXO voucher) to render in Spanish (Latin America).
+add_filter( 'wc_stripe_params', function( $params ) {
+    $params['stripe_locale'] = 'es-419';
+    return $params;
+} );
