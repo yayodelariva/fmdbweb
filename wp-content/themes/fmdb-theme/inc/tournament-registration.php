@@ -276,28 +276,37 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
 
             if ( ! isset( $teams[ $key ] ) ) {
                 $teams[ $key ] = [
-                    'name'        => $team_name,
-                    'rama'        => $rama,
-                    'categoria'   => $categoria,
-                    'modalidad'   => $modalidad,
-                    'captain'     => '',
-                    'bulk_count'  => 0,
-                    'order_id'    => 0,
-                    'status'      => '',
-                    'on_waitlist' => false,
-                    'confirmed'   => false,
-                    'players'     => [],
+                    'name'         => $team_name,
+                    'rama'         => $rama,
+                    'categoria'    => $categoria,
+                    'modalidad'    => $modalidad,
+                    'captain'      => '',
+                    'extra_players' => [],
+                    'bulk_count'   => 0,
+                    'order_id'     => 0,
+                    'status'       => '',
+                    'on_waitlist'  => false,
+                    'confirmed'    => false,
+                    'players'      => [],
                 ];
             }
 
             if ( $reg_type === 'team' ) {
-                $teams[ $key ]['captain']    = $item->get_meta( 'Capitán' );
-                $teams[ $key ]['bulk_count'] = (int) $item->get_meta( 'Jugadores' );
-                $teams[ $key ]['order_id']   = $order->get_id();
-                $teams[ $key ]['status']     = $order->get_status();
-                $teams[ $key ]['on_waitlist'] = $order->get_meta( '_fmdb_on_waitlist' ) === '1';
+                $captain_full = trim( $item->get_meta( 'Capitán' ) . ' ' . $item->get_meta( 'Apellido' ) );
+                $total_slots  = (int) $item->get_meta( 'Jugadores' );
+                $extra        = [];
+                for ( $i = 2; $i <= $total_slots; $i++ ) {
+                    $n = trim( $item->get_meta( 'Jugador ' . $i ) );
+                    if ( $n ) $extra[] = $n;
+                }
+                $teams[ $key ]['captain']       = $captain_full;
+                $teams[ $key ]['extra_players']  = $extra;
+                $teams[ $key ]['bulk_count']     = $total_slots;
+                $teams[ $key ]['order_id']       = $order->get_id();
+                $teams[ $key ]['status']         = $order->get_status();
+                $teams[ $key ]['on_waitlist']    = $order->get_meta( '_fmdb_on_waitlist' ) === '1';
             } else {
-                $player_name = $item->get_meta( 'Jugador' );
+                $player_name = trim( $item->get_meta( 'Jugador' ) . ' ' . $item->get_meta( 'Apellido' ) );
                 if ( $player_name ) {
                     $teams[ $key ]['players'][] = [
                         'name'   => $player_name,
@@ -1623,8 +1632,21 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
             <ul class="fmdb-reg-team-card__roster">
                 <?php if ( $team['captain'] ) : ?>
                     <li class="fmdb-reg-team-card__player">
-                        <span class="fmdb-reg-team-card__role">Cap.</span>
+                        <span class="fmdb-reg-team-card__role">Enc.</span>
                         <?php echo esc_html( $team['captain'] ); ?>
+                    </li>
+                <?php endif; ?>
+                <?php foreach ( $team['extra_players'] ?? [] as $name ) : ?>
+                    <li class="fmdb-reg-team-card__player">
+                        <?php echo esc_html( $name ); ?>
+                    </li>
+                <?php endforeach; ?>
+                <?php
+                // Unnamed slots: total registered minus captain minus named extras.
+                $unnamed = $team['bulk_count'] - ( $team['captain'] ? 1 : 0 ) - count( $team['extra_players'] ?? [] );
+                if ( $unnamed > 0 ) : ?>
+                    <li class="fmdb-reg-team-card__player fmdb-reg-team-card__player--pending">
+                        + <?php echo $unnamed; ?> jugador<?php echo $unnamed > 1 ? 'es' : ''; ?> más
                     </li>
                 <?php endif; ?>
                 <?php foreach ( $team['players'] as $p ) : ?>
@@ -1632,13 +1654,6 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
                         <?php echo esc_html( $p['name'] ); ?>
                     </li>
                 <?php endforeach; ?>
-                <?php
-                $remaining = $team['bulk_count'] - 1; // all bulk slots besides captain are anonymous
-                if ( $remaining > 0 ) : ?>
-                    <li class="fmdb-reg-team-card__player fmdb-reg-team-card__player--pending">
-                        + <?php echo $remaining; ?> jugador<?php echo $remaining > 1 ? 'es' : ''; ?> más
-                    </li>
-                <?php endif; ?>
             </ul>
 
             <?php if ( $total > 0 ) : ?>
@@ -1936,7 +1951,7 @@ add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
 
     // One line per player; each covered by hospedaje pays $0.
     for ( $i = 1; $i <= $total_players; $i++ ) {
-        $label   = $i === 1 ? 'Capitán' : "Jugador {$i}";
+        $label   = $i === 1 ? 'Encargado' : "Jugador {$i}";
         $covered = $total_coverage >= $i;
         if ( $covered ) {
             $cart->add_fee( "Entrada al venue - {$label} (incluida en {$coverage_label})", 0.0, false );
@@ -1984,7 +1999,7 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
             $data[] = [ 'name' => 'Teléfono', 'value' => $cart_item['fmdb_player_phone'] ];
         }
     } else {
-        $data[] = [ 'name' => 'Capitán',   'value' => $cart_item['fmdb_captain_name'] ?? '' ];
+        $data[] = [ 'name' => 'Encargado',  'value' => $cart_item['fmdb_captain_name'] ?? '' ];
         $data[] = [ 'name' => 'Apellido',  'value' => $cart_item['fmdb_captain_apellido'] ?? '' ];
         $data[] = [ 'name' => 'Teléfono',  'value' => $cart_item['fmdb_captain_phone'] ?? '' ];
         $data[] = [ 'name' => 'Jugadores', 'value' => $cart_item['fmdb_player_count'] ?? 0 ];
