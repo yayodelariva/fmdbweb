@@ -292,7 +292,7 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
             }
 
             if ( $reg_type === 'team' ) {
-                $captain_full = trim( $item->get_meta( 'Encargado' ) . ' ' . $item->get_meta( 'Apellido' ) );
+                $captain_full = trim( ( $item->get_meta( 'Encargado' ) ?: $item->get_meta( 'Capitán' ) ) . ' ' . $item->get_meta( 'Apellido' ) );
                 $total_slots  = (int) $item->get_meta( 'Jugadores' );
                 $extra        = [];
                 for ( $i = 2; $i <= $total_slots; $i++ ) {
