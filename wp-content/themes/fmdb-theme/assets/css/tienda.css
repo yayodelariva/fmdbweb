@@ -413,6 +413,9 @@ body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocomm
     font-size: 0.9rem;
     border-bottom: 1px solid var(--fmdb-neutral);
     vertical-align: top;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal !important;
 }
 .woocommerce-cart .cart_totals table .order-total th,
 .woocommerce-cart .cart_totals table .order-total td {
@@ -499,6 +502,9 @@ body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocomm
 .woocommerce-checkout table.shop_table td {
     padding: 10px 0;
     border-bottom: 1px solid var(--fmdb-neutral);
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal !important;
 }
 .woocommerce-checkout table.shop_table tfoot .order-total th,
 .woocommerce-checkout table.shop_table tfoot .order-total td {

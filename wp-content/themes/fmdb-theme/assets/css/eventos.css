@@ -365,11 +365,14 @@
 .fmdb-evento-single {
     background: var(--fmdb-pale-green);
     min-height: 80vh;
+    overflow-x: hidden;
 }
 .fmdb-evento-single__wrap {
     max-width: 1060px;
     margin: 0 auto;
     padding: 36px 20px 64px;
+    box-sizing: border-box;
+    width: 100%;
 }
 .fmdb-evento-single__content {
     background: #fff;
@@ -377,6 +380,7 @@
     border: 1px solid rgba(8,80,65,0.1);
     padding: 28px 32px;
     box-shadow: 0 2px 12px rgba(8,80,65,0.06);
+    min-width: 0;
 }
 @media (min-width: 761px) {
     .fmdb-evento-single__sidebar {
@@ -429,6 +433,8 @@
     .fmdb-evento-single__layout { grid-template-columns: 1fr; }
     .fmdb-evento-single__content { order: -1; }
     .fmdb-evento-single__header { flex-direction: column; }
+    .fmdb-evento-single__wrap { padding-left: 16px; padding-right: 16px; }
+    .fmdb-evento-single__content { padding: 20px 18px; }
 }
 
 .fmdb-evento-single__thumbnail { margin-bottom: 24px; border-radius: 10px; overflow: hidden; }

@@ -599,17 +599,20 @@ function fmdb_event_registration_box( int $event_id ): void {
                         if ( ! empty( $entry['is_captain'] ) ) {
                             $uid = (int) ( $entry['user_id'] ?? $entry['linked_user_id'] ?? 0 );
                             if ( $uid && ( $u = get_userdata( $uid ) ) ) {
-                                $captain_val = esc_attr( $u->display_name );
+                                $captain_val         = esc_attr( $u->first_name );
+                                if ( ! $captain_apellido_val ) $captain_apellido_val = esc_attr( $u->last_name );
                             }
                             break;
                         }
                     }
                 }
-                if ( ! $captain_val ) $captain_val = esc_attr( $current_user->display_name );
+                if ( ! $captain_val ) $captain_val = esc_attr( $current_user->first_name );
+                if ( ! $captain_apellido_val ) $captain_apellido_val = esc_attr( $current_user->last_name );
             }
         }
 
-        if ( ! $player_name_val ) $player_name_val = esc_attr( $current_user->display_name );
+        if ( ! $player_name_val )     $player_name_val     = esc_attr( $current_user->first_name );
+        if ( ! $player_apellido_val ) $player_apellido_val = esc_attr( $current_user->last_name );
     }
 
     // Teams already registered for this event (from WC orders)
@@ -707,6 +710,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Registro al torneo
             </div>
+            <p style="font-size:12px;color:var(--fmdb-text-muted,#666);margin:0 0 10px;">Inicia tu registro aquí — elige si deseas registrar a un equipo o inscribirte a un equipo que ya esté registrado.</p>
             <div class="fmdb-reg-tabs" id="fmdb-reg-tabs-<?php echo $eid; ?>">
                 <button type="button" class="fmdb-reg-tab<?php echo $active_tab === 'team' ? ' is-active' : ''; ?>"
                         data-target="fmdb-form-team-<?php echo $eid; ?>">
