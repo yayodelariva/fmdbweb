@@ -1596,10 +1596,8 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
 
     // Helper: render a single team card.
     $render_card = function ( array $team ) use ( $pay_status_labels, $min_players ): void {
-        $ind_count = count( $team['players'] );
-        $total     = $team['bulk_count'] + $ind_count;
+        $total = $team['bulk_count'] + count( $team['players'] );
 
-        $total = $team['bulk_count'] + $ind_count;
         if ( $team['confirmed'] ?? false ) {
             $st = [ 'label' => 'Confirmado', 'mod' => 'confirmed' ];
         } elseif ( $total < $min_players ) {
@@ -1609,23 +1607,30 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         } else {
             $st = $pay_status_labels[ $team['status'] ] ?? null;
         }
-        unset( $total ); // recomputed above; clear to avoid confusion with later uses
         ?>
         <div class="fmdb-reg-team-card"
              data-rama="<?php echo esc_attr( $team['rama'] ); ?>"
              data-cat="<?php echo esc_attr( $team['categoria'] ); ?>"
              data-mod="<?php echo esc_attr( $team['modalidad'] ); ?>">
             <div class="fmdb-reg-team-card__header">
-                <span class="fmdb-reg-team-card__name"><?php echo esc_html( $team['name'] ); ?></span>
-                <?php
-                $div_str = implode( ' · ', array_filter( [ $team['rama'], $team['categoria'], $team['modalidad'] ] ) );
-                if ( $div_str ) : ?>
-                    <span class="fmdb-reg-team-card__div"><?php echo esc_html( $div_str ); ?></span>
-                <?php endif; ?>
-                <?php if ( $st ) : ?>
-                    <span class="fmdb-reg-team-card__status fmdb-reg-status--<?php echo esc_attr( $st['mod'] ); ?>">
-                        <?php echo esc_html( $st['label'] ); ?>
-                    </span>
+                <div class="fmdb-reg-team-card__header-main">
+                    <span class="fmdb-reg-team-card__name"><?php echo esc_html( $team['name'] ); ?></span>
+                    <?php
+                    $div_str = implode( ' · ', array_filter( [ $team['rama'], $team['categoria'], $team['modalidad'] ] ) );
+                    if ( $div_str ) : ?>
+                        <span class="fmdb-reg-team-card__div"><?php echo esc_html( $div_str ); ?></span>
+                    <?php endif; ?>
+                    <?php if ( $st ) : ?>
+                        <span class="fmdb-reg-team-card__status fmdb-reg-status--<?php echo esc_attr( $st['mod'] ); ?>">
+                            <?php echo esc_html( $st['label'] ); ?>
+                        </span>
+                    <?php endif; ?>
+                </div>
+                <?php if ( $total > 0 ) : ?>
+                <div class="fmdb-reg-team-card__count">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                    <?php echo $total; ?>
+                </div>
                 <?php endif; ?>
             </div>
 
@@ -1656,11 +1661,6 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
                 <?php endforeach; ?>
             </ul>
 
-            <?php if ( $total > 0 ) : ?>
-            <div class="fmdb-reg-team-card__footer">
-                <?php echo esc_html( $total . ' jugador' . ( $total !== 1 ? 'es' : '' ) . ' registrado' . ( $total !== 1 ? 's' : '' ) . ' de 9' ); ?>
-            </div>
-            <?php endif; ?>
         </div>
         <?php
     };
