@@ -15,6 +15,44 @@
  * Storage: serialized array of associative arrays under postmeta keys
  * `tournament_teams` and `tournament_matches`.
  * =================================================================== */
+
+/**
+ * Returns team names registered for a given event via WooCommerce orders.
+ * Used as options for bracket team selects.
+ */
+function fmdb_get_event_registered_teams( int $event_id ): array {
+    if ( ! function_exists( 'wc_get_orders' ) ) return [];
+
+    $orders = wc_get_orders( [
+        'meta_key'   => '_fmdb_reg_event_id',
+        'meta_value' => $event_id,
+        'status'     => [ 'wc-processing', 'wc-completed' ],
+        'limit'      => -1,
+    ] );
+
+    $teams = [];
+    foreach ( $orders as $order ) {
+        foreach ( $order->get_items() as $item ) {
+            $name = trim( (string) $item->get_meta( 'Equipo' ) );
+            if ( $name && ! in_array( $name, $teams, true ) ) {
+                $teams[] = $name;
+            }
+        }
+    }
+    sort( $teams );
+    return $teams;
+}
+
+/** CMB2 options_cb for team select fields — populates from WC registrations. */
+function fmdb_tournament_team_options( $field ): array {
+    $event_id = (int) $field->object_id;
+    $options  = [ '' => '— Seleccionar equipo —' ];
+    foreach ( fmdb_get_event_registered_teams( $event_id ) as $name ) {
+        $options[ $name ] = $name;
+    }
+    return $options;
+}
+
 add_action( 'cmb2_init', function () {
     $cmb = new_cmb2_box( [
         'id'           => 'fmdb_tournament_box',
@@ -37,9 +75,10 @@ add_action( 'cmb2_init', function () {
         ],
     ] );
     $cmb->add_group_field( 'tournament_teams', [
-        'name' => __( 'Nombre del equipo', 'fmdb' ),
-        'id'   => 'team_name',
-        'type' => 'text',
+        'name'       => __( 'Nombre del equipo', 'fmdb' ),
+        'id'         => 'team_name',
+        'type'       => 'select',
+        'options_cb' => 'fmdb_tournament_team_options',
     ] );
 
     $cmb->add_field( [
@@ -68,9 +107,10 @@ add_action( 'cmb2_init', function () {
         'default' => 'cuartos',
     ] );
     $cmb->add_group_field( 'tournament_matches', [
-        'name' => __( 'Equipo A', 'fmdb' ),
-        'id'   => 'team_a_name',
-        'type' => 'text',
+        'name'       => __( 'Equipo A', 'fmdb' ),
+        'id'         => 'team_a_name',
+        'type'       => 'select',
+        'options_cb' => 'fmdb_tournament_team_options',
     ] );
     $cmb->add_group_field( 'tournament_matches', [
         'name' => __( 'Puntos A', 'fmdb' ),
@@ -79,9 +119,10 @@ add_action( 'cmb2_init', function () {
         'attributes' => [ 'type' => 'number', 'min' => '0' ],
     ] );
     $cmb->add_group_field( 'tournament_matches', [
-        'name' => __( 'Equipo B', 'fmdb' ),
-        'id'   => 'team_b_name',
-        'type' => 'text',
+        'name'       => __( 'Equipo B', 'fmdb' ),
+        'id'         => 'team_b_name',
+        'type'       => 'select',
+        'options_cb' => 'fmdb_tournament_team_options',
     ] );
     $cmb->add_group_field( 'tournament_matches', [
         'name' => __( 'Puntos B', 'fmdb' ),

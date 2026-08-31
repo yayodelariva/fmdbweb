@@ -84,7 +84,7 @@ while ( have_posts() ) : the_post();
         }
 
         $has_body    = $_body !== '';
-        $has_bracket = ! empty( $tournament_matches ) && $event_type === 'torneo';
+        $has_bracket = false; // bracket hidden until ready to display publicly
         $has_pdfs    = ! empty( $pdfs );
         $has_content = $has_body || has_post_thumbnail() || $has_bracket || $has_pdfs;
         $date_tbd    = get_post_meta( $id, '_fmdb_date_tbd', true ) === '1';
