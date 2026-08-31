@@ -522,3 +522,32 @@ add_filter( 'woocommerce_cancel_unpaid_order', function( $cancel, $order ) {
     }
     return time() > $expires; // cancel only after the voucher lapses
 }, 10, 2 );
+
+// Email the customer when their OXXO voucher expires and the order is auto-cancelled.
+add_action( 'woocommerce_order_status_pending_to_cancelled', function( $order_id ) {
+    $order = wc_get_order( $order_id );
+    if ( ! $order || 'stripe_oxxo' !== $order->get_payment_method() ) return;
+
+    $first_name  = esc_html( $order->get_billing_first_name() );
+    $order_num   = $order->get_order_number();
+    $order_total = $order->get_formatted_order_total();
+    $site_name   = esc_html( get_bloginfo( 'name' ) );
+    $shop_url    = esc_url( wc_get_page_permalink( 'shop' ) );
+    $subject     = 'Tu voucher OXXO venció — Pedido #' . $order_num;
+    $heading     = 'Tu voucher OXXO ha expirado';
+
+    $body = '
+        <p>Hola ' . $first_name . ',</p>
+        <p>El plazo para pagar tu pedido <strong>#' . $order_num . '</strong> en ' . $site_name . ' venció sin que se registrara el pago en OXXO, por lo que el pedido ha sido <strong>cancelado</strong>.</p>
+        <p>Total del pedido cancelado: <strong>' . $order_total . '</strong></p>
+        <p>Si todavía deseas inscribirte, puedes realizar un nuevo pedido en cualquier momento:</p>
+        <p style="text-align:center;margin:24px 0;">
+            <a href="' . $shop_url . '" style="background:#d32f2f;color:#fff;padding:14px 32px;text-decoration:none;border-radius:4px;font-size:16px;font-weight:bold;display:inline-block;">Volver a la tienda</a>
+        </p>
+        <p>Si crees que esto es un error o tienes alguna duda, contáctanos por WhatsApp al <strong>55 1432 9482</strong>.</p>
+    ';
+
+    $mailer  = WC()->mailer();
+    $message = $mailer->wrap_message( $heading, $body );
+    $mailer->send( $order->get_billing_email(), $subject, $message, '', [] );
+}, 10, 1 );
