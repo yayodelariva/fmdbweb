@@ -476,8 +476,14 @@ add_action( 'woocommerce_thankyou', function( $order_id ) {
         }
     }
 
-    $voucher_url    = $intent->next_action->oxxo_display_details->hosted_voucher_url;
-    $expires_after  = $intent->next_action->oxxo_display_details->expires_after ?? 0;
+    $voucher_url   = $intent->next_action->oxxo_display_details->hosted_voucher_url;
+    $expires_after = $intent->next_action->oxxo_display_details->expires_after ?? 0;
+
+    // Persist expiry so the cancel guard knows when the voucher lapses.
+    if ( $expires_after ) {
+        $order->update_meta_data( '_fmdb_oxxo_voucher_expires', $expires_after );
+        $order->save();
+    }
     $expires_line   = $expires_after
         ? '<p style="margin:0 0 16px;">Tu voucher vence el <strong>' . date_i18n( 'j \d\e F \d\e Y \a \l\a\s H:i', $expires_after ) . '</strong>. Paga antes de esa fecha para completar tu pedido.</p>'
         : '';
@@ -505,12 +511,16 @@ add_action( 'woocommerce_thankyou', function( $order_id ) {
     $mailer->send( $order->get_billing_email(), $subject, $message, '', [] );
 }, 20, 1 );
 
-// Prevent WC from auto-cancelling pending OXXO orders — customers have days to pay at OXXO.
+// Cancel an OXXO order only after its voucher has actually expired — not on WC's generic timer.
 add_filter( 'woocommerce_cancel_unpaid_order', function( $cancel, $order ) {
-    if ( 'stripe_oxxo' === $order->get_payment_method() ) {
-        return false;
+    if ( 'stripe_oxxo' !== $order->get_payment_method() ) {
+        return $cancel;
     }
-    return $cancel;
+    $expires = (int) $order->get_meta( '_fmdb_oxxo_voucher_expires' );
+    if ( ! $expires ) {
+        return false; // expiry unknown — don't cancel
+    }
+    return time() > $expires; // cancel only after the voucher lapses
 }, 10, 2 );
 
 // Allow Stripe's payment_intent.succeeded webhook to complete an OXXO order even if it was
