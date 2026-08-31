@@ -292,7 +292,7 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
             }
 
             if ( $reg_type === 'team' ) {
-                $captain_full = trim( $item->get_meta( 'Capitán' ) . ' ' . $item->get_meta( 'Apellido' ) );
+                $captain_full = trim( $item->get_meta( 'Encargado' ) . ' ' . $item->get_meta( 'Apellido' ) );
                 $total_slots  = (int) $item->get_meta( 'Jugadores' );
                 $extra        = [];
                 for ( $i = 2; $i <= $total_slots; $i++ ) {
@@ -2126,21 +2126,21 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             }
         }
         if ( empty( $_POST['fmdb_captain_name'] ) ) {
-            wc_add_notice( 'Ingresa el nombre del capitán.', 'error' );
+            wc_add_notice( 'Ingresa el nombre del encargado.', 'error' );
             $passed = false;
         } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_captain_name'] ) ) {
-            wc_add_notice( 'El nombre del capitán solo puede contener letras.', 'error' );
+            wc_add_notice( 'El nombre del encargado solo puede contener letras.', 'error' );
             $passed = false;
         }
         if ( empty( $_POST['fmdb_captain_apellido'] ) ) {
-            wc_add_notice( 'Ingresa el apellido del capitán.', 'error' );
+            wc_add_notice( 'Ingresa el apellido del encargado.', 'error' );
             $passed = false;
         } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_captain_apellido'] ) ) {
-            wc_add_notice( 'El apellido del capitán solo puede contener letras.', 'error' );
+            wc_add_notice( 'El apellido del encargado solo puede contener letras.', 'error' );
             $passed = false;
         }
         if ( empty( $_POST['fmdb_captain_phone'] ) ) {
-            wc_add_notice( 'Ingresa el teléfono del capitán.', 'error' );
+            wc_add_notice( 'Ingresa el teléfono del encargado.', 'error' );
             $passed = false;
         }
         $count = (int) ( $_POST['fmdb_player_count'] ?? 0 );
@@ -2403,7 +2403,7 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
             $item->update_meta_data( 'Teléfono', $values['fmdb_player_phone'] );
         }
     } else {
-        $item->update_meta_data( 'Capitán',   $values['fmdb_captain_name'] ?? '' );
+        $item->update_meta_data( 'Encargado',  $values['fmdb_captain_name'] ?? '' );
         $item->update_meta_data( 'Apellido',  $values['fmdb_captain_apellido'] ?? '' );
         $item->update_meta_data( 'Teléfono',  $values['fmdb_captain_phone'] ?? '' );
         $item->update_meta_data( 'Jugadores', $values['fmdb_player_count'] ?? 0 );
