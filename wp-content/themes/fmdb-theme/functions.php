@@ -18,6 +18,7 @@ foreach ( [
     'events',
     'woocommerce',
     'tournament-registration',
+    'tournament-admin',
     'nav',
     'login',
     'email-verification',
