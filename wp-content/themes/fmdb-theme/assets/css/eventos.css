@@ -427,7 +427,7 @@
 }
 @media (max-width: 760px) {
     .fmdb-evento-single__layout { grid-template-columns: 1fr; }
-    .fmdb-evento-single__sidebar { order: -1; }
+    .fmdb-evento-single__content { order: -1; }
     .fmdb-evento-single__header { flex-direction: column; }
 }
 
