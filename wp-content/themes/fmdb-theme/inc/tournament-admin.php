@@ -36,7 +36,7 @@ function fmdb_reg_export_rows( int $event_id ): array {
 
         if ( ! $reg_item ) continue;
 
-        $encargado_nombre   = $reg_item->get_meta( 'Encargado' ) ?: $reg_item->get_meta( 'Capitán' );
+        $encargado_nombre   = $reg_item->get_meta( 'Encargado' ) ?: $reg_item->get_meta( 'Capitán' ) ?: $reg_item->get_meta( 'Jugador' );
         $encargado_apellido = $reg_item->get_meta( 'Apellido' );
         $encargado          = trim( $encargado_nombre . ' ' . $encargado_apellido );
 
