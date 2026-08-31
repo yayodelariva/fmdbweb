@@ -504,3 +504,20 @@ add_action( 'woocommerce_thankyou', function( $order_id ) {
     $message = $mailer->wrap_message( $heading, $body );
     $mailer->send( $order->get_billing_email(), $subject, $message, '', [] );
 }, 20, 1 );
+
+// Prevent WC from auto-cancelling pending OXXO orders — customers have days to pay at OXXO.
+add_filter( 'woocommerce_cancel_unpaid_order', function( $cancel, $order ) {
+    if ( 'stripe_oxxo' === $order->get_payment_method() ) {
+        return false;
+    }
+    return $cancel;
+}, 10, 2 );
+
+// Allow Stripe's payment_intent.succeeded webhook to complete an OXXO order even if it was
+// auto-cancelled before the customer paid — adds 'cancelled' to the valid processing statuses.
+add_filter( 'wc_stripe_allowed_payment_processing_statuses', function( $statuses, $order ) {
+    if ( 'stripe_oxxo' === $order->get_payment_method() ) {
+        $statuses[] = 'cancelled';
+    }
+    return $statuses;
+}, 10, 2 );
