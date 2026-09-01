@@ -69,7 +69,7 @@ add_action( 'admin_init', function () {
     $user  = wp_get_current_user();
     $roles = (array) $user->roles;
     if ( array_intersect( $roles, [ 'jugador', 'representante_equipo' ] ) ) {
-        wp_safe_redirect( home_url( '/mi-equipo/' ) );
+        wp_safe_redirect( home_url( '/mi-perfil/' ) );
         exit;
     }
 

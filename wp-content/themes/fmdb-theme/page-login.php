@@ -5,13 +5,13 @@
  */
 
 if ( is_user_logged_in() ) {
-    wp_safe_redirect( home_url( '/mi-equipo/' ) );
+    wp_safe_redirect( home_url( '/mi-perfil/' ) );
     exit;
 }
 
 $errors      = []; // simple strings, escaped at output
 $errors_html = []; // pre-trusted HTML (e.g., unverified link), output as-is
-$redirect_to = isset( $_GET['redirect_to'] ) ? esc_url_raw( $_GET['redirect_to'] ) : home_url( '/mi-equipo/' );
+$redirect_to = isset( $_GET['redirect_to'] ) ? esc_url_raw( $_GET['redirect_to'] ) : home_url( '/mi-perfil/' );
 $resend_mode = isset( $_GET['resend'] );
 $resend_done = false;
 
@@ -46,7 +46,7 @@ if ( $resend_mode && $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmd
                 $errors[] = 'Usuario o contraseña incorrectos.';
             }
         } else {
-            $dest = isset( $_POST['redirect_to'] ) ? esc_url_raw( $_POST['redirect_to'] ) : home_url( '/mi-equipo/' );
+            $dest = isset( $_POST['redirect_to'] ) ? esc_url_raw( $_POST['redirect_to'] ) : home_url( '/mi-perfil/' );
             wp_safe_redirect( $dest );
             exit;
         }
