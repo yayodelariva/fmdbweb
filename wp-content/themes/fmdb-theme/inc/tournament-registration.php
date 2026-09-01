@@ -241,6 +241,63 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
 
 /* ─── 3a. Helper: get all teams registered for an event ───────────────── */
 
+/**
+ * Expands Varonil/Mixto and Femenil/Mixto registrations into two display entries each:
+ * a primary team (Varonil or Femenil) and a shared Mixto team that merges all contributions
+ * for the same team name + categoria.
+ */
+function fmdb_expand_team_ramas( array $teams ): array {
+    $out      = [];
+    $mixto    = []; // lc-name|categoria → index in $out
+
+    foreach ( $teams as $team ) {
+        $rama = $team['rama'] ?? '';
+
+        if ( strpos( $rama, '/' ) === false ) {
+            $out[] = $team; // old-format or already expanded — pass through
+            continue;
+        }
+
+        $primary_rama = ( strpos( $rama, 'Varonil' ) !== false ) ? 'Varonil' : 'Femenil';
+        $mixto_key    = mb_strtolower( trim( $team['name'] ?? '' ) ) . '|' . ( $team['categoria'] ?? '' );
+
+        // Primary team (Varonil or Femenil).
+        $primary         = $team;
+        $primary['rama'] = $primary_rama;
+        $out[]           = $primary;
+
+        // Mixto team.
+        if ( ! isset( $mixto[ $mixto_key ] ) ) {
+            $mt = $team;
+            $mt['rama'] = 'Mixto';
+            unset( $mt['confirmed'] ); // recomputed by normalization pass
+            $out[] = $mt;
+            $mixto[ $mixto_key ] = array_key_last( $out );
+        } else {
+            $idx = $mixto[ $mixto_key ];
+            // Merge captain as extra player if different.
+            $captain = trim( $team['captain'] ?? '' );
+            if ( $captain && $captain !== ( $out[ $idx ]['captain'] ?? '' ) ) {
+                $out[ $idx ]['extra_players'][] = $captain;
+            }
+            foreach ( $team['extra_players'] ?? [] as $ep ) {
+                $out[ $idx ]['extra_players'][] = $ep;
+            }
+            $out[ $idx ]['bulk_count'] += (int) ( $team['bulk_count'] ?? 0 );
+            foreach ( $team['players'] ?? [] as $p ) {
+                $out[ $idx ]['players'][] = $p;
+            }
+            // Promote status to the "better" of the two registrations.
+            $rank = [ 'completed' => 3, 'processing' => 2, 'on-hold' => 1, 'pending' => 0 ];
+            if ( ( $rank[ $team['status'] ?? '' ] ?? -1 ) > ( $rank[ $out[ $idx ]['status'] ?? '' ] ?? -1 ) ) {
+                $out[ $idx ]['status'] = $team['status'];
+            }
+        }
+    }
+
+    return $out;
+}
+
 function fmdb_reg_get_event_teams( int $event_id ): array {
     if ( ! function_exists( 'wc_get_orders' ) ) return [];
 
@@ -327,8 +384,11 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
 
     $all = apply_filters( 'fmdb_reg_event_teams', array_values( $teams ), $event_id );
 
+    // Expand Varonil/Mixto → Varonil + Mixto, Femenil/Mixto → Femenil + Mixto.
+    $all = fmdb_expand_team_ramas( $all );
+
     // Normalize fixture/filtered data that may be missing computed fields.
-    return array_map( function ( $t ) use ( $min_players ) {
+    $normalized = array_map( function ( $t ) use ( $min_players ) {
         $t['on_waitlist'] = $t['on_waitlist'] ?? false;
         if ( ! isset( $t['confirmed'] ) ) {
             $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
@@ -338,6 +398,22 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
         }
         return $t;
     }, $all );
+
+    // Apply slot cap to Mixto display teams (same cap as primary teams, first-come-first-served).
+    $mixto_counts = [];
+    foreach ( $normalized as &$t ) {
+        if ( ( $t['rama'] ?? '' ) !== 'Mixto' || ! ( $t['confirmed'] ?? false ) ) continue;
+        $cat = $t['categoria'] ?? '';
+        $cap = fmdb_reg_slot_cap( $event_id, $cat );
+        $mixto_counts[ $cat ] = ( $mixto_counts[ $cat ] ?? 0 ) + 1;
+        if ( $cap > 0 && $mixto_counts[ $cat ] > $cap ) {
+            $t['confirmed']   = false;
+            $t['on_waitlist'] = true;
+        }
+    }
+    unset( $t );
+
+    return $normalized;
 }
 
 /* ─── 3b. Helper: resolve user's fmdb_team ────────────────────────────── */
@@ -619,6 +695,7 @@ function fmdb_event_registration_box( int $event_id ): void {
     if ( $user_team ) {
         $team_lower = mb_strtolower( trim( $user_team->post_title ) );
         foreach ( $registered_teams as $rt ) {
+            if ( ( $rt['rama'] ?? '' ) === 'Mixto' ) continue;
             if ( mb_strtolower( trim( $rt['name'] ) ) === $team_lower && $rt['order_id'] ) {
                 $team_already_registered = true;
                 $team_reg_details        = $rt;
@@ -833,6 +910,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 $ind_lower     = mb_strtolower( trim( $ind_team_val ) );
                 $ind_reg_match = null;
                 foreach ( $registered_teams as $_rt ) {
+                    if ( ( $_rt['rama'] ?? '' ) === 'Mixto' ) continue; // Mixto is derived, not a real picker option
                     if ( mb_strtolower( trim( $_rt['name'] ) ) === $ind_lower ) {
                         $ind_reg_match = $_rt; break;
                     }
@@ -848,6 +926,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                         <select id="fmdb-ind-sel-<?php echo $eid; ?>" class="fmdb-reg-ind-sel">
                             <option value="">— Selecciona tu equipo —</option>
                             <?php foreach ( $registered_teams as $rt ) :
+                                if ( ( $rt['rama'] ?? '' ) === 'Mixto' ) continue; // Mixto is derived; join via the primary team
                                 $rt_div = implode( ' · ', array_filter( [ $rt['rama'], $rt['categoria'] ] ) );
                             ?>
                                 <option value="<?php echo esc_attr( $rt['name'] ); ?>"
@@ -1594,6 +1673,16 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
     $all_cats  = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_categorias', true ) ) );
     $all_ramas = array_values( array_intersect( $all_ramas, [ 'Varonil/Mixto', 'Femenil/Mixto' ] ) );
     if ( empty( $all_ramas ) ) $all_ramas = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
+    // Expand stored ramas to display ramas: Varonil/Mixto → Varonil; Femenil/Mixto → Femenil; Mixto appended once.
+    $_display_ramas = [];
+    $_has_mixto     = false;
+    foreach ( $all_ramas as $_r ) {
+        $_primary = strpos( $_r, 'Varonil' ) !== false ? 'Varonil' : 'Femenil';
+        if ( ! in_array( $_primary, $_display_ramas, true ) ) $_display_ramas[] = $_primary;
+        $_has_mixto = true;
+    }
+    if ( $_has_mixto ) $_display_ramas[] = 'Mixto';
+    $all_ramas = $_display_ramas;
     if ( empty( $all_cats ) )  $all_cats  = [ 'Infantil', 'Libre' ];
 
     $sid = 'fmdb-teams-' . $event_id;
@@ -2076,13 +2165,17 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             wc_add_notice( 'Ingresa tu teléfono.', 'error' );
             $passed = false;
         }
-        // Enforce roster cap per team.
+        // Enforce roster cap per team — match by name + primary display rama (not Mixto).
         if ( $passed && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
-            $_ind_limits = fmdb_reg_player_limits( $event_id );
-            $teams = fmdb_reg_get_event_teams( $event_id );
-            $target = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
+            $_ind_limits      = fmdb_reg_player_limits( $event_id );
+            $teams            = fmdb_reg_get_event_teams( $event_id );
+            $target           = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
+            $_ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+            // Derive display rama: 'Varonil/Mixto' → 'Varonil', 'Femenil/Mixto' → 'Femenil'.
+            $_ind_disp_rama = strpos( $_ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
+                            : ( strpos( $_ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $_ind_stored_rama );
             foreach ( $teams as $t ) {
-                if ( mb_strtolower( trim( $t['name'] ) ) === $target ) {
+                if ( mb_strtolower( trim( $t['name'] ) ) === $target && $t['rama'] === $_ind_disp_rama ) {
                     $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
                     if ( $total >= $_ind_limits['max'] ) {
                         wc_add_notice( 'Este equipo ya alcanzó el límite de ' . $_ind_limits['max'] . ' jugadores.', 'error' );
