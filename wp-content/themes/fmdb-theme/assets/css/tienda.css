@@ -413,9 +413,6 @@ body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocomm
     font-size: 0.9rem;
     border-bottom: 1px solid var(--fmdb-neutral);
     vertical-align: top;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    white-space: normal !important;
 }
 .woocommerce-cart .cart_totals table .order-total th,
 .woocommerce-cart .cart_totals table .order-total td {
@@ -490,13 +487,14 @@ body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocomm
 }
 .woocommerce-checkout #place_order:hover { background: var(--fmdb-dark-green) !important; }
 
-/* WC block money amount — prevent overflow on narrow screens */
-.wc-block-formatted-money-amount,
-.wc-block-components-formatted-money-amount,
-.wc-block-components-product-price__value {
-    white-space: normal !important;
+/* WC block order summary — price column stays on one line, name wraps */
+.wc-block-components-order-summary-item__total-price {
+    white-space: nowrap;
+    padding-left: 8px;
+}
+.wc-block-components-order-summary-item__description {
+    word-break: break-word;
     overflow-wrap: break-word;
-    max-width: 100%;
 }
 
 /* Order review */
@@ -511,9 +509,10 @@ body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocomm
 .woocommerce-checkout table.shop_table td {
     padding: 10px 0;
     border-bottom: 1px solid var(--fmdb-neutral);
+}
+.woocommerce-checkout table.shop_table .product-name {
     word-break: break-word;
     overflow-wrap: break-word;
-    white-space: normal !important;
 }
 .woocommerce-checkout table.shop_table tfoot .order-total th,
 .woocommerce-checkout table.shop_table tfoot .order-total td {
