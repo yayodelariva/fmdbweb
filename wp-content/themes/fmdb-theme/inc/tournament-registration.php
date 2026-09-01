@@ -928,9 +928,13 @@ function fmdb_event_registration_box( int $event_id ): void {
                             <?php foreach ( $registered_teams as $rt ) :
                                 if ( ( $rt['rama'] ?? '' ) === 'Mixto' ) continue; // Mixto is derived; join via the primary team
                                 $rt_div = implode( ' · ', array_filter( [ $rt['rama'], $rt['categoria'] ] ) );
+                                // Stored/compound rama for the hidden field (must match team order's Rama meta).
+                                $_rt_stored_rama = ( $rt['rama'] ?? '' ) === 'Varonil' ? 'Varonil/Mixto'
+                                                 : ( ( $rt['rama'] ?? '' ) === 'Femenil' ? 'Femenil/Mixto' : ( $rt['rama'] ?? '' ) );
                             ?>
                                 <option value="<?php echo esc_attr( $rt['name'] ); ?>"
                                         data-rama="<?php echo esc_attr( $rt['rama'] ); ?>"
+                                        data-stored-rama="<?php echo esc_attr( $_rt_stored_rama ); ?>"
                                         data-cat="<?php echo esc_attr( $rt['categoria'] ); ?>"
                                         <?php selected( mb_strtolower( trim( $rt['name'] ) ) === $ind_lower ); ?>>
                                     <?php echo esc_html( $rt['name'] . ( $rt_div ? '  —  ' . $rt_div : '' ) ); ?>
@@ -967,9 +971,13 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <?php if ( ! empty( $registered_teams ) ) : ?>
                 <div class="fmdb-reg-form__section-title">División</div>
                 <?php
-                $ind_rama_val  = $ind_reg_match ? $ind_reg_match['rama']      : '';
-                $ind_cat_val   = $ind_reg_match ? $ind_reg_match['categoria']  : '';
-                $show_div_card = (bool) $ind_reg_match;
+                $_ind_disp_rama  = $ind_reg_match ? ( $ind_reg_match['rama'] ?? '' ) : '';
+                $ind_cat_val     = $ind_reg_match ? $ind_reg_match['categoria']  : '';
+                // Convert display rama back to stored/compound rama for the hidden field and cart.
+                $ind_stored_rama = $_ind_disp_rama === 'Varonil' ? 'Varonil/Mixto'
+                                 : ( $_ind_disp_rama === 'Femenil' ? 'Femenil/Mixto' : $_ind_disp_rama );
+                $ind_rama_val    = $_ind_disp_rama; // display-only (visible span)
+                $show_div_card   = (bool) $ind_reg_match;
                 ?>
                 <div class="fmdb-reg-ind-div-card<?php echo $show_div_card ? '' : ' fmdb-reg-form--hidden'; ?>"
                      id="fmdb-ind-div-card-<?php echo $eid; ?>">
@@ -982,7 +990,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                         <span class="fmdb-reg-ind-div-card__val" id="fmdb-ind-div-cat-<?php echo $eid; ?>"><?php echo esc_html( $cat_labels[ $ind_cat_val ] ?? $ind_cat_val ); ?></span>
                     </div>
                     <input type="hidden" name="fmdb_rama"      id="fmdb-ind-hrama-<?php echo $eid; ?>"
-                           value="<?php echo esc_attr( $ind_rama_val ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
+                           value="<?php echo esc_attr( $ind_stored_rama ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
                     <input type="hidden" name="fmdb_categoria" id="fmdb-ind-hcat-<?php echo $eid; ?>"
                            value="<?php echo esc_attr( $ind_cat_val ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
                 </div>
@@ -1464,10 +1472,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                 var indRamaSpan = document.getElementById('fmdb-ind-div-rama-' + eid);
                 var indCatSpan  = document.getElementById('fmdb-ind-div-cat-'  + eid);
 
-                function showDivCard(rama, cat) {
+                function showDivCard(rama, storedRama, cat) {
                     if (indRamaSpan) indRamaSpan.textContent = rama;
                     if (indCatSpan)  indCatSpan.textContent  = catLabels[cat] || cat;
-                    if (indHRama) { indHRama.value = rama; indHRama.disabled = false; }
+                    if (indHRama) { indHRama.value = storedRama || rama; indHRama.disabled = false; }
                     if (indHCat)  { indHCat.value  = cat;  indHCat.disabled  = false; }
                     if (indDivCard) indDivCard.classList.remove('fmdb-reg-form--hidden');
                 }
@@ -1482,7 +1490,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                     indSel.addEventListener('change', function () {
                         var opt = indSel.options[indSel.selectedIndex];
                         if (opt.value === '') { if (indNameHid) indNameHid.value = ''; hideDivCard(); }
-                        else { if (indNameHid) indNameHid.value = opt.value; showDivCard(opt.dataset.rama || '', opt.dataset.cat || ''); }
+                        else { if (indNameHid) indNameHid.value = opt.value; showDivCard(opt.dataset.rama || '', opt.dataset.storedRama || opt.dataset.rama || '', opt.dataset.cat || ''); }
                     });
                 }
 
