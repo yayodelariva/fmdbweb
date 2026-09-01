@@ -201,6 +201,11 @@ while ( have_posts() ) : the_post();
                 <div class="fmdb-evento-single__meta-card">
                     <h3 class="fmdb-evento-single__meta-title">Detalles del evento</h3>
 
+                    <?php
+                    $day_schedule_check = get_post_meta( $id, 'event_day_schedule', true );
+                    $has_day_schedule   = is_array( $day_schedule_check ) && ! empty( $day_schedule_check );
+                    if ( ! $has_day_schedule ) :
+                    ?>
                     <div class="fmdb-evento-single__meta-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         <div>
@@ -230,6 +235,7 @@ while ( have_posts() ) : the_post();
                         </div>
                     <?php endif; ?>
                     <?php endif; ?>
+                    <?php endif; // ! $has_day_schedule ?>
 
                     <?php if ( count( $occurrences ) > 1 ) : ?>
                         <div class="fmdb-evento-single__meta-item">
@@ -263,8 +269,8 @@ while ( have_posts() ) : the_post();
                     <?php endif; ?>
 
                     <?php
-                    $day_schedule = get_post_meta( $id, 'event_day_schedule', true );
-                    if ( is_array( $day_schedule ) && ! empty( $day_schedule ) ) :
+                    $day_schedule = $day_schedule_check;
+                    if ( $has_day_schedule ) :
                     ?>
                         <div class="fmdb-evento-single__meta-item">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
