@@ -413,6 +413,30 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
     }
     unset( $t );
 
+    // Re-check slot cap for primary (Varonil/Femenil) teams that bypassed the checkout
+    // slot-cap check because they registered below the player minimum (on_waitlist was not
+    // evaluated at checkout). If individual joiners later push them over the minimum while
+    // the cap is already full from properly-registered teams, they must go to the waitlist.
+    $legit_primary = []; // rama|categoria → count of confirmed teams with bulk_count >= min
+    foreach ( $normalized as $t ) {
+        if ( ( $t['rama'] ?? '' ) === 'Mixto' || ! ( $t['confirmed'] ?? false ) ) continue;
+        if ( ( $t['bulk_count'] ?? 0 ) < $min_players ) continue;
+        $k = ( $t['rama'] ?? '' ) . '|' . ( $t['categoria'] ?? '' );
+        $legit_primary[ $k ] = ( $legit_primary[ $k ] ?? 0 ) + 1;
+    }
+    foreach ( $normalized as &$t ) {
+        if ( ( $t['rama'] ?? '' ) === 'Mixto' || ! ( $t['confirmed'] ?? false ) ) continue;
+        if ( ( $t['bulk_count'] ?? 0 ) >= $min_players ) continue; // legitimately registered
+        $cap = fmdb_reg_slot_cap( $event_id, $t['categoria'] ?? '' );
+        if ( $cap <= 0 ) continue;
+        $k = ( $t['rama'] ?? '' ) . '|' . ( $t['categoria'] ?? '' );
+        if ( ( $legit_primary[ $k ] ?? 0 ) >= $cap ) {
+            $t['confirmed']   = false;
+            $t['on_waitlist'] = true;
+        }
+    }
+    unset( $t );
+
     return $normalized;
 }
 
