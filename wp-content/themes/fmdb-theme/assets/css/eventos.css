@@ -1356,3 +1356,30 @@
     border-top: 1px solid var(--fmdb-border, #e5e5e5);
     background: var(--fmdb-bg-subtle, #fafafa);
 }
+
+/* Per-day schedule list in event sidebar */
+.fmdb-evento-single__day-schedule {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.fmdb-evento-single__day-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.88rem;
+}
+.fmdb-evento-single__day-label {
+    font-weight: 600;
+    color: var(--fmdb-text, inherit);
+    flex-shrink: 0;
+}
+.fmdb-evento-single__day-label::after {
+    content: ':';
+}
+.fmdb-evento-single__day-time {
+    color: var(--fmdb-text-muted, #666);
+}

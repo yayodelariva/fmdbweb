@@ -379,6 +379,52 @@ add_action( 'cmb2_init', function () {
 } );
 
 /* ===================================================================
+ * Per-day schedule — CMB2 group on tribe_events
+ * For multi-day events where each day has different start/end hours.
+ * Storage: serialized array under postmeta `event_day_schedule`.
+ * =================================================================== */
+add_action( 'cmb2_init', function () {
+    $cmb = new_cmb2_box( [
+        'id'           => 'fmdb_event_day_schedule_box',
+        'title'        => __( 'Horario por día', 'fmdb' ),
+        'object_types' => [ 'tribe_events' ],
+        'context'      => 'normal',
+        'priority'     => 'default',
+    ] );
+
+    $cmb->add_field( [
+        'name'    => __( 'Horario por día', 'fmdb' ),
+        'desc'    => __( 'Útil para eventos de varios días con horarios distintos por jornada.', 'fmdb' ),
+        'id'      => 'event_day_schedule',
+        'type'    => 'group',
+        'options' => [
+            'group_title'   => __( 'Día {#}', 'fmdb' ),
+            'add_button'    => __( 'Añadir día', 'fmdb' ),
+            'remove_button' => __( 'Eliminar día', 'fmdb' ),
+            'sortable'      => true,
+        ],
+    ] );
+    $cmb->add_group_field( 'event_day_schedule', [
+        'name' => __( 'Etiqueta (opcional)', 'fmdb' ),
+        'desc' => __( 'Ej. "Viernes", "Jornada 1", "Final".', 'fmdb' ),
+        'id'   => 'label',
+        'type' => 'text',
+    ] );
+    $cmb->add_group_field( 'event_day_schedule', [
+        'name'        => __( 'Hora de inicio', 'fmdb' ),
+        'id'          => 'start_time',
+        'type'        => 'text_time',
+        'time_format' => 'g:i a',
+    ] );
+    $cmb->add_group_field( 'event_day_schedule', [
+        'name'        => __( 'Hora de fin', 'fmdb' ),
+        'id'          => 'end_time',
+        'type'        => 'text_time',
+        'time_format' => 'g:i a',
+    ] );
+} );
+
+/* ===================================================================
  * Event PDFs (Documentos) — CMB2 group on tribe_events
  * =================================================================== */
 add_action( 'cmb2_init', function () {

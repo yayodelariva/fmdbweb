@@ -74,10 +74,10 @@ add_action( 'cmb2_init', function () {
     ] );
     $cmb->add_field( [
         'name'    => __( 'Ramas', 'fmdb' ),
-        'desc'    => __( 'Dejar vacío para mostrar todas.', 'fmdb' ),
+        'desc'    => __( 'Dejar vacío para mostrar todas. Cada rama incluye Foam y Cloth automáticamente.', 'fmdb' ),
         'id'      => '_fmdb_reg_ramas',
         'type'    => 'multicheck',
-        'options' => [ 'Femenil' => 'Femenil', 'Mixta' => 'Mixta', 'Varonil' => 'Varonil' ],
+        'options' => [ 'Varonil/Mixto' => 'Varonil/Mixto', 'Femenil/Mixto' => 'Femenil/Mixto' ],
     ] );
     $cmb->add_field( [
         'name'    => __( 'Categorías', 'fmdb' ),
@@ -85,13 +85,6 @@ add_action( 'cmb2_init', function () {
         'id'      => '_fmdb_reg_categorias',
         'type'    => 'multicheck',
         'options' => [ 'Infantil' => 'Infantil (8-12 años)', 'Libre' => 'Libre (13+ años)' ],
-    ] );
-    $cmb->add_field( [
-        'name'    => __( 'Modalidades', 'fmdb' ),
-        'desc'    => __( 'Dejar vacío para mostrar todas.', 'fmdb' ),
-        'id'      => '_fmdb_reg_modalidades',
-        'type'    => 'multicheck',
-        'options' => [ 'Foam' => 'Foam', 'Cloth' => 'Cloth' ],
     ] );
     $cmb->add_field( [
         'name'       => __( 'Hospedaje – Habitación Sencilla (MXN)', 'fmdb' ),
@@ -272,7 +265,11 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
             $modalidad = $item->get_meta( 'Modalidad' );
 
             // Key on name + division so same-named teams in different divisions are independent.
-            $key = mb_strtolower( trim( $team_name ) ) . '|' . $rama . '|' . $categoria . '|' . $modalidad;
+            // New format (rama contains '/'): key omits modalidad — one registration covers all modalidades.
+            // Old format (pre-migration): include modalidad for backward compat.
+            $is_new_fmt = strpos( $rama, '/' ) !== false;
+            $key = mb_strtolower( trim( $team_name ) ) . '|' . $rama . '|' . $categoria
+                 . ( $is_new_fmt ? '' : '|' . $modalidad );
 
             if ( ! isset( $teams[ $key ] ) ) {
                 $teams[ $key ] = [
@@ -369,10 +366,9 @@ function fmdb_reg_slot_cap( int $event_id, string $categoria ): int {
     return (int) get_post_meta( $event_id, '_fmdb_reg_max_teams', true );
 }
 
-// Count non-waitlist team registrations for a specific slot.
-// Counts any non-cancelled order (pending/on-hold/processing/completed) so a reserved
-// slot is held even before payment clears, preventing double-booking.
-function fmdb_reg_slot_team_count( int $event_id, string $rama, string $modalidad, string $categoria ): int {
+// Count non-waitlist team registrations for a given (rama × categoria) slot.
+// A single registration now covers all modalidades, so modalidad is no longer a cap axis.
+function fmdb_reg_slot_team_count( int $event_id, string $rama, string $categoria ): int {
     if ( ! function_exists( 'wc_get_orders' ) ) return 0;
     $orders = wc_get_orders( [
         'meta_key'   => '_fmdb_reg_event_id',
@@ -386,14 +382,13 @@ function fmdb_reg_slot_team_count( int $event_id, string $rama, string $modalida
         if ( $order->get_meta( '_fmdb_on_waitlist' ) === '1' ) continue;
         foreach ( $order->get_items() as $item ) {
             if ( $item->get_meta( 'Rama' )     === $rama
-              && $item->get_meta( 'Modalidad' ) === $modalidad
               && $item->get_meta( 'Categoría' ) === $categoria ) {
                 $count++;
                 break;
             }
         }
     }
-    return (int) apply_filters( 'fmdb_reg_slot_team_count', $count, $event_id, $rama, $modalidad, $categoria );
+    return (int) apply_filters( 'fmdb_reg_slot_team_count', $count, $event_id, $rama, $categoria );
 }
 
 /* ─── 3d. Hospedaje add-on products ───────────────────────────────────── */
@@ -540,7 +535,6 @@ function fmdb_event_registration_box( int $event_id ): void {
     $max      = (int) get_post_meta( $event_id, '_fmdb_reg_max_teams', true );
     $ramas    = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_ramas', true ) ) );
     $cats     = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_categorias', true ) ) );
-    $mods     = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_modalidades', true ) ) );
 
     if ( ! $open || $fee < 0 || ! $prod_id ) return;
 
@@ -550,10 +544,12 @@ function fmdb_event_registration_box( int $event_id ): void {
     $past_deadline = $deadline && strtotime( $deadline . ' 23:59:59' ) < time();
     $closed        = $past_deadline;
 
-    // Fallback: show all options if admin left division fields empty
-    if ( empty( $ramas ) ) $ramas = [ 'Femenil', 'Mixta', 'Varonil' ];
+    // Strip legacy values (pre-migration: Femenil, Mixta, Varonil) saved before the new rama model.
+    $valid_ramas = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
+    $ramas = array_values( array_intersect( $ramas, $valid_ramas ) );
+    // Fallback: show all options if admin left division fields empty (or only had legacy values).
+    if ( empty( $ramas ) ) $ramas = $valid_ramas;
     if ( empty( $cats ) )  $cats  = [ 'Infantil', 'Libre' ];
-    if ( empty( $mods ) )  $mods  = [ 'Foam', 'Cloth' ];
 
     $cat_labels    = [ 'Infantil' => 'Infantil (8-12 años)', 'Libre' => 'Libre (13+ años)' ];
     $player_limits = fmdb_reg_player_limits( $event_id );
@@ -565,7 +561,6 @@ function fmdb_event_registration_box( int $event_id ): void {
                      ? $_POST['fmdb_reg_type'] : 'team';
     $rama_val      = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
     $cat_val       = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
-    $mod_val       = sanitize_text_field( $_POST['fmdb_modalidad'] ?? '' );
 
     // Team form values
     $team_post_id        = 0;
@@ -804,7 +799,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 </div>
 
                 <div class="fmdb-reg-form__section-title">División</div>
-                <?php echo fmdb_reg_division_selects( $eid . 't', $ramas, $cats, $mods, $cat_labels, $rama_val, $cat_val, $mod_val ); ?>
+                <?php echo fmdb_reg_division_selects( $eid . 't', $ramas, $cats, $cat_labels, $rama_val, $cat_val ); ?>
 
                 <div class="fmdb-reg-form__section-title">Plantel</div>
 
@@ -853,12 +848,11 @@ function fmdb_event_registration_box( int $event_id ): void {
                         <select id="fmdb-ind-sel-<?php echo $eid; ?>" class="fmdb-reg-ind-sel">
                             <option value="">— Selecciona tu equipo —</option>
                             <?php foreach ( $registered_teams as $rt ) :
-                                $rt_div = implode( ' · ', array_filter( [ $rt['rama'], $rt['categoria'], $rt['modalidad'] ] ) );
+                                $rt_div = implode( ' · ', array_filter( [ $rt['rama'], $rt['categoria'] ] ) );
                             ?>
                                 <option value="<?php echo esc_attr( $rt['name'] ); ?>"
                                         data-rama="<?php echo esc_attr( $rt['rama'] ); ?>"
                                         data-cat="<?php echo esc_attr( $rt['categoria'] ); ?>"
-                                        data-mod="<?php echo esc_attr( $rt['modalidad'] ); ?>"
                                         <?php selected( mb_strtolower( trim( $rt['name'] ) ) === $ind_lower ); ?>>
                                     <?php echo esc_html( $rt['name'] . ( $rt_div ? '  —  ' . $rt_div : '' ) ); ?>
                                 </option>
@@ -896,7 +890,6 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <?php
                 $ind_rama_val  = $ind_reg_match ? $ind_reg_match['rama']      : '';
                 $ind_cat_val   = $ind_reg_match ? $ind_reg_match['categoria']  : '';
-                $ind_mod_val   = $ind_reg_match ? $ind_reg_match['modalidad']  : '';
                 $show_div_card = (bool) $ind_reg_match;
                 ?>
                 <div class="fmdb-reg-ind-div-card<?php echo $show_div_card ? '' : ' fmdb-reg-form--hidden'; ?>"
@@ -909,16 +902,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                         <span class="fmdb-reg-ind-div-card__label">Categoría</span>
                         <span class="fmdb-reg-ind-div-card__val" id="fmdb-ind-div-cat-<?php echo $eid; ?>"><?php echo esc_html( $cat_labels[ $ind_cat_val ] ?? $ind_cat_val ); ?></span>
                     </div>
-                    <div class="fmdb-reg-ind-div-card__row">
-                        <span class="fmdb-reg-ind-div-card__label">Modalidad</span>
-                        <span class="fmdb-reg-ind-div-card__val" id="fmdb-ind-div-mod-<?php echo $eid; ?>"><?php echo esc_html( $ind_mod_val ); ?></span>
-                    </div>
                     <input type="hidden" name="fmdb_rama"      id="fmdb-ind-hrama-<?php echo $eid; ?>"
                            value="<?php echo esc_attr( $ind_rama_val ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
                     <input type="hidden" name="fmdb_categoria" id="fmdb-ind-hcat-<?php echo $eid; ?>"
                            value="<?php echo esc_attr( $ind_cat_val ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
-                    <input type="hidden" name="fmdb_modalidad" id="fmdb-ind-hmod-<?php echo $eid; ?>"
-                           value="<?php echo esc_attr( $ind_mod_val ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
                 </div>
                 <?php endif; ?>
 
@@ -1395,18 +1382,14 @@ function fmdb_event_registration_box( int $event_id ): void {
                 var indDivCard  = document.getElementById('fmdb-ind-div-card-' + eid);
                 var indHRama    = document.getElementById('fmdb-ind-hrama-'    + eid);
                 var indHCat     = document.getElementById('fmdb-ind-hcat-'     + eid);
-                var indHMod     = document.getElementById('fmdb-ind-hmod-'     + eid);
                 var indRamaSpan = document.getElementById('fmdb-ind-div-rama-' + eid);
                 var indCatSpan  = document.getElementById('fmdb-ind-div-cat-'  + eid);
-                var indModSpan  = document.getElementById('fmdb-ind-div-mod-'  + eid);
 
-                function showDivCard(rama, cat, mod) {
+                function showDivCard(rama, cat) {
                     if (indRamaSpan) indRamaSpan.textContent = rama;
                     if (indCatSpan)  indCatSpan.textContent  = catLabels[cat] || cat;
-                    if (indModSpan)  indModSpan.textContent  = mod;
                     if (indHRama) { indHRama.value = rama; indHRama.disabled = false; }
                     if (indHCat)  { indHCat.value  = cat;  indHCat.disabled  = false; }
-                    if (indHMod)  { indHMod.value  = mod;  indHMod.disabled  = false; }
                     if (indDivCard) indDivCard.classList.remove('fmdb-reg-form--hidden');
                 }
 
@@ -1414,14 +1397,13 @@ function fmdb_event_registration_box( int $event_id ): void {
                     if (indDivCard) indDivCard.classList.add('fmdb-reg-form--hidden');
                     if (indHRama) { indHRama.value = ''; indHRama.disabled = true; }
                     if (indHCat)  { indHCat.value  = ''; indHCat.disabled  = true; }
-                    if (indHMod)  { indHMod.value  = ''; indHMod.disabled  = true; }
                 }
 
                 if (indSel) {
                     indSel.addEventListener('change', function () {
                         var opt = indSel.options[indSel.selectedIndex];
                         if (opt.value === '') { if (indNameHid) indNameHid.value = ''; hideDivCard(); }
-                        else { if (indNameHid) indNameHid.value = opt.value; showDivCard(opt.dataset.rama || '', opt.dataset.cat || '', opt.dataset.mod || ''); }
+                        else { if (indNameHid) indNameHid.value = opt.value; showDivCard(opt.dataset.rama || '', opt.dataset.cat || ''); }
                     });
                 }
 
@@ -1509,6 +1491,31 @@ function fmdb_ajax_add_registration(): void {
         }
     }
 
+    // Duplicate team check — block if same name + rama already exists in any active order.
+    $_ajax_event_id  = (int) get_post_meta( $prod_id, '_fmdb_reg_event_id', true );
+    $_ajax_reg_type  = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
+                       ? $_POST['fmdb_reg_type'] : 'team';
+    if ( $_ajax_event_id && $_ajax_reg_type === 'team' && ! empty( $_POST['fmdb_team_name'] ) ) {
+        $_ajax_name = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
+        $_ajax_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+        $_ajax_orders = wc_get_orders( [
+            'meta_key'   => '_fmdb_reg_event_id',
+            'meta_value' => $_ajax_event_id,
+            'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+            'limit'      => -1,
+        ] );
+        foreach ( $_ajax_orders as $_ao ) {
+            if ( $_ao->get_meta( '_fmdb_reg_type' ) !== 'team' ) continue;
+            foreach ( $_ao->get_items() as $_ai ) {
+                if ( mb_strtolower( trim( (string) $_ai->get_meta( 'Equipo' ) ) ) === $_ajax_name
+                  && $_ai->get_meta( 'Rama' ) === $_ajax_rama ) {
+                    wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
+                    return;
+                }
+            }
+        }
+    }
+
     $result = WC()->cart->add_to_cart( $prod_id, 1, 0, [], [] );
 
     if ( $result === false ) {
@@ -1522,8 +1529,8 @@ function fmdb_ajax_add_registration(): void {
     wp_send_json_success( [ 'message' => 'Inscripción agregada.' ] );
 }
 
-// Shared helper: render Rama / Categoría / Modalidad selects.
-function fmdb_reg_division_selects( string $uid, array $ramas, array $cats, array $mods, array $cat_labels, string $rama_val, string $cat_val, string $mod_val, bool $disabled = false ): string {
+// Shared helper: render Rama / Categoría selects. Each rama includes Foam + Cloth automatically.
+function fmdb_reg_division_selects( string $uid, array $ramas, array $cats, array $cat_labels, string $rama_val, string $cat_val, bool $disabled = false ): string {
     ob_start();
     ?>
     <div class="fmdb-reg-form__row">
@@ -1546,15 +1553,7 @@ function fmdb_reg_division_selects( string $uid, array $ramas, array $cats, arra
             </select>
         </div>
     </div>
-    <div class="fmdb-reg-form__field">
-        <label>Modalidad *</label>
-        <select name="fmdb_modalidad"<?php echo $disabled ? ' disabled' : ' required'; ?>>
-            <option value="">— Seleccionar —</option>
-            <?php foreach ( $mods as $m ) : ?>
-                <option value="<?php echo esc_attr( $m ); ?>" <?php selected( $mod_val, $m ); ?>><?php echo esc_html( $m ); ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+    <p class="fmdb-reg-form__hint">Incluye automáticamente Foam y Cloth en tu rama y en Mixto.</p>
     <?php
     return ob_get_clean();
 }
@@ -1591,10 +1590,9 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
     // Use event-configured options for filters (fallback to full list).
     $all_ramas = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_ramas', true ) ) );
     $all_cats  = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_categorias', true ) ) );
-    $all_mods  = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_modalidades', true ) ) );
-    if ( empty( $all_ramas ) ) $all_ramas = [ 'Femenil', 'Mixta', 'Varonil' ];
+    $all_ramas = array_values( array_intersect( $all_ramas, [ 'Varonil/Mixto', 'Femenil/Mixto' ] ) );
+    if ( empty( $all_ramas ) ) $all_ramas = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
     if ( empty( $all_cats ) )  $all_cats  = [ 'Infantil', 'Libre' ];
-    if ( empty( $all_mods ) )  $all_mods  = [ 'Foam', 'Cloth' ];
 
     $sid = 'fmdb-teams-' . $event_id;
 
@@ -1614,13 +1612,12 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         ?>
         <div class="fmdb-reg-team-card"
              data-rama="<?php echo esc_attr( $team['rama'] ); ?>"
-             data-cat="<?php echo esc_attr( $team['categoria'] ); ?>"
-             data-mod="<?php echo esc_attr( $team['modalidad'] ); ?>">
+             data-cat="<?php echo esc_attr( $team['categoria'] ); ?>">
             <div class="fmdb-reg-team-card__header">
                 <div class="fmdb-reg-team-card__header-main">
                     <span class="fmdb-reg-team-card__name"><?php echo esc_html( $team['name'] ); ?></span>
                     <?php
-                    $div_str = implode( ' · ', array_filter( [ $team['rama'], $team['categoria'], $team['modalidad'] ] ) );
+                    $div_str = implode( ' · ', array_filter( [ $team['rama'], $team['categoria'] ] ) );
                     if ( $div_str ) : ?>
                         <span class="fmdb-reg-team-card__div"><?php echo esc_html( $div_str ); ?></span>
                     <?php endif; ?>
@@ -1673,13 +1670,6 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         <h2 class="fmdb-reg-teams__title">Equipos inscritos</h2>
 
         <div class="fmdb-reg-teams__filters">
-            <div class="fmdb-reg-teams__filter-group fmdb-reg-teams__filter-group--mod">
-                <span class="fmdb-reg-teams__filter-label">Modalidad</span>
-                <button class="fmdb-reg-filter fmdb-reg-filter--mod is-active" data-filter="mod" data-value="">Todas</button>
-                <?php foreach ( $all_mods as $m ) : ?>
-                    <button class="fmdb-reg-filter fmdb-reg-filter--mod" data-filter="mod" data-value="<?php echo esc_attr( $m ); ?>"><?php echo esc_html( $m ); ?></button>
-                <?php endforeach; ?>
-            </div>
             <div class="fmdb-reg-teams__filter-group fmdb-reg-teams__filter-group--rama">
                 <span class="fmdb-reg-teams__filter-label">Rama</span>
                 <button class="fmdb-reg-filter fmdb-reg-filter--rama is-active" data-filter="rama" data-value="">Todas</button>
@@ -1697,10 +1687,10 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         </div>
 
         <?php if ( ! empty( $confirmed ) ) :
-            // Group confirmed by modalidad → rama → categoria.
+            // Group confirmed by rama → categoria.
             $confirmed_groups = [];
             foreach ( $confirmed as $team ) {
-                $gkey = ( $team['modalidad'] ?? '' ) . '|' . ( $team['rama'] ?? '' ) . '|' . ( $team['categoria'] ?? '' );
+                $gkey = ( $team['rama'] ?? '' ) . '|' . ( $team['categoria'] ?? '' );
                 $confirmed_groups[ $gkey ][] = $team;
             }
             ksort( $confirmed_groups );
@@ -1711,13 +1701,12 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
                 Equipos confirmados
             </h3>
             <?php foreach ( $confirmed_groups as $gkey => $group_teams ) :
-                [ $g_mod, $g_rama, $g_cat ] = explode( '|', $gkey );
-                $g_label = implode( ' · ', array_filter( [ $g_mod, $g_rama, $g_cat ] ) );
+                [ $g_rama, $g_cat ] = explode( '|', $gkey );
+                $g_label = implode( ' · ', array_filter( [ $g_rama, $g_cat ] ) );
                 $g_cap   = $g_cat ? fmdb_reg_slot_cap( $event_id, $g_cat ) : 0;
                 $g_count = count( $group_teams );
             ?>
             <div class="fmdb-reg-teams__subgroup"
-                 data-mod="<?php echo esc_attr( $g_mod ); ?>"
                  data-rama="<?php echo esc_attr( $g_rama ); ?>"
                  data-cat="<?php echo esc_attr( $g_cat ); ?>">
                 <h4 class="fmdb-reg-teams__subgroup-title">
@@ -1767,7 +1756,7 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
             var root   = document.getElementById(sid);
             if (!root) return;
 
-            var active = { rama: '', cat: '', mod: '' };
+            var active = { rama: '', cat: '' };
 
             root.querySelectorAll('.fmdb-reg-filter').forEach(function (btn) {
                 btn.addEventListener('click', function () {
@@ -1789,8 +1778,7 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
                 root.querySelectorAll('.fmdb-reg-team-card').forEach(function (card) {
                     var ramaMatch = !active.rama || card.dataset.rama === active.rama;
                     var catMatch  = !active.cat  || card.dataset.cat  === active.cat;
-                    var modMatch  = !active.mod  || card.dataset.mod  === active.mod;
-                    card.classList.toggle('fmdb-reg-form--hidden', !(ramaMatch && catMatch && modMatch));
+                    card.classList.toggle('fmdb-reg-form--hidden', !(ramaMatch && catMatch));
                 });
 
                 // Hide confirmed sub-groups when all their cards are filtered out.
@@ -1855,7 +1843,7 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
     $cart_item_data['fmdb_reg_type']   = $type;
     $cart_item_data['fmdb_rama']       = sanitize_text_field( wp_unslash( $_POST['fmdb_rama'] ?? '' ) );
     $cart_item_data['fmdb_categoria']  = sanitize_text_field( wp_unslash( $_POST['fmdb_categoria'] ?? '' ) );
-    $cart_item_data['fmdb_modalidad']  = sanitize_text_field( wp_unslash( $_POST['fmdb_modalidad'] ?? '' ) );
+    $cart_item_data['fmdb_modalidad']  = ''; // no longer a registration axis — rama includes all modalidades
 
     if ( $type === 'individual' ) {
         $cart_item_data['fmdb_team_name']       = sanitize_text_field( wp_unslash( $_POST['fmdb_ind_team_name'] ?? '' ) );
@@ -1895,7 +1883,6 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
                 $slot_count = fmdb_reg_slot_team_count(
                     $event_id,
                     $cart_item_data['fmdb_rama'],
-                    $cart_item_data['fmdb_modalidad'],
                     $cart_item_data['fmdb_categoria']
                 );
                 $cart_item_data['fmdb_on_waitlist'] = $slot_count >= $slot_cap ? '1' : '0';
@@ -1989,7 +1976,6 @@ add_filter( 'woocommerce_get_item_data', function ( $data, $cart_item ) {
     $div_str = implode( ' · ', array_filter( [
         $cart_item['fmdb_rama']      ?? '',
         $cart_item['fmdb_categoria'] ?? '',
-        $cart_item['fmdb_modalidad'] ?? '',
     ] ) );
 
     $data[] = [ 'name' => 'Evento',   'value' => get_the_title( $cart_item['fmdb_event_id'] ) ];
@@ -2064,10 +2050,6 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         wc_add_notice( 'Selecciona una categoría.', 'error' );
         $passed = false;
     }
-    if ( empty( $_POST['fmdb_modalidad'] ) ) {
-        wc_add_notice( 'Selecciona una modalidad.', 'error' );
-        $passed = false;
-    }
 
     if ( $type === 'individual' ) {
         if ( empty( $_POST['fmdb_ind_team_name'] ) ) {
@@ -2115,17 +2097,35 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         } else {
             $submitted_name = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
             $submitted_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-            $submitted_cat  = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
-            $submitted_mod  = sanitize_text_field( $_POST['fmdb_modalidad'] ?? '' );
-            foreach ( fmdb_reg_get_event_teams( $event_id ) as $rt ) {
-                if ( mb_strtolower( trim( $rt['name'] ) ) === $submitted_name
-                  && $rt['rama']      === $submitted_rama
-                  && $rt['categoria'] === $submitted_cat
-                  && $rt['modalidad'] === $submitted_mod
-                  && $rt['order_id'] ) {
-                    wc_add_notice( 'Ya existe un equipo con ese nombre en esta división.', 'error' );
-                    $passed = false;
-                    break;
+            // Check orders in any non-cancelled status (blocks from the moment a previous checkout created an order).
+            $_dup_orders = wc_get_orders( [
+                'meta_key'   => '_fmdb_reg_event_id',
+                'meta_value' => $event_id,
+                'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+                'limit'      => -1,
+            ] );
+            foreach ( $_dup_orders as $_dord ) {
+                if ( $_dord->get_meta( '_fmdb_reg_type' ) !== 'team' ) continue;
+                foreach ( $_dord->get_items() as $_ditem ) {
+                    if ( mb_strtolower( trim( (string) $_ditem->get_meta( 'Equipo' ) ) ) === $submitted_name
+                      && $_ditem->get_meta( 'Rama' ) === $submitted_rama ) {
+                        wc_add_notice( 'Este equipo ya ha sido registrado.', 'error' );
+                        $passed = false;
+                        break 2;
+                    }
+                }
+            }
+            // Also block if the same team is already sitting in the current cart.
+            if ( $passed && ! is_null( WC()->cart ) ) {
+                foreach ( WC()->cart->get_cart() as $_citem ) {
+                    if ( isset( $_citem['fmdb_team_name'], $_citem['fmdb_rama'] )
+                      && mb_strtolower( trim( $_citem['fmdb_team_name'] ) ) === $submitted_name
+                      && $_citem['fmdb_rama'] === $submitted_rama
+                      && ( (int) ( $_citem['fmdb_event_id'] ?? 0 ) ) === $event_id ) {
+                        wc_add_notice( 'Este equipo ya ha sido registrado.', 'error' );
+                        $passed = false;
+                        break;
+                    }
                 }
             }
         }
