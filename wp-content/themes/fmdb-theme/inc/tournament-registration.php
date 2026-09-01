@@ -2220,12 +2220,11 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             $teams            = fmdb_reg_get_event_teams( $event_id );
             $target           = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
             $_ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-            $_ind_is_mixto    = strpos( $_ind_stored_rama, 'Mixto' ) !== false;
             // Derive display rama: 'Varonil/Mixto' → 'Varonil', 'Femenil/Mixto' → 'Femenil'.
             $_ind_disp_rama = strpos( $_ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
                             : ( strpos( $_ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $_ind_stored_rama );
-            // Cap to apply: Mixto teams use max_mixto (0 = skip); others use max.
-            $_ind_cap = $_ind_is_mixto ? $_ind_limits['max_mixto'] : $_ind_limits['max'];
+            // Cap to apply: pure Mixto display uses max_mixto (0 = skip); Varonil/Femenil use max.
+            $_ind_cap = $_ind_disp_rama === 'Mixto' ? $_ind_limits['max_mixto'] : $_ind_limits['max'];
             if ( $_ind_cap > 0 ) {
                 foreach ( $teams as $t ) {
                     if ( mb_strtolower( trim( $t['name'] ) ) === $target && $t['rama'] === $_ind_disp_rama ) {
