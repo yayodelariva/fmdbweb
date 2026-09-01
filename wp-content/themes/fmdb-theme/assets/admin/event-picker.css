@@ -36,6 +36,11 @@
     flex-shrink: 0;
 }
 
+/* Hide TEC's Inicio/Fin date-time row — per-day schedule is used instead */
+tr:has(.tribe-datetime-label) {
+    display: none !important;
+}
+
 /* Required-field error highlight */
 .fmdb-field-error #title,
 .fmdb-field-error #EventStartDate {
