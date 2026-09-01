@@ -2204,26 +2204,9 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             wc_add_notice( 'Ingresa tu teléfono.', 'error' );
             $passed = false;
         }
-        // Enforce roster cap per team — match by name + primary display rama (not Mixto).
-        if ( $passed && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
-            $_ind_limits      = fmdb_reg_player_limits( $event_id );
-            $teams            = fmdb_reg_get_event_teams( $event_id );
-            $target           = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
-            $_ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-            // Derive display rama: 'Varonil/Mixto' → 'Varonil', 'Femenil/Mixto' → 'Femenil'.
-            $_ind_disp_rama = strpos( $_ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
-                            : ( strpos( $_ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $_ind_stored_rama );
-            foreach ( $teams as $t ) {
-                if ( mb_strtolower( trim( $t['name'] ) ) === $target && $t['rama'] === $_ind_disp_rama ) {
-                    $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
-                    if ( $total >= $_ind_limits['max'] ) {
-                        wc_add_notice( 'Este equipo ya alcanzó el límite de ' . $_ind_limits['max'] . ' jugadores.', 'error' );
-                        $passed = false;
-                    }
-                    break;
-                }
-            }
-        }
+        // No max-player cap for individual joiners — Mixto teams are unlimited by design,
+        // and every team appears in Mixto (compound ramas). The captain's bulk registration
+        // form still enforces max_players for the initial roster.
     } else {
         if ( empty( $_POST['fmdb_team_name'] ) ) {
             wc_add_notice( 'Ingresa el nombre del equipo.', 'error' );
