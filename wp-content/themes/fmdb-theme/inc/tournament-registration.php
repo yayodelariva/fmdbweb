@@ -73,6 +73,13 @@ add_action( 'cmb2_init', function () {
         'attributes' => [ 'type' => 'number', 'min' => '1', 'placeholder' => '10' ],
     ] );
     $cmb->add_field( [
+        'name'       => __( 'Máximo de jugadores por equipo (Mixto)', 'fmdb' ),
+        'desc'       => __( 'Límite de jugadores individuales en equipos Mixto. 0 = sin límite.', 'fmdb' ),
+        'id'         => '_fmdb_reg_max_players_mixto',
+        'type'       => 'text_small',
+        'attributes' => [ 'type' => 'number', 'min' => '0', 'placeholder' => '0' ],
+    ] );
+    $cmb->add_field( [
         'name'    => __( 'Ramas', 'fmdb' ),
         'desc'    => __( 'Dejar vacío para mostrar todas. Cada rama incluye Foam y Cloth automáticamente.', 'fmdb' ),
         'id'      => '_fmdb_reg_ramas',
@@ -169,12 +176,14 @@ add_action( 'cmb2_init', function () {
  * Reads from per-event meta; falls back to 6/10.
  */
 function fmdb_reg_player_limits( int $event_id ): array {
-    $min = (int) get_post_meta( $event_id, '_fmdb_reg_min_players', true );
-    $max = (int) get_post_meta( $event_id, '_fmdb_reg_max_players', true );
+    $min       = (int) get_post_meta( $event_id, '_fmdb_reg_min_players', true );
+    $max       = (int) get_post_meta( $event_id, '_fmdb_reg_max_players', true );
+    $max_mixto = (int) get_post_meta( $event_id, '_fmdb_reg_max_players_mixto', true );
     if ( $min < 1 ) $min = 6;
     if ( $max < 1 ) $max = 10;
     if ( $max < $min ) $max = $min;
-    return [ 'min' => $min, 'max' => $max ];
+    // max_mixto: 0 = unlimited; positive = hard cap for Mixto individual joiners.
+    return [ 'min' => $min, 'max' => $max, 'max_mixto' => $max_mixto ];
 }
 
 /* ─── 2. Sync WC product on event save ────────────────────────────────── */
@@ -2205,22 +2214,28 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
             $passed = false;
         }
         // Enforce roster cap per team — match by name + primary display rama (not Mixto).
+        // Mixto teams use a separate cap (max_mixto); 0 = unlimited.
         if ( $passed && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
             $_ind_limits      = fmdb_reg_player_limits( $event_id );
             $teams            = fmdb_reg_get_event_teams( $event_id );
             $target           = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
             $_ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+            $_ind_is_mixto    = strpos( $_ind_stored_rama, 'Mixto' ) !== false;
             // Derive display rama: 'Varonil/Mixto' → 'Varonil', 'Femenil/Mixto' → 'Femenil'.
             $_ind_disp_rama = strpos( $_ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
                             : ( strpos( $_ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $_ind_stored_rama );
-            foreach ( $teams as $t ) {
-                if ( mb_strtolower( trim( $t['name'] ) ) === $target && $t['rama'] === $_ind_disp_rama ) {
-                    $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
-                    if ( $total >= $_ind_limits['max'] ) {
-                        wc_add_notice( 'Este equipo ya alcanzó el límite de ' . $_ind_limits['max'] . ' jugadores.', 'error' );
-                        $passed = false;
+            // Cap to apply: Mixto teams use max_mixto (0 = skip); others use max.
+            $_ind_cap = $_ind_is_mixto ? $_ind_limits['max_mixto'] : $_ind_limits['max'];
+            if ( $_ind_cap > 0 ) {
+                foreach ( $teams as $t ) {
+                    if ( mb_strtolower( trim( $t['name'] ) ) === $target && $t['rama'] === $_ind_disp_rama ) {
+                        $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
+                        if ( $total >= $_ind_cap ) {
+                            wc_add_notice( 'Este equipo ya alcanzó el límite de ' . $_ind_cap . ' jugadores.', 'error' );
+                            $passed = false;
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
