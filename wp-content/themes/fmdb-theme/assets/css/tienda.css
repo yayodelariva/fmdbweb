@@ -495,10 +495,8 @@ body.woocommerce-cart:has(.cart-empty, .wc-empty-cart-message, .wp-block-woocomm
 .wc-block-components-formatted-money-amount,
 .wc-block-components-product-price__value {
     white-space: normal !important;
-    word-break: break-word;
     overflow-wrap: break-word;
     max-width: 100%;
-    display: inline-block;
 }
 
 /* Order review */
