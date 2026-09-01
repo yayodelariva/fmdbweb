@@ -36,8 +36,13 @@
     flex-shrink: 0;
 }
 
-/* Hide TEC's Inicio/Fin date-time row — per-day schedule is used instead */
+/* Hide TEC's Inicio/Fin date-time — per-day schedule is used instead */
+/* Classic editor: the Start/End table row */
 tr:has(.tribe-datetime-label) {
+    display: none !important;
+}
+/* Block editor: the date-time block rendered in the content area */
+.tribe-editor__subtitle.tribe-editor__date-time {
     display: none !important;
 }
 
