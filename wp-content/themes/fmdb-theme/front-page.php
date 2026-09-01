@@ -174,4 +174,19 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
 
 </main>
 
+<!-- Announcement Modal: Circuito Mexicano de Dodgeball 2026 -->
+<div id="fmdb-announce-modal" class="fmdb-announce-modal" role="dialog" aria-modal="true" aria-labelledby="fmdb-announce-title" hidden>
+    <div class="fmdb-announce-modal__backdrop"></div>
+    <div class="fmdb-announce-modal__card">
+        <button class="fmdb-announce-modal__close" aria-label="Cerrar">&#x2715;</button>
+        <div class="fmdb-announce-modal__eyebrow">Inscripciones abiertas</div>
+        <h2 class="fmdb-announce-modal__title" id="fmdb-announce-title">Circuito Mexicano<br>de Dodgeball<br><span>2026</span></h2>
+        <p class="fmdb-announce-modal__body">Regístrate ahora y forma parte de la temporada más grande del dodgeball nacional. Cupos limitados por rama, categoría y modalidad.</p>
+        <div class="fmdb-announce-modal__actions">
+            <a href="/event/circuito-mexicano-dodgeball-2026-1/" class="fmdb-announce-modal__cta">Ver torneo</a>
+            <button class="fmdb-announce-modal__dismiss">Recordar después</button>
+        </div>
+    </div>
+</div>
+
 <?php get_footer(); ?>
