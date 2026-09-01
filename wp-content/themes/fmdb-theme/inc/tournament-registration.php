@@ -443,9 +443,12 @@ function fmdb_reg_slot_cap( int $event_id, string $categoria ): int {
 }
 
 // Count non-waitlist team registrations for a given (rama × categoria) slot.
+// Only registrations with Jugadores >= min_players count — incomplete registrations don't
+// hold a slot, consistent with how the fixture filter counts confirmed teams.
 // A single registration now covers all modalidades, so modalidad is no longer a cap axis.
 function fmdb_reg_slot_team_count( int $event_id, string $rama, string $categoria ): int {
     if ( ! function_exists( 'wc_get_orders' ) ) return 0;
+    $min = fmdb_reg_player_limits( $event_id )['min'];
     $orders = wc_get_orders( [
         'meta_key'   => '_fmdb_reg_event_id',
         'meta_value' => $event_id,
@@ -458,7 +461,8 @@ function fmdb_reg_slot_team_count( int $event_id, string $rama, string $categori
         if ( $order->get_meta( '_fmdb_on_waitlist' ) === '1' ) continue;
         foreach ( $order->get_items() as $item ) {
             if ( $item->get_meta( 'Rama' )     === $rama
-              && $item->get_meta( 'Categoría' ) === $categoria ) {
+              && $item->get_meta( 'Categoría' ) === $categoria
+              && (int) $item->get_meta( 'Jugadores' ) >= $min ) {
                 $count++;
                 break;
             }
