@@ -315,6 +315,8 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
         'meta_value' => $event_id,
         'status'     => [ 'wc-processing', 'wc-completed' ],
         'limit'      => -1,
+        'orderby'    => 'ID',
+        'order'      => 'ASC',
     ] );
 
     $teams = []; // keyed by normalized team name
