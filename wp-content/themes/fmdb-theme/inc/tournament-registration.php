@@ -1642,6 +1642,29 @@ function fmdb_ajax_add_registration(): void {
         }
     }
 
+    // Individual join: enforce roster cap before adding to cart.
+    // woocommerce_add_to_cart_validation no longer exists in WC 10+; validate here instead.
+    if ( ( $_POST['fmdb_reg_type'] ?? '' ) === 'individual' && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
+        $_ind_event_id    = (int) get_post_meta( $prod_id, '_fmdb_reg_event_id', true );
+        $_ind_limits      = fmdb_reg_player_limits( $_ind_event_id );
+        $_ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+        $_ind_disp_rama   = strpos( $_ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
+                          : ( strpos( $_ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $_ind_stored_rama );
+        $_ind_cap         = $_ind_disp_rama === 'Mixto' ? $_ind_limits['max_mixto'] : $_ind_limits['max'];
+        if ( $_ind_cap > 0 ) {
+            $_ind_target = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
+            foreach ( fmdb_reg_get_event_teams( $_ind_event_id ) as $_ind_t ) {
+                if ( mb_strtolower( trim( $_ind_t['name'] ) ) === $_ind_target && $_ind_t['rama'] === $_ind_disp_rama ) {
+                    $total = ( $_ind_t['bulk_count'] ?? 0 ) + count( $_ind_t['players'] ?? [] );
+                    if ( $total >= $_ind_cap ) {
+                        wp_send_json_error( [ 'message' => 'Este equipo ya alcanzó el límite de ' . $_ind_cap . ' jugadores.' ] );
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
     $result = WC()->cart->add_to_cart( $prod_id, 1, 0, [], [] );
 
     if ( $result === false ) {
