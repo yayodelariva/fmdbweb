@@ -1671,9 +1671,12 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
         return ! ( $t['confirmed'] ?? false ) && ( $t['on_waitlist'] ?? false ) && $total >= $min_players;
     } ) );
-    $incomplete = array_values( array_filter( $teams, function ( $t ) use ( $min_players ) {
-        $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
-        return ! ( $t['confirmed'] ?? false ) && $total < $min_players;
+    // Covers both truly incomplete (total < min) AND limbo teams (total >= min but no paid team
+    // order, e.g. individual-only registrations where status stays ''). Without this, a team that
+    // reaches the player minimum solely via individual orders would fall through all three buckets
+    // and vanish from the page entirely.
+    $incomplete = array_values( array_filter( $teams, function ( $t ) {
+        return ! ( $t['confirmed'] ?? false ) && ! ( $t['on_waitlist'] ?? false );
     } ) );
 
     // Use event-configured options for filters (fallback to full list).
@@ -1706,7 +1709,7 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
         } elseif ( $team['on_waitlist'] ?? false ) {
             $st = [ 'label' => 'Lista de espera', 'mod' => 'waitlist' ];
         } else {
-            $st = $pay_status_labels[ $team['status'] ] ?? null;
+            $st = $pay_status_labels[ $team['status'] ] ?? [ 'label' => 'Incompleto', 'mod' => 'incomplete' ];
         }
         ?>
         <div class="fmdb-reg-team-card"
