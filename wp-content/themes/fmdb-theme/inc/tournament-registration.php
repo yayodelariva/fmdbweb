@@ -1498,6 +1498,7 @@ function fmdb_ajax_add_registration(): void {
     if ( $_ajax_event_id && $_ajax_reg_type === 'team' && ! empty( $_POST['fmdb_team_name'] ) ) {
         $_ajax_name = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
         $_ajax_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+        $_ajax_cat  = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
         $_ajax_orders = wc_get_orders( [
             'meta_key'   => '_fmdb_reg_event_id',
             'meta_value' => $_ajax_event_id,
@@ -1508,7 +1509,8 @@ function fmdb_ajax_add_registration(): void {
             if ( $_ao->get_meta( '_fmdb_reg_type' ) !== 'team' ) continue;
             foreach ( $_ao->get_items() as $_ai ) {
                 if ( mb_strtolower( trim( (string) $_ai->get_meta( 'Equipo' ) ) ) === $_ajax_name
-                  && $_ai->get_meta( 'Rama' ) === $_ajax_rama ) {
+                  && $_ai->get_meta( 'Rama' ) === $_ajax_rama
+                  && $_ai->get_meta( 'Categoría' ) === $_ajax_cat ) {
                     wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
                     return;
                 }
@@ -2097,6 +2099,7 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         } else {
             $submitted_name = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
             $submitted_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+            $submitted_cat  = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
             // Check orders in any non-cancelled status (blocks from the moment a previous checkout created an order).
             $_dup_orders = wc_get_orders( [
                 'meta_key'   => '_fmdb_reg_event_id',
@@ -2108,7 +2111,8 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
                 if ( $_dord->get_meta( '_fmdb_reg_type' ) !== 'team' ) continue;
                 foreach ( $_dord->get_items() as $_ditem ) {
                     if ( mb_strtolower( trim( (string) $_ditem->get_meta( 'Equipo' ) ) ) === $submitted_name
-                      && $_ditem->get_meta( 'Rama' ) === $submitted_rama ) {
+                      && $_ditem->get_meta( 'Rama' ) === $submitted_rama
+                      && $_ditem->get_meta( 'Categoría' ) === $submitted_cat ) {
                         wc_add_notice( 'Este equipo ya ha sido registrado.', 'error' );
                         $passed = false;
                         break 2;
@@ -2121,6 +2125,7 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
                     if ( isset( $_citem['fmdb_team_name'], $_citem['fmdb_rama'] )
                       && mb_strtolower( trim( $_citem['fmdb_team_name'] ) ) === $submitted_name
                       && $_citem['fmdb_rama'] === $submitted_rama
+                      && ( $_citem['fmdb_categoria'] ?? '' ) === $submitted_cat
                       && ( (int) ( $_citem['fmdb_event_id'] ?? 0 ) ) === $event_id ) {
                         wc_add_notice( 'Este equipo ya ha sido registrado.', 'error' );
                         $passed = false;
