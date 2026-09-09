@@ -2071,6 +2071,9 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
 add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
     if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
 
+    // One-time courtesy coupon — waive all fees (venue + hospedaje).
+    if ( in_array( 'fmdb-k7q2-9mpx', WC()->cart->get_applied_coupons(), true ) ) return;
+
     $room_cap = [
         'sencilla'     => 1, 'sencilla_sc'  => 1,
         'doble'        => 2, 'doble_sc'     => 2,
