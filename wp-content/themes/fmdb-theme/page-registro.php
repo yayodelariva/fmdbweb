@@ -27,7 +27,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_register_nonce
         if ( ! $first_name ) $errors[] = 'El nombre es obligatorio.';
         if ( ! $last_name )  $errors[] = 'El apellido es obligatorio.';
         if ( ! $username )   $errors[] = 'El nombre de usuario es obligatorio.';
-        if ( $username && ! preg_match( '/^[A-Za-z0-9]+$/', $username ) ) $errors[] = 'El nombre de usuario solo puede contener letras y números, sin espacios ni caracteres especiales.';
+        if ( $username && ! preg_match( '/^[A-Za-z0-9]+$/', $username ) ) $errors[] = 'El nombre de usuario solo puede contener letras sin acentos y números, sin espacios ni caracteres especiales.';
         if ( ! is_email( $email ) ) $errors[] = 'Ingresa un correo electrónico válido.';
         if ( strlen( $password ) < 8 ) $errors[] = 'La contraseña debe tener al menos 8 caracteres.';
         if ( $password !== $password2 ) $errors[] = 'Las contraseñas no coinciden.';
@@ -108,9 +108,9 @@ get_header();
                 </div>
 
                 <div class="fmdb-registro__field">
-                    <label for="username">Nombre de usuario</label>
+                    <label for="username">Nombre de usuario <small>(solo letras sin acentos y números)</small></label>
                     <input type="text" id="username" name="username" value="<?php echo esc_attr( $_POST['username'] ?? '' ); ?>" required autocomplete="username"
-                           pattern="[A-Za-z0-9]+" title="Solo letras y números, sin espacios ni caracteres especiales">
+                           pattern="[A-Za-z0-9]+" title="Solo letras sin acentos y números, sin espacios ni caracteres especiales">
                 </div>
 
 <div class="fmdb-registro__row">
