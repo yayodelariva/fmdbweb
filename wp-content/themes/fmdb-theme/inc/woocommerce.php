@@ -415,6 +415,26 @@ add_filter( 'woocommerce_email_subject_new_order',                 fn( $s, $orde
 add_filter( 'woocommerce_email_subject_customer_new_account',      fn() => 'Tu cuenta en ' . get_bloginfo( 'name' ) );
 add_filter( 'woocommerce_email_subject_customer_reset_password',   fn() => 'Restablecimiento de contraseña en ' . get_bloginfo( 'name' ) );
 
+// Translate WordPress core admin-triggered password reset email (WP Admin → Users → Send Password Reset).
+add_filter( 'retrieve_password_title', fn() => '[' . get_bloginfo( 'name' ) . '] Restablecimiento de contraseña' );
+add_filter( 'retrieve_password_message', function ( $message, $key, $user_login, $user_data ) {
+    $reset_url = add_query_arg( [
+        'action' => 'reset',
+        'key'    => $key,
+        'login'  => rawurlencode( $user_login ),
+    ], home_url( '/olvide-mi-contrasena/' ) );
+
+    $site = get_bloginfo( 'name' );
+    $name = $user_data->display_name ?: $user_login;
+
+    return "Hola {$name},\n\n"
+         . "Recibimos una solicitud para restablecer la contraseña de tu cuenta en {$site}.\n\n"
+         . "Haz clic en el siguiente enlace para crear una nueva contraseña (válido por 24 horas):\n\n"
+         . $reset_url . "\n\n"
+         . "Si no solicitaste este cambio, puedes ignorar este mensaje.\n\n"
+         . "— {$site}";
+}, 10, 4 );
+
 add_filter( 'woocommerce_email_order_meta_fields', function ( $fields, $sent_to_admin, $order ) {
     $email = $order->get_billing_email();
     if ( $email ) {
