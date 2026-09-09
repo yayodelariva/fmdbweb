@@ -16,18 +16,19 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_register_nonce
     if ( ! wp_verify_nonce( $_POST['fmdb_register_nonce'], 'fmdb_register' ) ) {
         $errors[] = 'Solicitud inválida. Por favor intenta de nuevo.';
     } else {
-        $first_name = sanitize_text_field( $_POST['first_name'] ?? '' );
-        $last_name  = sanitize_text_field( $_POST['last_name'] ?? '' );
-        $username   = sanitize_user( $_POST['username'] ?? '' );
-        $email      = sanitize_email( $_POST['email'] ?? '' );
-        $password   = $_POST['password'] ?? '';
-        $password2  = $_POST['password2'] ?? '';
+        $first_name   = sanitize_text_field( $_POST['first_name'] ?? '' );
+        $last_name    = sanitize_text_field( $_POST['last_name'] ?? '' );
+        $username_raw = trim( $_POST['username'] ?? '' );
+        $username     = sanitize_user( $username_raw );
+        $email        = sanitize_email( $_POST['email'] ?? '' );
+        $password     = $_POST['password'] ?? '';
+        $password2    = $_POST['password2'] ?? '';
         $role = 'jugador';
 
         if ( ! $first_name ) $errors[] = 'El nombre es obligatorio.';
         if ( ! $last_name )  $errors[] = 'El apellido es obligatorio.';
-        if ( ! $username )   $errors[] = 'El nombre de usuario es obligatorio.';
-        if ( $username && ! preg_match( '/^[A-Za-z0-9]+$/', $username ) ) $errors[] = 'El nombre de usuario solo puede contener letras sin acentos y números, sin espacios ni caracteres especiales.';
+        if ( ! $username_raw ) $errors[] = 'El nombre de usuario es obligatorio.';
+        if ( $username_raw && ! preg_match( '/^[A-Za-z0-9]+$/', $username_raw ) ) $errors[] = 'El nombre de usuario solo puede contener letras sin acentos y números, sin espacios ni caracteres especiales.';
         if ( ! is_email( $email ) ) $errors[] = 'Ingresa un correo electrónico válido.';
         if ( strlen( $password ) < 8 ) $errors[] = 'La contraseña debe tener al menos 8 caracteres.';
         if ( $password !== $password2 ) $errors[] = 'Las contraseñas no coinciden.';
