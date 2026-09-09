@@ -1035,7 +1035,8 @@ function fmdb_event_registration_box( int $event_id ): void {
                 </div>
                 <?php endif; ?>
 
-                <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-section__btn">
+                <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-reg-section__btn"
+                        <?php echo empty( $registered_teams ) ? 'disabled' : ''; ?>>
                     Agregar inscripción →
                 </button>
                 <div class="fmdb-reg-section__msg" id="fmdb-reg-msg-ind-<?php echo $eid; ?>"></div>
@@ -1361,6 +1362,11 @@ function fmdb_event_registration_box( int $event_id ): void {
                             phoneInput.setCustomValidity('');
                         }
                         if (!form.checkValidity()) { form.reportValidity(); return; }
+                        var indNameField = form.querySelector('input[name="fmdb_ind_team_name"]');
+                        if (indNameField !== null && !indNameField.value.trim()) {
+                            if (msgEl) { msgEl.textContent = 'Debes seleccionar un equipo antes de registrarte como jugador individual.'; msgEl.className = 'fmdb-reg-section__msg fmdb-reg-section__msg--err'; }
+                            return;
+                        }
 
                         var origText = btn.textContent;
                         btn.disabled = true;
@@ -1646,6 +1652,13 @@ function fmdb_ajax_add_registration(): void {
                 }
             }
         }
+    }
+
+    // Individual join: team selection is required.
+    if ( ( $_POST['fmdb_reg_type'] ?? '' ) === 'individual'
+      && trim( sanitize_text_field( wp_unslash( $_POST['fmdb_ind_team_name'] ?? '' ) ) ) === '' ) {
+        wp_send_json_error( [ 'message' => 'Debes seleccionar un equipo antes de registrarte como jugador individual.' ] );
+        return;
     }
 
     // Individual join: enforce roster cap before adding to cart.
