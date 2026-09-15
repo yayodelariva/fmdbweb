@@ -1661,6 +1661,14 @@ function fmdb_ajax_add_registration(): void {
         return;
     }
 
+    // Individual join: rama must be resolved — guards against stale-page submissions where the
+    // team's division card was never enabled (e.g. team was pending when the page loaded).
+    if ( ( $_POST['fmdb_reg_type'] ?? '' ) === 'individual'
+      && trim( sanitize_text_field( wp_unslash( $_POST['fmdb_rama'] ?? '' ) ) ) === '' ) {
+        wp_send_json_error( [ 'message' => 'Recarga la página y selecciona tu equipo nuevamente para continuar.' ] );
+        return;
+    }
+
     // Individual join: enforce roster cap before adding to cart.
     // woocommerce_add_to_cart_validation no longer exists in WC 10+; validate here instead.
     if ( ( $_POST['fmdb_reg_type'] ?? '' ) === 'individual' && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
