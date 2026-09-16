@@ -1236,9 +1236,11 @@ function fmdb_event_registration_box( int $event_id ): void {
                     var venueLbl = document.getElementById('fmdb-total-venue-label-' + eid);
                     var hospEl   = document.getElementById('fmdb-total-hosp-'        + eid);
                     var grandEl  = document.getElementById('fmdb-total-grand-'       + eid);
-                    var sfx = currentPlayerCount > 0 ? ' (x' + currentPlayerCount + ')' : '';
-                    if (regLbl)   regLbl.textContent   = 'Inscripción' + sfx;
-                    if (venueLbl) venueLbl.textContent = 'Entrada al venue' + sfx;
+                    var regSfx   = currentPlayerCount > 0 ? ' (x' + currentPlayerCount + ')' : '';
+                    var uncovered = entradaFee > 0 ? Math.round(venueAmt / entradaFee) : 0;
+                    var venueSfx = uncovered > 0 ? ' (x' + uncovered + ')' : '';
+                    if (regLbl)   regLbl.textContent   = 'Inscripción' + regSfx;
+                    if (venueLbl) venueLbl.textContent = 'Entrada al venue' + venueSfx;
                     if (regEl)    regEl.textContent    = regAmt   > 0 ? fmtMXN(regAmt)   : '—';
                     if (venueEl)  venueEl.textContent  = venueAmt > 0 ? fmtMXN(venueAmt) : 'Incluido';
                     if (hospEl)   hospEl.textContent   = hospAmt  > 0 ? fmtMXN(hospAmt)  : '—';
