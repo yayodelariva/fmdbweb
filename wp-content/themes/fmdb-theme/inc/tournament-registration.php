@@ -1641,8 +1641,22 @@ function fmdb_ajax_add_registration(): void {
         }
     }
 
-    // Duplicate team check — block if same name + rama already exists in any active order.
     $_ajax_event_id  = (int) get_post_meta( $prod_id, '_fmdb_reg_event_id', true );
+
+    // Registration open + deadline checks (mirroring woocommerce_add_to_cart_validation which is dead on this site).
+    if ( $_ajax_event_id ) {
+        if ( get_post_meta( $_ajax_event_id, '_fmdb_reg_open', true ) !== 'on' ) {
+            wp_send_json_error( [ 'message' => 'La inscripción para este torneo no está abierta.' ] );
+            return;
+        }
+        $_ajax_deadline = get_post_meta( $_ajax_event_id, '_fmdb_reg_deadline', true );
+        if ( $_ajax_deadline && strtotime( $_ajax_deadline . ' 23:59:59' ) < time() ) {
+            wp_send_json_error( [ 'message' => 'La fecha límite de inscripción ha pasado.' ] );
+            return;
+        }
+    }
+
+    // Duplicate team check — block if same name + rama already exists in any active order.
     $_ajax_reg_type  = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
                        ? $_POST['fmdb_reg_type'] : 'team';
     if ( $_ajax_event_id && $_ajax_reg_type === 'team' && ! empty( $_POST['fmdb_team_name'] ) ) {
