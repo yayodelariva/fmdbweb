@@ -1137,11 +1137,11 @@ function fmdb_event_registration_box( int $event_id ): void {
             <!-- ── TOTAL SECTION ── -->
             <div class="fmdb-reg-total">
                 <div class="fmdb-reg-total__row">
-                    <span class="fmdb-reg-total__label">Inscripción</span>
+                    <span class="fmdb-reg-total__label" id="fmdb-total-reg-label-<?php echo $eid; ?>">Inscripción</span>
                     <span class="fmdb-reg-total__val" id="fmdb-total-reg-<?php echo $eid; ?>">—</span>
                 </div>
                 <div class="fmdb-reg-total__row">
-                    <span class="fmdb-reg-total__label">Entrada al venue</span>
+                    <span class="fmdb-reg-total__label" id="fmdb-total-venue-label-<?php echo $eid; ?>">Entrada al venue</span>
                     <span class="fmdb-reg-total__val" id="fmdb-total-venue-<?php echo $eid; ?>">$<?php echo esc_html( number_format( $entrada_fee, 2 ) ); ?> MXN</span>
                 </div>
                 <div class="fmdb-reg-total__row">
@@ -1224,19 +1224,25 @@ function fmdb_event_registration_box( int $event_id ): void {
                 }
 
                 // ── Grand total ──
-                var regAmt   = 0;
-                var hospAmt  = 0;
-                var venueAmt = 0;
+                var regAmt            = 0;
+                var hospAmt           = 0;
+                var venueAmt          = 0;
+                var currentPlayerCount = 0;
 
                 function updateGrandTotal() {
-                    var regEl   = document.getElementById('fmdb-total-reg-'   + eid);
-                    var venueEl = document.getElementById('fmdb-total-venue-' + eid);
-                    var hospEl  = document.getElementById('fmdb-total-hosp-'  + eid);
-                    var grandEl = document.getElementById('fmdb-total-grand-' + eid);
-                    if (regEl)   regEl.textContent   = regAmt  > 0 ? fmtMXN(regAmt)  : '—';
-                    if (venueEl) venueEl.textContent = venueAmt > 0 ? fmtMXN(venueAmt) : 'Incluido';
-                    if (hospEl)  hospEl.textContent  = hospAmt > 0 ? fmtMXN(hospAmt) : '—';
-                    if (grandEl) grandEl.textContent = (regAmt + venueAmt + hospAmt) > 0 ? fmtMXN(regAmt + venueAmt + hospAmt) : '—';
+                    var regEl    = document.getElementById('fmdb-total-reg-'         + eid);
+                    var regLbl   = document.getElementById('fmdb-total-reg-label-'   + eid);
+                    var venueEl  = document.getElementById('fmdb-total-venue-'       + eid);
+                    var venueLbl = document.getElementById('fmdb-total-venue-label-' + eid);
+                    var hospEl   = document.getElementById('fmdb-total-hosp-'        + eid);
+                    var grandEl  = document.getElementById('fmdb-total-grand-'       + eid);
+                    var sfx = currentPlayerCount > 0 ? ' (x' + currentPlayerCount + ')' : '';
+                    if (regLbl)   regLbl.textContent   = 'Inscripción' + sfx;
+                    if (venueLbl) venueLbl.textContent = 'Entrada al venue' + sfx;
+                    if (regEl)    regEl.textContent    = regAmt   > 0 ? fmtMXN(regAmt)   : '—';
+                    if (venueEl)  venueEl.textContent  = venueAmt > 0 ? fmtMXN(venueAmt) : 'Incluido';
+                    if (hospEl)   hospEl.textContent   = hospAmt  > 0 ? fmtMXN(hospAmt)  : '—';
+                    if (grandEl)  grandEl.textContent  = (regAmt + venueAmt + hospAmt) > 0 ? fmtMXN(regAmt + venueAmt + hospAmt) : '—';
                 }
 
                 // ── Tab switching ──
@@ -1256,14 +1262,16 @@ function fmdb_event_registration_box( int $event_id ): void {
                         if (target === 'fmdb-form-team-' + eid) {
                             var n = countInput ? parseInt(countInput.value, 10) : 0;
                             if (n >= 1 && n <= maxPlayers) {
-                                regAmt   = fee * n;
-                                venueAmt = computeVenueAmt(n, currentRoomCoverage);
+                                regAmt             = fee * n;
+                                venueAmt           = computeVenueAmt(n, currentRoomCoverage);
+                                currentPlayerCount = n;
                             } else {
-                                regAmt = venueAmt = 0;
+                                regAmt = venueAmt = currentPlayerCount = 0;
                             }
                         } else {
-                            regAmt   = fee;
-                            venueAmt = computeVenueAmt(1, currentRoomCoverage);
+                            regAmt             = fee;
+                            venueAmt           = computeVenueAmt(1, currentRoomCoverage);
+                            currentPlayerCount = 1;
                         }
                         updateGrandTotal();
                     });
@@ -1274,18 +1282,20 @@ function fmdb_event_registration_box( int $event_id ): void {
                     countInput.addEventListener('input', function () {
                         var n = parseInt(countInput.value, 10);
                         if (n >= 1 && n <= maxPlayers) {
-                            regAmt   = fee * n;
-                            venueAmt = computeVenueAmt(n, currentRoomCoverage);
+                            regAmt             = fee * n;
+                            venueAmt           = computeVenueAmt(n, currentRoomCoverage);
+                            currentPlayerCount = n;
                         } else {
-                            regAmt = venueAmt = 0;
+                            regAmt = venueAmt = currentPlayerCount = 0;
                         }
                         renderExtraPlayers(isNaN(n) ? 0 : n);
                         updateGrandTotal();
                     });
                     var initN = parseInt(countInput.value, 10);
                     if (initN >= 1 && initN <= maxPlayers) {
-                        regAmt   = fee * initN;
-                        venueAmt = computeVenueAmt(initN, currentRoomCoverage);
+                        regAmt             = fee * initN;
+                        venueAmt           = computeVenueAmt(initN, currentRoomCoverage);
+                        currentPlayerCount = initN;
                         renderExtraPlayers(initN);
                         updateGrandTotal();
                     }
@@ -1293,8 +1303,9 @@ function fmdb_event_registration_box( int $event_id ): void {
                     // Individual tab is active (no count input) — regAmt = fee × 1
                     var activeTabEl = document.querySelector('#fmdb-reg-tabs-' + eid + ' .fmdb-reg-tab.is-active');
                     if (activeTabEl && activeTabEl.dataset.target === 'fmdb-form-ind-' + eid) {
-                        regAmt   = fee;
-                        venueAmt = computeVenueAmt(1, currentRoomCoverage);
+                        regAmt             = fee;
+                        venueAmt           = computeVenueAmt(1, currentRoomCoverage);
+                        currentPlayerCount = 1;
                         updateGrandTotal();
                     }
                 }
@@ -1337,7 +1348,9 @@ function fmdb_event_registration_box( int $event_id ): void {
                             var indForm = document.getElementById('fmdb-form-ind-' + eid);
                             var isIndiv = indForm && !indForm.classList.contains('fmdb-reg-form--hidden');
                             var n = isIndiv ? 1 : (countInput ? parseInt(countInput.value, 10) : 1);
-                            venueAmt = computeVenueAmt(isNaN(n) || n < 1 ? 1 : n, currentRoomCoverage);
+                            var nSafe = isNaN(n) || n < 1 ? 1 : n;
+                            currentPlayerCount = nSafe;
+                            venueAmt = computeVenueAmt(nSafe, currentRoomCoverage);
                             if (hospBtn) hospBtn.disabled = (r.value === '');
                             showGuestFields(r.value);
                             updateGrandTotal();
