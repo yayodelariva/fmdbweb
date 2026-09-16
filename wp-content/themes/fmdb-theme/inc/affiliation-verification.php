@@ -13,10 +13,7 @@
  *  - fmdb_affiliation_id          : the claimed ID (string)
  *  - fmdb_affiliation_status      : '' | 'pending' | 'verified' | 'rejected'
  *  - fmdb_affiliation_token       : wp_hash_password() of the raw token
- *  - fmdb_affiliation_token_expires : unix ts
  */
-
-const FMDB_AFFIL_TOKEN_TTL = 14 * DAY_IN_SECONDS;
 
 function fmdb_affiliation_admin_email(): string {
     return apply_filters( 'fmdb_affiliation_admin_email', get_option( 'admin_email' ) );
@@ -33,7 +30,6 @@ function fmdb_request_affiliation_verification( int $user_id, string $affiliatio
 
     $token = wp_generate_password( 32, false );
     update_user_meta( $user_id, 'fmdb_affiliation_token', wp_hash_password( $token ) );
-    update_user_meta( $user_id, 'fmdb_affiliation_token_expires', time() + FMDB_AFFIL_TOKEN_TTL );
 
     $approve_url = add_query_arg(
         [ 'uid' => $user_id, 'token' => $token, 'action' => 'approve' ],
@@ -54,7 +50,7 @@ function fmdb_request_affiliation_verification( int $user_id, string $affiliatio
         . "Verifica que coincida con el ID asignado a este usuario:\n\n"
         . "Aprobar:\n$approve_url\n\n"
         . "Rechazar:\n$reject_url\n\n"
-        . "Los enlaces expiran en 14 días y solo funcionan una vez.\n\n"
+        . "Los enlaces no expiran y solo funcionan una vez.\n\n"
         . "— $site";
 
     return wp_mail( fmdb_affiliation_admin_email(), $subject, $message );
@@ -64,9 +60,8 @@ function fmdb_resolve_affiliation_token( int $user_id, string $token, string $ac
     if ( ! in_array( $action, [ 'approve', 'reject' ], true ) ) {
         return false;
     }
-    $hash    = get_user_meta( $user_id, 'fmdb_affiliation_token', true );
-    $expires = (int) get_user_meta( $user_id, 'fmdb_affiliation_token_expires', true );
-    if ( ! $hash || $expires < time() ) {
+    $hash = get_user_meta( $user_id, 'fmdb_affiliation_token', true );
+    if ( ! $hash ) {
         return false;
     }
     if ( ! wp_check_password( $token, $hash ) ) {
@@ -78,7 +73,6 @@ function fmdb_resolve_affiliation_token( int $user_id, string $token, string $ac
         $action === 'approve' ? 'verified' : 'rejected'
     );
     delete_user_meta( $user_id, 'fmdb_affiliation_token' );
-    delete_user_meta( $user_id, 'fmdb_affiliation_token_expires' );
     return true;
 }
 
@@ -186,7 +180,6 @@ function fmdb_save_affiliation_profile_fields( $user_id ) {
             // Clear any pending token when the admin overrides directly.
             if ( $status !== 'pending' ) {
                 delete_user_meta( $user_id, 'fmdb_affiliation_token' );
-                delete_user_meta( $user_id, 'fmdb_affiliation_token_expires' );
             }
         }
     }
@@ -222,7 +215,6 @@ function fmdb_render_affiliations_page() {
             $new_status = $action === 'approve' ? 'verified' : 'rejected';
             update_user_meta( $uid, 'fmdb_affiliation_status', $new_status );
             delete_user_meta( $uid, 'fmdb_affiliation_token' );
-            delete_user_meta( $uid, 'fmdb_affiliation_token_expires' );
             $label = $action === 'approve' ? 'aprobada' : 'rechazada';
             echo '<div class="notice notice-success is-dismissible"><p>Afiliación ' . esc_html( $label ) . '.</p></div>';
         }
