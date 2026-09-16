@@ -1310,8 +1310,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                 var currentRoomCoverage = 0;
 
                 function computeVenueAmt(playerCount, coverage) {
-                    var excess = coverage === 0 ? playerCount : Math.max(0, coverage - playerCount);
-                    return entradaFee * excess;
+                    return entradaFee * Math.max(0, playerCount - coverage);
                 }
 
                 function showGuestFields(roomVal) {
@@ -2086,10 +2085,8 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
 
 /* ─── 6a. Venue entry fee ──────────────────────────────────────────────── */
 
-// Venue fee: charged for excess beds (beds beyond player count), not uncovered players.
-// Room capacities: sencilla=1, doble=2, triple=3, cuádruple=4 beds.
-// beds < players → fee = 0 (whole team gets in free). beds > players → fee for each excess bed.
-// No hospedaje → full fee for all players.
+// Venue fee: entradaFee × uncovered players (players − beds, floored at 0).
+// Room capacities: sencilla=1, doble=2, triple=3, cuádruple=4 beds. beds ≥ players → no fee.
 add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
     if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
 
@@ -2121,11 +2118,8 @@ add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
 
     if ( ! $has_reg || $total_players === 0 || $venue_fee <= 0 ) return;
 
-    // Fee applies to excess beds (beds beyond player count). If beds < players, team gets in free.
-    // No hospedaje → full fee for all players.
-    $uncovered = $total_coverage === 0
-        ? $total_players
-        : max( 0, $total_coverage - $total_players );
+    // Fee for uncovered players: max(0, players − beds). beds ≥ players → no fee.
+    $uncovered = max( 0, $total_players - $total_coverage );
     if ( $uncovered > 0 ) {
         $suffix = $uncovered === 1 ? '1 jugador' : "{$uncovered} jugadores";
         $cart->add_fee( "Entrada al venue ({$suffix})", $venue_fee * $uncovered, false );
