@@ -651,13 +651,13 @@ function fmdb_event_registration_box( int $event_id ): void {
     $ramas    = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_ramas', true ) ) );
     $cats     = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_categorias', true ) ) );
 
-    if ( ! $open || $fee < 0 || ! $prod_id ) return;
+    if ( $fee < 0 || ! $prod_id ) return;
 
     $product = wc_get_product( $prod_id );
     if ( ! $product || $product->get_status() !== 'publish' ) return;
 
     $past_deadline = $deadline && strtotime( $deadline . ' 23:59:59' ) < time();
-    $closed        = $past_deadline;
+    $closed        = $past_deadline || ! $open;
 
     // Strip legacy values (pre-migration: Femenil, Mixta, Varonil) saved before the new rama model.
     $valid_ramas = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
@@ -1765,8 +1765,6 @@ function fmdb_reg_division_selects( string $uid, array $ramas, array $cats, arra
 /* ─── 4b. Public section: registered teams + rosters ──────────────────── */
 
 function fmdb_event_registered_teams_section( int $event_id ): void {
-    $open = get_post_meta( $event_id, '_fmdb_reg_open', true ) === 'on';
-    if ( ! $open ) return;
 
     $teams = fmdb_reg_get_event_teams( $event_id );
     if ( empty( $teams ) ) return;
