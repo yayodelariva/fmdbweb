@@ -2399,12 +2399,6 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
 /* ─── 8a. Block checkout if deadline has passed for any cart registration ── */
 
 add_action( 'woocommerce_checkout_process', function () {
-    $room_cap = [
-        'sencilla' => 1, 'sencilla_sc' => 1,
-        'doble'    => 2, 'doble_sc'    => 2,
-        'triple'   => 3, 'triple_sc'   => 3,
-        'cuadruple'=> 4, 'cuadruple_sc'=> 4,
-    ];
     foreach ( WC()->cart->get_cart() as $item ) {
         if ( empty( $item['fmdb_event_id'] ) ) continue;
         $eid = (int) $item['fmdb_event_id'];
