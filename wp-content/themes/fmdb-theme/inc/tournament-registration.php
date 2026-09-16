@@ -2396,6 +2396,30 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
     return $passed;
 }, 10, 2 );
 
+/* ─── 8a. Block checkout if deadline has passed for any cart registration ── */
+
+add_action( 'woocommerce_checkout_process', function () {
+    $room_cap = [
+        'sencilla' => 1, 'sencilla_sc' => 1,
+        'doble'    => 2, 'doble_sc'    => 2,
+        'triple'   => 3, 'triple_sc'   => 3,
+        'cuadruple'=> 4, 'cuadruple_sc'=> 4,
+    ];
+    foreach ( WC()->cart->get_cart() as $item ) {
+        if ( empty( $item['fmdb_event_id'] ) ) continue;
+        $eid = (int) $item['fmdb_event_id'];
+        if ( get_post_meta( $eid, '_fmdb_reg_open', true ) !== 'on' ) {
+            wc_add_notice( 'La inscripción para este torneo ya no está abierta.', 'error' );
+            return;
+        }
+        $deadline = get_post_meta( $eid, '_fmdb_reg_deadline', true );
+        if ( $deadline && strtotime( $deadline . ' 23:59:59' ) < time() ) {
+            wc_add_notice( 'La fecha límite de inscripción ha pasado.', 'error' );
+            return;
+        }
+    }
+} );
+
 /* ─── 9a. AJAX endpoint: hospedaje-only add-to-cart ───────────────────────
  *
  * Bluehost PHP has request_order=GP, so $_REQUEST never contains POST data.
