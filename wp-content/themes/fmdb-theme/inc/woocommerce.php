@@ -28,22 +28,17 @@ add_action( 'init', function () {
 } );
 
 // Remove popularity + average-rating options and rename default/date labels
-add_filter( 'woocommerce_catalog_orderby', function ( $options ) {
+$fmdb_catalog_orderby_cb = function ( $options ) {
     unset( $options['popularity'], $options['rating'] );
     if ( isset( $options['menu_order'] ) ) $options['menu_order'] = 'Predeterminado';
     if ( isset( $options['date'] ) )       $options['date']       = 'Agregados recientemente';
     if ( isset( $options['price'] ) )      $options['price']      = 'Precio: menor a mayor';
     if ( isset( $options['price-desc'] ) ) $options['price-desc'] = 'Precio: mayor a menor';
     return $options;
-} );
-add_filter( 'woocommerce_default_catalog_orderby_options', function ( $options ) {
-    unset( $options['popularity'], $options['rating'] );
-    if ( isset( $options['menu_order'] ) ) $options['menu_order'] = 'Predeterminado';
-    if ( isset( $options['date'] ) )       $options['date']       = 'Agregados recientemente';
-    if ( isset( $options['price'] ) )      $options['price']      = 'Precio: menor a mayor';
-    if ( isset( $options['price-desc'] ) ) $options['price-desc'] = 'Precio: mayor a menor';
-    return $options;
-} );
+};
+add_filter( 'woocommerce_catalog_orderby',                 $fmdb_catalog_orderby_cb );
+add_filter( 'woocommerce_default_catalog_orderby_options', $fmdb_catalog_orderby_cb );
+unset( $fmdb_catalog_orderby_cb );
 
 // Cart page title in Spanish — covers both WooCommerce template (woocommerce_page_title)
 // and Kadence hero (the_title). Same string + condition in both filters.
@@ -231,16 +226,14 @@ add_filter( 'gettext_with_context_woocommerce', function ( $translation, $text )
     $overrides = fmdb_cart_checkout_overrides();
     return $overrides[ $text ] ?? $translation;
 }, 20, 2 );
-add_filter( 'ngettext_woocommerce', function ( $translation, $single, $plural, $number ) {
+$fmdb_ngettext_cb = function ( $translation, $single, $plural, $number ) {
     $overrides = fmdb_cart_checkout_overrides();
     $key = ( $number == 1 ) ? $single : $plural;
     return $overrides[ $key ] ?? $translation;
-}, 20, 4 );
-add_filter( 'ngettext_with_context_woocommerce', function ( $translation, $single, $plural, $number ) {
-    $overrides = fmdb_cart_checkout_overrides();
-    $key = ( $number == 1 ) ? $single : $plural;
-    return $overrides[ $key ] ?? $translation;
-}, 20, 4 );
+};
+add_filter( 'ngettext_woocommerce',              $fmdb_ngettext_cb, 20, 4 );
+add_filter( 'ngettext_with_context_woocommerce', $fmdb_ngettext_cb, 20, 4 );
+unset( $fmdb_ngettext_cb );
 
 // JS-side: catch strings rendered through wp.i18n.__() in block JS.
 // Scoped to cart/checkout pages — the filter is domain-agnostic and could
@@ -379,15 +372,20 @@ add_action( 'woocommerce_single_product_summary', function () {
 /* ─── Email headings and subjects in Spanish ──────────────────────────────── */
 // These override the values stored in WC settings (which bypass gettext).
 
-add_filter( 'woocommerce_email_heading_customer_processing_order', fn() => '¡Gracias por tu pedido!' );
-add_filter( 'woocommerce_email_heading_customer_completed_order',  fn() => 'Tu pedido está completo' );
-add_filter( 'woocommerce_email_heading_customer_on_hold_order',    fn() => '¡Gracias por tu pedido!' );
-add_filter( 'woocommerce_email_heading_customer_failed_order',     fn() => 'Tu pedido no se pudo completar' );
-add_filter( 'woocommerce_email_heading_customer_cancelled_order',  fn() => 'Tu pedido fue cancelado' );
-add_filter( 'woocommerce_email_heading_customer_refunded_order',   fn() => 'Tu pedido fue reembolsado' );
-add_filter( 'woocommerce_email_heading_new_order',                 fn() => 'Nuevo pedido' );
-add_filter( 'woocommerce_email_heading_customer_new_account',      fn() => 'Bienvenido/a a ' . get_bloginfo( 'name' ) );
-add_filter( 'woocommerce_email_heading_customer_reset_password',   fn() => 'Restablecimiento de contraseña' );
+foreach ( [
+    'customer_processing_order' => '¡Gracias por tu pedido!',
+    'customer_completed_order'  => 'Tu pedido está completo',
+    'customer_on_hold_order'    => '¡Gracias por tu pedido!',
+    'customer_failed_order'     => 'Tu pedido no se pudo completar',
+    'customer_cancelled_order'  => 'Tu pedido fue cancelado',
+    'customer_refunded_order'   => 'Tu pedido fue reembolsado',
+    'new_order'                 => 'Nuevo pedido',
+    'customer_reset_password'   => 'Restablecimiento de contraseña',
+] as $fmdb_suffix => $fmdb_heading ) {
+    add_filter( "woocommerce_email_heading_{$fmdb_suffix}", fn() => $fmdb_heading );
+}
+unset( $fmdb_suffix, $fmdb_heading );
+add_filter( 'woocommerce_email_heading_customer_new_account', fn() => 'Bienvenido/a a ' . get_bloginfo( 'name' ) );
 
 // Replace WC's 'user_preview' placeholder with the current admin's login in preview/test emails.
 add_filter( 'woocommerce_prepare_email_for_preview', function ( $email ) {
@@ -398,22 +396,20 @@ add_filter( 'woocommerce_prepare_email_for_preview', function ( $email ) {
     return $email;
 } );
 
-add_filter( 'woocommerce_email_subject_customer_processing_order', fn( $s, $order ) =>
-    'Tu pedido #' . $order->get_order_number() . ' ha sido recibido', 10, 2 );
-add_filter( 'woocommerce_email_subject_customer_completed_order',  fn( $s, $order ) =>
-    'Tu pedido #' . $order->get_order_number() . ' está completo', 10, 2 );
-add_filter( 'woocommerce_email_subject_customer_on_hold_order',    fn( $s, $order ) =>
-    'Tu pedido #' . $order->get_order_number() . ' está en espera', 10, 2 );
-add_filter( 'woocommerce_email_subject_customer_failed_order',     fn( $s, $order ) =>
-    'Tu pedido #' . $order->get_order_number() . ' no se pudo completar', 10, 2 );
-add_filter( 'woocommerce_email_subject_customer_cancelled_order',  fn( $s, $order ) =>
-    'Tu pedido #' . $order->get_order_number() . ' fue cancelado', 10, 2 );
-add_filter( 'woocommerce_email_subject_customer_refunded_order',   fn( $s, $order ) =>
-    'Tu pedido #' . $order->get_order_number() . ' fue reembolsado', 10, 2 );
-add_filter( 'woocommerce_email_subject_new_order',                 fn( $s, $order ) =>
-    'Nuevo pedido #' . $order->get_order_number(), 10, 2 );
-add_filter( 'woocommerce_email_subject_customer_new_account',      fn() => 'Tu cuenta en ' . get_bloginfo( 'name' ) );
-add_filter( 'woocommerce_email_subject_customer_reset_password',   fn() => 'Restablecimiento de contraseña en ' . get_bloginfo( 'name' ) );
+foreach ( [
+    'customer_processing_order' => fn( $s, $order ) => 'Tu pedido #' . $order->get_order_number() . ' ha sido recibido',
+    'customer_completed_order'  => fn( $s, $order ) => 'Tu pedido #' . $order->get_order_number() . ' está completo',
+    'customer_on_hold_order'    => fn( $s, $order ) => 'Tu pedido #' . $order->get_order_number() . ' está en espera',
+    'customer_failed_order'     => fn( $s, $order ) => 'Tu pedido #' . $order->get_order_number() . ' no se pudo completar',
+    'customer_cancelled_order'  => fn( $s, $order ) => 'Tu pedido #' . $order->get_order_number() . ' fue cancelado',
+    'customer_refunded_order'   => fn( $s, $order ) => 'Tu pedido #' . $order->get_order_number() . ' fue reembolsado',
+    'new_order'                 => fn( $s, $order ) => 'Nuevo pedido #' . $order->get_order_number(),
+] as $fmdb_suffix => $fmdb_cb ) {
+    add_filter( "woocommerce_email_subject_{$fmdb_suffix}", $fmdb_cb, 10, 2 );
+}
+unset( $fmdb_suffix, $fmdb_cb );
+add_filter( 'woocommerce_email_subject_customer_new_account',    fn() => 'Tu cuenta en ' . get_bloginfo( 'name' ) );
+add_filter( 'woocommerce_email_subject_customer_reset_password', fn() => 'Restablecimiento de contraseña en ' . get_bloginfo( 'name' ) );
 
 // Translate WordPress core admin-triggered password reset email (WP Admin → Users → Send Password Reset).
 add_filter( 'retrieve_password_title', fn() => '[' . get_bloginfo( 'name' ) . '] Restablecimiento de contraseña', 999 );
@@ -453,14 +449,12 @@ add_filter( 'wc_stripe_params', function( $params ) {
 } );
 
 // Force Stripe Customer preferred_locales to Spanish so hosted OXXO voucher pages render in Spanish.
-add_filter( 'wc_stripe_create_customer_args', function( $args ) {
+function fmdb_stripe_preferred_locales( array $args ): array {
     $args['preferred_locales'] = [ 'es-419' ];
     return $args;
-} );
-add_filter( 'wc_stripe_update_customer_args', function( $args ) {
-    $args['preferred_locales'] = [ 'es-419' ];
-    return $args;
-} );
+}
+add_filter( 'wc_stripe_create_customer_args', 'fmdb_stripe_preferred_locales' );
+add_filter( 'wc_stripe_update_customer_args', 'fmdb_stripe_preferred_locales' );
 
 // Send customer a one-time email with the OXXO voucher link after checkout.
 add_action( 'woocommerce_thankyou', function( $order_id ) {

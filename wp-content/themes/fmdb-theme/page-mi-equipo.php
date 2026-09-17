@@ -22,9 +22,8 @@ if ( ! is_user_logged_in() ) {
 if ( ! empty( $_POST['object_id'] ) && ! empty( $_POST['fmdb_cmb_box'] ) ) {
     $box_id    = sanitize_key( $_POST['fmdb_cmb_box'] );
     $object_id = (int) $_POST['object_id'];
-    $reps      = get_field( 'team_rep', $object_id );
-    if ( ! is_array( $reps ) ) $reps = $reps ? [ $reps ] : [];
-    $is_auth   = in_array( get_current_user_id(), array_map( 'intval', $reps ), true )
+    $reps    = fmdb_normalize_reps( get_field( 'team_rep', $object_id ) );
+    $is_auth = in_array( get_current_user_id(), $reps, true )
                  || fmdb_is_team_manager();
     if ( $is_auth && function_exists( 'cmb2_get_metabox' ) ) {
         $cmb = cmb2_get_metabox( $box_id, $object_id );
@@ -59,9 +58,8 @@ if ( ! empty( $_POST['object_id'] ) && ! empty( $_POST['fmdb_cmb_box'] ) ) {
 if ( isset( $_POST['fmdb_plantel_nonce'] ) && wp_verify_nonce( $_POST['fmdb_plantel_nonce'], 'fmdb_plantel_save' ) ) {
     $team_id = (int) ( $_POST['fmdb_plantel_team_id'] ?? 0 );
     if ( $team_id && get_post_type( $team_id ) === 'fmdb_team' ) {
-        $reps     = get_field( 'team_rep', $team_id );
-        if ( ! is_array( $reps ) ) $reps = $reps ? [ $reps ] : [];
-        $can_edit = in_array( get_current_user_id(), array_map( 'intval', $reps ), true )
+        $reps     = fmdb_normalize_reps( get_field( 'team_rep', $team_id ) );
+        $can_edit = in_array( get_current_user_id(), $reps, true )
                     || fmdb_is_team_manager();
         if ( $can_edit ) {
             $roster  = [];

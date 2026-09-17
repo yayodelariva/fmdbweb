@@ -421,9 +421,7 @@ add_action( 'acf/save_post', function ( $post_id ) {
 // Capture current team_rep value before ACF overwrites it on save
 add_action( 'acf/save_post', function ( $post_id ) {
     if ( get_post_type( $post_id ) !== 'fmdb_team' ) return;
-    $old = get_field( 'team_rep', $post_id );
-    if ( ! is_array( $old ) ) $old = $old ? [ (int) $old ] : [];
-    set_transient( 'fmdb_prev_reps_' . $post_id, array_map( 'intval', $old ), 60 );
+    set_transient( 'fmdb_prev_reps_' . $post_id, fmdb_normalize_reps( get_field( 'team_rep', $post_id ) ), 60 );
 }, 1 );
 
 // Promote added reps → representante_equipo; demote removed reps → jugador
@@ -433,9 +431,7 @@ add_action( 'acf/save_post', function ( $post_id ) {
     $old = get_transient( 'fmdb_prev_reps_' . $post_id ) ?: [];
     delete_transient( 'fmdb_prev_reps_' . $post_id );
 
-    $new = get_field( 'team_rep', $post_id );
-    if ( ! is_array( $new ) ) $new = $new ? [ (int) $new ] : [];
-    $new = array_map( 'intval', $new );
+    $new = fmdb_normalize_reps( get_field( 'team_rep', $post_id ) );
 
     foreach ( array_diff( $new, $old ) as $uid ) {
         $u = get_userdata( $uid );

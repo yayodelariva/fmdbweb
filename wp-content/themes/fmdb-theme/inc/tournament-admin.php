@@ -85,7 +85,18 @@ function fmdb_reg_export_rows( int $event_id ): array {
     return $rows;
 }
 
-/* ─── 2. Metabox registration ─────────────────────────────────────────── */
+/* ─── 2. Status label map ─────────────────────────────────────────────── */
+
+function fmdb_reg_status_labels(): array {
+    return [
+        'pending'    => [ 'Pendiente de pago', '#b45309' ],
+        'on-hold'    => [ 'En espera',          '#1d4ed8' ],
+        'processing' => [ 'Confirmado',          '#15803d' ],
+        'completed'  => [ 'Completado',          '#15803d' ],
+    ];
+}
+
+/* ─── 3. Metabox registration ─────────────────────────────────────────── */
 
 add_action( 'add_meta_boxes', function () {
     add_meta_box(
@@ -98,18 +109,12 @@ add_action( 'add_meta_boxes', function () {
     );
 } );
 
-/* ─── 3. Metabox render ───────────────────────────────────────────────── */
+/* ─── 4. Metabox render ───────────────────────────────────────────────── */
 
 function fmdb_render_reg_export_metabox( WP_Post $post ): void {
-    $event_id = $post->ID;
-    $rows     = fmdb_reg_export_rows( $event_id );
-
-    $status_labels = [
-        'pending'    => [ 'Pendiente de pago', '#b45309' ],
-        'on-hold'    => [ 'En espera',          '#1d4ed8' ],
-        'processing' => [ 'Confirmado',          '#15803d' ],
-        'completed'  => [ 'Completado',          '#15803d' ],
-    ];
+    $event_id     = $post->ID;
+    $rows         = fmdb_reg_export_rows( $event_id );
+    $status_labels = fmdb_reg_status_labels();
 
     $nonce = wp_create_nonce( 'fmdb_reg_export_' . $event_id );
     $csv_url = add_query_arg( [
@@ -154,7 +159,6 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
         <tbody>
         <?php foreach ( $rows as $i => $r ) :
             [ $st_label, $st_color ] = $status_labels[ $r['status'] ] ?? [ ucfirst( $r['status'] ), '#555' ];
-            $order_url = get_edit_post_link( wc_get_order( $r['order_id'] )->get_id() );
             $order_url = admin_url( 'post.php?post=' . $r['order_id'] . '&action=edit' );
         ?>
             <tr>
@@ -210,7 +214,7 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
     <?php
 }
 
-/* ─── 4. CSV download handler ─────────────────────────────────────────── */
+/* ─── 5. CSV download handler ─────────────────────────────────────────── */
 
 add_action( 'admin_post_fmdb_reg_export', function () {
     $event_id = absint( $_GET['event_id'] ?? 0 );
@@ -250,12 +254,7 @@ add_action( 'admin_post_fmdb_reg_export', function () {
         'Huéspedes',
     ] );
 
-    $status_labels = [
-        'pending'    => 'Pendiente de pago',
-        'on-hold'    => 'En espera',
-        'processing' => 'Confirmado',
-        'completed'  => 'Completado',
-    ];
+    $status_labels = array_map( fn( $v ) => $v[0], fmdb_reg_status_labels() );
 
     foreach ( $rows as $r ) {
         fputcsv( $out, [

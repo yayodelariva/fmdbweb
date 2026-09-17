@@ -16,8 +16,7 @@ while ( have_posts() ) :
     $instagram   = get_field( 'asociacion_instagram' );
     $facebook    = get_field( 'asociacion_facebook' );
 
-    $initials = implode( '', array_map( fn( $w ) => strtoupper( $w[0] ), explode( ' ', get_the_title() ) ) );
-    $initials = substr( $initials, 0, 3 );
+    $initials = fmdb_initials( get_the_title(), 3 );
 
     // Ligas + equipos del mismo estado (referencia rápida)
     $leagues = $state ? get_posts( [
@@ -77,24 +76,7 @@ while ( have_posts() ) :
                 <div class="fmdb-league-teams">
                     <h2>Ligas en <?php echo esc_html( $state ); ?></h2>
                     <div class="fmdb-team-grid">
-                        <?php foreach ( $leagues as $liga ) :
-                            $thumb = get_the_post_thumbnail_url( $liga->ID, 'thumbnail' );
-                            $words = array_filter( explode( ' ', $liga->post_title ) );
-                            $linit = substr( implode( '', array_map( fn( $w ) => strtoupper( $w[0] ), $words ) ), 0, 3 );
-                        ?>
-                            <a href="<?php echo esc_url( get_permalink( $liga->ID ) ); ?>" class="fmdb-team-card">
-                                <div class="fmdb-team-card__avatar">
-                                    <?php if ( $thumb ) : ?>
-                                        <img src="<?php echo esc_url( $thumb ); ?>" alt="<?php echo esc_attr( $liga->post_title ); ?>">
-                                    <?php else : ?>
-                                        <span><?php echo esc_html( $linit ); ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="fmdb-team-card__info">
-                                    <strong><?php echo esc_html( $liga->post_title ); ?></strong>
-                                </div>
-                            </a>
-                        <?php endforeach; ?>
+                        <?php foreach ( $leagues as $liga ) : fmdb_render_team_card( $liga ); endforeach; ?>
                     </div>
                 </div>
             <?php endif; ?>
@@ -104,33 +86,8 @@ while ( have_posts() ) :
                     <h2>Equipos en <?php echo esc_html( $state ); ?></h2>
                     <div class="fmdb-team-grid">
                         <?php foreach ( $teams as $team ) :
-                            $thumb = get_the_post_thumbnail_url( $team->ID, 'thumbnail' );
-                            $city  = get_field( 'team_city', $team->ID );
-                            $cats  = get_field( 'team_category', $team->ID ) ?: [];
-                            $words = array_filter( explode( ' ', $team->post_title ) );
-                            $tinit = substr( implode( '', array_map( fn( $w ) => strtoupper( $w[0] ), $words ) ), 0, 3 );
-                        ?>
-                            <a href="<?php echo esc_url( get_permalink( $team->ID ) ); ?>" class="fmdb-team-card">
-                                <div class="fmdb-team-card__avatar">
-                                    <?php if ( $thumb ) : ?>
-                                        <img src="<?php echo esc_url( $thumb ); ?>" alt="<?php echo esc_attr( $team->post_title ); ?>">
-                                    <?php else : ?>
-                                        <span><?php echo esc_html( $tinit ); ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="fmdb-team-card__info">
-                                    <strong><?php echo esc_html( $team->post_title ); ?></strong>
-                                    <?php if ( $city ) : ?><small><?php echo esc_html( $city ); ?></small><?php endif; ?>
-                                    <?php if ( $cats ) : ?>
-                                        <div class="fmdb-team-card__cats">
-                                            <?php foreach ( $cats as $cat ) : ?>
-                                                <span class="fmdb-badge fmdb-badge--<?php echo esc_attr( strtolower( $cat ) ); ?>"><?php echo esc_html( $cat ); ?></span>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            </a>
-                        <?php endforeach; ?>
+                            fmdb_render_team_card( $team, get_field( 'team_city', $team->ID ), get_field( 'team_category', $team->ID ) ?: [] );
+                        endforeach; ?>
                     </div>
                 </div>
             <?php endif; ?>
@@ -142,12 +99,7 @@ while ( have_posts() ) :
                         <?php if ( $email )   : ?><li><strong>Email:</strong> <a href="mailto:<?php echo esc_attr( $email ); ?>"><?php echo esc_html( $email ); ?></a></li><?php endif; ?>
                         <?php if ( $website ) : ?><li><strong>Sitio web:</strong> <a href="<?php echo esc_url( $website ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $website ); ?></a></li><?php endif; ?>
                     </ul>
-                    <?php if ( $instagram || $facebook ) : ?>
-                        <div class="fmdb-team-social">
-                            <?php if ( $instagram ) : ?><a href="<?php echo esc_url( $instagram ); ?>" target="_blank" rel="noopener">Instagram</a><?php endif; ?>
-                            <?php if ( $facebook )  : ?><a href="<?php echo esc_url( $facebook ); ?>"  target="_blank" rel="noopener">Facebook</a><?php endif; ?>
-                        </div>
-                    <?php endif; ?>
+                    <?php fmdb_social_links( (string) $instagram, (string) $facebook ); ?>
                 </div>
             <?php endif; ?>
 

@@ -46,12 +46,11 @@ add_action( 'wp_enqueue_scripts', function () {
     if ( is_page( 'reglamentos' ) ) {
         wp_enqueue_style( 'fmdb-reglamentos', get_stylesheet_directory_uri() . '/assets/css/reglamentos.css', [], $ver( 'assets/css/reglamentos.css' ) );
     }
-    if ( is_front_page() ) {
-        wp_enqueue_style(  'fmdb-home', get_stylesheet_directory_uri() . '/assets/css/home.css', [], $ver( 'assets/css/home.css' ) );
-        wp_enqueue_script( 'fmdb-home', get_stylesheet_directory_uri() . '/assets/js/home.js', [ 'fmdb-map' ], $ver( 'assets/js/home.js' ), true );
-    }
-    if ( is_404() ) {
+    if ( is_front_page() || is_404() ) {
         wp_enqueue_style( 'fmdb-home', get_stylesheet_directory_uri() . '/assets/css/home.css', [], $ver( 'assets/css/home.css' ) );
+        if ( is_front_page() ) {
+            wp_enqueue_script( 'fmdb-home', get_stylesheet_directory_uri() . '/assets/js/home.js', [ 'fmdb-map' ], $ver( 'assets/js/home.js' ), true );
+        }
     }
     if ( is_page( 'registro' ) || is_page( 'login' ) || is_page( 'olvide-mi-contrasena' ) || is_page( 'verificar' ) || is_page( 'verificar-afiliacion' ) ) {
         wp_enqueue_style( 'fmdb-registro', get_stylesheet_directory_uri() . '/assets/css/registro.css', [], $ver( 'assets/css/registro.css' ) );
@@ -89,36 +88,9 @@ add_action( 'wp_enqueue_scripts', function () {
     wp_enqueue_script( 'fmdb-map', get_stylesheet_directory_uri() . '/assets/js/map.js', [], $ver( 'assets/js/map.js' ), true );
 
     // Pass per-state team, league and asociación counts to JS: [ 'Estado' => count ]
-    $team_counts       = [];
-    $league_counts     = [];
-    $asociacion_counts = [];
-    if ( function_exists( 'get_posts' ) ) {
-        $teams = get_posts( [ 'post_type' => 'fmdb_team', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
-        foreach ( $teams as $team ) {
-            $state = get_field( 'team_state', $team->ID );
-            if ( $state ) {
-                $team_counts[ $state ] = ( $team_counts[ $state ] ?? 0 ) + 1;
-            }
-        }
-        $leagues = get_posts( [ 'post_type' => 'fmdb_league', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
-        foreach ( $leagues as $liga ) {
-            $state = get_field( 'league_state', $liga->ID );
-            // Skip "Nacional" — it doesn't map to a single state on the map
-            if ( $state && $state !== 'Nacional' ) {
-                $league_counts[ $state ] = ( $league_counts[ $state ] ?? 0 ) + 1;
-            }
-        }
-        $asociaciones = get_posts( [ 'post_type' => 'fmdb_asociacion', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
-        foreach ( $asociaciones as $asoc ) {
-            $state = get_field( 'asociacion_state', $asoc->ID );
-            if ( $state ) {
-                $asociacion_counts[ $state ] = ( $asociacion_counts[ $state ] ?? 0 ) + 1;
-            }
-        }
-    }
     wp_localize_script( 'fmdb-map', 'fmdbMapData', [
-        'teams'        => $team_counts,
-        'leagues'      => $league_counts,
-        'asociaciones' => $asociacion_counts,
+        'teams'        => fmdb_count_posts_by_state( 'fmdb_team',      'team_state' ),
+        'leagues'      => fmdb_count_posts_by_state( 'fmdb_league',    'league_state',    'Nacional' ),
+        'asociaciones' => fmdb_count_posts_by_state( 'fmdb_asociacion', 'asociacion_state' ),
     ] );
 } );

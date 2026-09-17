@@ -9,6 +9,10 @@
  *  - Inline admin CSS/JS for picker, bracket visibility, and validation
  */
 
+function fmdb_event_types(): array {
+    return [ 'torneo', 'liga', 'campamento', 'entrenamiento', 'anuncio', 'miscelaneo' ];
+}
+
 // Fix TEC Spanish translations
 add_filter( 'gettext_the-events-calendar', function ( $translation, $text ) {
     if ( $text === '%s Cost' ) return 'Costo del %s';
@@ -91,7 +95,7 @@ add_filter( 'wp_insert_post_data', function ( $data, $postarr ) {
         $missing[] = 'Título';
     }
     $type = isset( $_POST['event_type'] ) ? sanitize_key( $_POST['event_type'] ) : '';
-    if ( ! in_array( $type, [ 'torneo', 'liga', 'campamento', 'entrenamiento', 'anuncio', 'miscelaneo' ], true ) ) {
+    if ( ! in_array( $type, fmdb_event_types(), true ) ) {
         $missing[] = 'Tipo de evento';
     }
     if ( empty( trim( $_POST['EventStartDate'] ?? '' ) ) ) {
@@ -180,7 +184,7 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
          ! wp_verify_nonce( $_POST['fmdb_event_type_nonce'], 'fmdb_event_type_save' ) ) return;
     if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
-    $allowed = [ 'torneo', 'liga', 'campamento', 'entrenamiento', 'anuncio', 'miscelaneo' ];
+    $allowed = fmdb_event_types();
     $type    = isset( $_POST['event_type'] ) ? sanitize_key( $_POST['event_type'] ) : '';
 
     if ( in_array( $type, $allowed, true ) ) {

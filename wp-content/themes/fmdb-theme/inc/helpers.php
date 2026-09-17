@@ -208,11 +208,8 @@ function fmdb_render_org_page( array $args ) {
                             <div class="fmdb-org-card__photo">
                                 <?php if ( $photo_url ) : ?>
                                     <img src="<?php echo esc_url( $photo_url ); ?>" alt="<?php echo esc_attr( $photo_alt ); ?>" loading="lazy">
-                                <?php else :
-                                    $words    = array_filter( explode( ' ', trim( $name ) ) );
-                                    $initials = $words ? substr( implode( '', array_map( fn( $w ) => strtoupper( $w[0] ), $words ) ), 0, 2 ) : '?';
-                                ?>
-                                    <div class="fmdb-org-card__initials"><?php echo esc_html( $initials ); ?></div>
+                                <?php else : ?>
+                                    <div class="fmdb-org-card__initials"><?php echo esc_html( fmdb_initials( $name ) ); ?></div>
                                 <?php endif; ?>
                             </div>
                             <div class="fmdb-org-card__body">
@@ -238,6 +235,13 @@ function fmdb_render_org_page( array $args ) {
     <?php
 }
 
+// Extract initials from a name — 2 chars by default, configurable max
+function fmdb_initials( string $name, int $max = 2 ): string {
+    $words = array_filter( explode( ' ', trim( $name ) ) );
+    if ( ! $words ) return '?';
+    return substr( implode( '', array_map( fn( $w ) => strtoupper( $w[0] ), $words ) ), 0, $max );
+}
+
 // Render a player avatar — linked WP user photo if available, initials fallback
 function fmdb_player_avatar( $user_id, $fallback_name, $size = 'thumbnail' ) {
     $pic_id  = $user_id ? get_user_meta( (int) $user_id, 'fmdb_profile_picture', true ) : 0;
@@ -245,7 +249,61 @@ function fmdb_player_avatar( $user_id, $fallback_name, $size = 'thumbnail' ) {
     if ( $pic_url ) {
         return '<img src="' . esc_url( $pic_url ) . '" alt="' . esc_attr( $fallback_name ) . '" class="fmdb-player-avatar">';
     }
-    $words    = array_filter( explode( ' ', trim( $fallback_name ) ) );
-    $initials = $words ? substr( implode( '', array_map( fn( $w ) => strtoupper( $w[0] ), $words ) ), 0, 2 ) : '?';
-    return '<span class="fmdb-player-avatar fmdb-player-avatar--initials">' . esc_html( $initials ) . '</span>';
+    return '<span class="fmdb-player-avatar fmdb-player-avatar--initials">' . esc_html( fmdb_initials( $fallback_name ) ) . '</span>';
+}
+
+// Render social links row (Instagram + Facebook) — no output when both empty
+function fmdb_social_links( string $instagram, string $facebook ): void {
+    if ( ! $instagram && ! $facebook ) return;
+    echo '<div class="fmdb-team-social">';
+    if ( $instagram ) printf( '<a href="%s" target="_blank" rel="noopener">Instagram</a>', esc_url( $instagram ) );
+    if ( $facebook )  printf( '<a href="%s" target="_blank" rel="noopener">Facebook</a>',  esc_url( $facebook ) );
+    echo '</div>';
+}
+
+// Render a single team/league card link (avatar → initials fallback, name, optional city + category badges)
+function fmdb_render_team_card( WP_Post $post, ?string $city = null, array $cats = [] ): void {
+    $thumb = get_the_post_thumbnail_url( $post->ID, 'thumbnail' );
+    $init  = fmdb_initials( $post->post_title, 3 );
+    ?>
+    <a href="<?php echo esc_url( get_permalink( $post->ID ) ); ?>" class="fmdb-team-card">
+        <div class="fmdb-team-card__avatar">
+            <?php if ( $thumb ) : ?>
+                <img src="<?php echo esc_url( $thumb ); ?>" alt="<?php echo esc_attr( $post->post_title ); ?>">
+            <?php else : ?>
+                <span><?php echo esc_html( $init ); ?></span>
+            <?php endif; ?>
+        </div>
+        <div class="fmdb-team-card__info">
+            <strong><?php echo esc_html( $post->post_title ); ?></strong>
+            <?php if ( $city ) : ?><small><?php echo esc_html( $city ); ?></small><?php endif; ?>
+            <?php if ( $cats ) : ?>
+                <div class="fmdb-team-card__cats">
+                    <?php foreach ( $cats as $cat ) : ?>
+                        <span class="fmdb-badge fmdb-badge--<?php echo esc_attr( strtolower( $cat ) ); ?>"><?php echo esc_html( $cat ); ?></span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </a>
+    <?php
+}
+
+// Normalize ACF team_rep field value to an int[]
+function fmdb_normalize_reps( $reps ): array {
+    if ( ! is_array( $reps ) ) $reps = $reps ? [ $reps ] : [];
+    return array_map( 'intval', $reps );
+}
+
+// Count published posts of a given type, bucketed by an ACF state field; optionally exclude one value
+function fmdb_count_posts_by_state( string $post_type, string $acf_field, string $exclude = '' ): array {
+    $counts = [];
+    $posts  = get_posts( [ 'post_type' => $post_type, 'posts_per_page' => -1, 'post_status' => 'publish' ] );
+    foreach ( $posts as $post ) {
+        $state = get_field( $acf_field, $post->ID );
+        if ( $state && ( ! $exclude || $state !== $exclude ) ) {
+            $counts[ $state ] = ( $counts[ $state ] ?? 0 ) + 1;
+        }
+    }
+    return $counts;
 }

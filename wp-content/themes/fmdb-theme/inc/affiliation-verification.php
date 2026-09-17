@@ -15,6 +15,15 @@
  *  - fmdb_affiliation_token       : wp_hash_password() of the raw token
  */
 
+function fmdb_affiliation_badge_colors(): array {
+    return [
+        'verified' => '#0f6b48',
+        'pending'  => '#856404',
+        'rejected' => '#842029',
+        'none'     => '#777',
+    ];
+}
+
 function fmdb_affiliation_admin_email(): string {
     return apply_filters( 'fmdb_affiliation_admin_email', get_option( 'admin_email' ) );
 }
@@ -104,12 +113,7 @@ add_filter( 'manage_users_custom_column', function ( $out, $col, $user_id ) {
     $id     = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
     $status = fmdb_affiliation_status( (int) $user_id );
     [ $state, $label ] = fmdb_affiliation_status_label( $status );
-    $badge_color = [
-        'verified' => '#0f6b48',
-        'pending'  => '#856404',
-        'rejected' => '#842029',
-        'none'     => '#777',
-    ][ $state ];
+    $badge_color = fmdb_affiliation_badge_colors()[ $state ];
     $badge = sprintf(
         '<span style="display:inline-block;padding:1px 8px;border-radius:999px;background:%s;color:#fff;font-size:11px;font-weight:600;">%s</span>',
         esc_attr( $badge_color ),
@@ -244,12 +248,7 @@ function fmdb_render_affiliations_page() {
         'meta_query' => [ [ 'key' => 'fmdb_affiliation_status', 'value' => 'pending' ] ],
     ] ) );
 
-    $badge_colors = [
-        'verified' => '#0f6b48',
-        'pending'  => '#856404',
-        'rejected' => '#842029',
-        'none'     => '#777',
-    ];
+    $badge_colors = fmdb_affiliation_badge_colors();
 
     ?>
     <div class="wrap">

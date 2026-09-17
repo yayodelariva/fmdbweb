@@ -27,8 +27,7 @@ while ( have_posts() ) :
     if ( ! is_array( $roster ) )  { $roster  = []; }
     if ( ! is_array( $results ) ) { $results = []; }
 
-    $initials = implode( '', array_map( fn( $w ) => strtoupper( $w[0] ), explode( ' ', get_the_title() ) ) );
-    $initials = substr( $initials, 0, 3 );
+    $initials = fmdb_initials( get_the_title(), 3 );
 ?>
 
 <main id="fmdb-team-single" class="fmdb-team-single">
@@ -164,12 +163,7 @@ while ( have_posts() ) :
                         <?php if ( $fmdb_id )  : ?><li><strong>ID FMDB:</strong> <?php echo esc_html( $fmdb_id ); ?></li><?php endif; ?>
                         <?php if ( $email )    : ?><li><strong>Contacto:</strong> <a href="mailto:<?php echo esc_attr( $email ); ?>"><?php echo esc_html( $email ); ?></a></li><?php endif; ?>
                     </ul>
-                    <?php if ( $instagram || $facebook ) : ?>
-                        <div class="fmdb-team-social">
-                            <?php if ( $instagram ) : ?><a href="<?php echo esc_url( $instagram ); ?>" target="_blank" rel="noopener">Instagram</a><?php endif; ?>
-                            <?php if ( $facebook )  : ?><a href="<?php echo esc_url( $facebook ); ?>"  target="_blank" rel="noopener">Facebook</a><?php endif; ?>
-                        </div>
-                    <?php endif; ?>
+                    <?php fmdb_social_links( (string) $instagram, (string) $facebook ); ?>
                 </div>
             </div>
         </div>
