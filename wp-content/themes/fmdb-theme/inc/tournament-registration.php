@@ -195,6 +195,7 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
     if ( wp_is_post_revision( $post_id ) ) return;
     if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
+    // Save hospedaje capacity fields (CMB2 sometimes misses these under TEC's save flow).
     foreach ( [ '_fmdb_hospedaje_doble_max', '_fmdb_hospedaje_triple_max', '_fmdb_hospedaje_sencilla_max', '_fmdb_hospedaje_cuadruple_max' ] as $key ) {
         if ( ! isset( $_POST[ $key ] ) ) continue;
         $val = absint( $_POST[ $key ] );
@@ -204,16 +205,12 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
             delete_post_meta( $post_id, $key );
         }
     }
-}, 20 );
 
-add_action( 'save_post_tribe_events', function ( $post_id ) {
-    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
-    if ( wp_is_post_revision( $post_id ) ) return;
+    // Sync WC registration product.
     if ( ! class_exists( 'WC_Product_Simple' ) ) return;
 
     $open    = get_post_meta( $post_id, '_fmdb_reg_open', true );
     $fee     = (float) get_post_meta( $post_id, '_fmdb_reg_fee', true );
-    $max     = (int) get_post_meta( $post_id, '_fmdb_reg_max_teams', true );
     $prod_id = (int) get_post_meta( $post_id, '_fmdb_reg_product_id', true );
 
     if ( $open !== 'on' || $fee < 0 ) {
@@ -237,16 +234,14 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
     $product->set_name( $title );
     $product->set_status( 'publish' );
     $product->set_regular_price( (string) $fee );
-
     $product->set_manage_stock( false );
     $product->set_stock_status( 'instock' );
-
     $product->save();
     $new_id = $product->get_id();
 
     update_post_meta( $post_id, '_fmdb_reg_product_id', $new_id );
     update_post_meta( $new_id, '_fmdb_reg_event_id', $post_id );
-}, 30 );
+}, 20 );
 
 /* ─── 3a. Helper: get all teams registered for an event ───────────────── */
 
@@ -596,46 +591,37 @@ function fmdb_hospedaje_sold_count( int $event_id, string $room_type ): int {
     return $count;
 }
 
-// $avail: −1 = unlimited, 0 = sold out, N > 0 = slots remaining.
-function fmdb_hospedaje_form_section( float $price_doble = 1415.0, float $price_triple = 1355.0, int $avail_doble = -1, int $avail_triple = -1 ): void {
-    $fmt_d      = '$' . number_format( $price_doble,  0, '.', ',' ) . ' MXN';
-    $fmt_t      = '$' . number_format( $price_triple, 0, '.', ',' ) . ' MXN';
-    $soldout_d  = $avail_doble  === 0;
-    $soldout_t  = $avail_triple === 0;
-    ?>
-<div class="fmdb-reg-form__section-title">Hospedaje <span class="fmdb-reg-form__range">(opcional)</span></div>
-<p class="fmdb-reg-form__hint fmdb-reg-hospedaje__desc">Incluye: 1 noche · Desayuno Americano · Comida Emplatada (3 tiempos) · Cena Emplatada (3 tiempos)</p>
-<div class="fmdb-reg-hospedaje">
-    <label class="fmdb-reg-hospedaje__option">
-        <input type="radio" name="fmdb_hospedaje" value="" checked>
-        <span class="fmdb-reg-hospedaje__label">Sin hospedaje</span>
-    </label>
-    <label class="fmdb-reg-hospedaje__option<?php echo $soldout_d ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
-        <input type="radio" name="fmdb_hospedaje" value="doble"<?php echo $soldout_d ? ' disabled' : ''; ?>>
-        <span class="fmdb-reg-hospedaje__label">Habitación Doble</span>
-        <span class="fmdb-reg-hospedaje__meta">
-            <span class="fmdb-reg-hospedaje__price"><?php echo esc_html( $fmt_d ); ?></span>
-            <?php if ( $avail_doble === 0 ) : ?>
-                <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-            <?php elseif ( $avail_doble > 0 ) : ?>
-                <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $avail_doble ); ?> disponible<?php echo $avail_doble !== 1 ? 's' : ''; ?></span>
-            <?php endif; ?>
-        </span>
-    </label>
-    <label class="fmdb-reg-hospedaje__option<?php echo $soldout_t ? ' fmdb-reg-hospedaje__option--soldout' : ''; ?>">
-        <input type="radio" name="fmdb_hospedaje" value="triple"<?php echo $soldout_t ? ' disabled' : ''; ?>>
-        <span class="fmdb-reg-hospedaje__label">Habitación Triple</span>
-        <span class="fmdb-reg-hospedaje__meta">
-            <span class="fmdb-reg-hospedaje__price"><?php echo esc_html( $fmt_t ); ?></span>
-            <?php if ( $avail_triple === 0 ) : ?>
-                <span class="fmdb-reg-hospedaje__avail fmdb-reg-hospedaje__avail--soldout">Agotado</span>
-            <?php elseif ( $avail_triple > 0 ) : ?>
-                <span class="fmdb-reg-hospedaje__avail"><?php echo esc_html( $avail_triple ); ?> disponible<?php echo $avail_triple !== 1 ? 's' : ''; ?></span>
-            <?php endif; ?>
-        </span>
-    </label>
-</div>
-<?php }
+/* ─── 3e. Shared data helpers ─────────────────────────────────────────── */
+
+// Bed capacity per room type key.
+function fmdb_room_capacities(): array {
+    return [
+        'sencilla'     => 1, 'sencilla_sc'  => 1,
+        'doble'        => 2, 'doble_sc'     => 2,
+        'triple'       => 3, 'triple_sc'    => 3,
+        'cuadruple'    => 4, 'cuadruple_sc' => 4,
+    ];
+}
+
+// Event meta key + default price per room type key.
+function fmdb_hospedaje_fee_map(): array {
+    return [
+        'doble'        => [ '_fmdb_hospedaje_doble_fee',        1415.0 ],
+        'triple'       => [ '_fmdb_hospedaje_triple_fee',       1355.0 ],
+        'sencilla'     => [ '_fmdb_hospedaje_sencilla_fee',     1200.0 ],
+        'cuadruple'    => [ '_fmdb_hospedaje_cuadruple_fee',    1500.0 ],
+        'doble_sc'     => [ '_fmdb_hospedaje_doble_sc_fee',      800.0 ],
+        'triple_sc'    => [ '_fmdb_hospedaje_triple_sc_fee',     750.0 ],
+        'sencilla_sc'  => [ '_fmdb_hospedaje_sencilla_sc_fee',   700.0 ],
+        'cuadruple_sc' => [ '_fmdb_hospedaje_cuadruple_sc_fee',  900.0 ],
+    ];
+}
+
+// True when the event's registration deadline has passed.
+function fmdb_reg_deadline_passed( int $event_id ): bool {
+    $d = get_post_meta( $event_id, '_fmdb_reg_deadline', true );
+    return $d && strtotime( $d . ' 23:59:59' ) < time();
+}
 
 /* ─── 4. Frontend: registration card ──────────────────────────────────── */
 
@@ -653,8 +639,7 @@ function fmdb_event_registration_box( int $event_id ): void {
 
     if ( $fee < 0 || ! $prod_id ) return;
 
-    $past_deadline = $deadline && strtotime( $deadline . ' 23:59:59' ) < time();
-    $closed        = $past_deadline || ! $open;
+    $closed = ! $open || fmdb_reg_deadline_passed( $event_id );
 
     $product = wc_get_product( $prod_id );
     // If the product is unpublished treat it as closed rather than hiding the card entirely.
@@ -1629,55 +1614,56 @@ function fmdb_ajax_add_registration(): void {
 
     if ( ! is_user_logged_in() ) {
         wp_send_json_error( [ 'message' => 'Debes iniciar sesión.' ] );
+        return;
     }
 
     $prod_id = absint( $_POST['add-to-cart'] ?? 0 );
     if ( ! $prod_id || ! wc_get_product( $prod_id ) ) {
         wp_send_json_error( [ 'message' => 'Producto inválido.' ] );
+        return;
     }
 
     // Enforce 1 registration per cart regardless of type (team or individual).
-    foreach ( WC()->cart->get_cart() as $_existing ) {
-        if ( ! empty( $_existing['fmdb_event_id'] ) ) {
+    foreach ( WC()->cart->get_cart() as $existing ) {
+        if ( ! empty( $existing['fmdb_event_id'] ) ) {
             wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en el carrito. Finaliza el pago antes de agregar otra.' ] );
             return;
         }
     }
 
-    $_ajax_event_id  = (int) get_post_meta( $prod_id, '_fmdb_reg_event_id', true );
+    $event_id = (int) get_post_meta( $prod_id, '_fmdb_reg_event_id', true );
 
-    // Registration open + deadline checks (mirroring woocommerce_add_to_cart_validation which is dead on this site).
-    if ( $_ajax_event_id ) {
-        if ( get_post_meta( $_ajax_event_id, '_fmdb_reg_open', true ) !== 'on' ) {
+    // Registration open + deadline checks.
+    if ( $event_id ) {
+        if ( get_post_meta( $event_id, '_fmdb_reg_open', true ) !== 'on' ) {
             wp_send_json_error( [ 'message' => 'La inscripción para este torneo no está abierta.' ] );
             return;
         }
-        $_ajax_deadline = get_post_meta( $_ajax_event_id, '_fmdb_reg_deadline', true );
-        if ( $_ajax_deadline && strtotime( $_ajax_deadline . ' 23:59:59' ) < time() ) {
+        if ( fmdb_reg_deadline_passed( $event_id ) ) {
             wp_send_json_error( [ 'message' => 'La fecha límite de inscripción ha pasado.' ] );
             return;
         }
     }
 
     // Duplicate team check — block if same name + rama already exists in any active order.
-    $_ajax_reg_type  = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
-                       ? $_POST['fmdb_reg_type'] : 'team';
-    if ( $_ajax_event_id && $_ajax_reg_type === 'team' && ! empty( $_POST['fmdb_team_name'] ) ) {
-        $_ajax_name = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
-        $_ajax_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-        $_ajax_cat  = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
-        $_ajax_orders = wc_get_orders( [
+    $reg_type = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
+                ? $_POST['fmdb_reg_type'] : 'team';
+    if ( $event_id && $reg_type === 'team' && ! empty( $_POST['fmdb_team_name'] ) ) {
+        $dup_name   = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
+        $dup_rama   = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+        $dup_cat    = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
+        $dup_orders = wc_get_orders( [
             'meta_key'   => '_fmdb_reg_event_id',
-            'meta_value' => $_ajax_event_id,
+            'meta_value' => $event_id,
             'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
             'limit'      => -1,
         ] );
-        foreach ( $_ajax_orders as $_ao ) {
-            if ( $_ao->get_meta( '_fmdb_reg_type' ) !== 'team' ) continue;
-            foreach ( $_ao->get_items() as $_ai ) {
-                if ( mb_strtolower( trim( (string) $_ai->get_meta( 'Equipo' ) ) ) === $_ajax_name
-                  && $_ai->get_meta( 'Rama' ) === $_ajax_rama
-                  && $_ai->get_meta( 'Categoría' ) === $_ajax_cat ) {
+        foreach ( $dup_orders as $dup_order ) {
+            if ( $dup_order->get_meta( '_fmdb_reg_type' ) !== 'team' ) continue;
+            foreach ( $dup_order->get_items() as $dup_item ) {
+                if ( mb_strtolower( trim( (string) $dup_item->get_meta( 'Equipo' ) ) ) === $dup_name
+                  && $dup_item->get_meta( 'Rama' ) === $dup_rama
+                  && $dup_item->get_meta( 'Categoría' ) === $dup_cat ) {
                     wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
                     return;
                 }
@@ -1701,21 +1687,20 @@ function fmdb_ajax_add_registration(): void {
     }
 
     // Individual join: enforce roster cap before adding to cart.
-    // woocommerce_add_to_cart_validation no longer exists in WC 10+; validate here instead.
     if ( ( $_POST['fmdb_reg_type'] ?? '' ) === 'individual' && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
-        $_ind_event_id    = (int) get_post_meta( $prod_id, '_fmdb_reg_event_id', true );
-        $_ind_limits      = fmdb_reg_player_limits( $_ind_event_id );
-        $_ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-        $_ind_disp_rama   = strpos( $_ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
-                          : ( strpos( $_ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $_ind_stored_rama );
-        $_ind_cap         = $_ind_disp_rama === 'Mixto' ? $_ind_limits['max_mixto'] : $_ind_limits['max'];
-        if ( $_ind_cap > 0 ) {
-            $_ind_target = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
-            foreach ( fmdb_reg_get_event_teams( $_ind_event_id ) as $_ind_t ) {
-                if ( mb_strtolower( trim( $_ind_t['name'] ) ) === $_ind_target && $_ind_t['rama'] === $_ind_disp_rama ) {
-                    $total = ( $_ind_t['bulk_count'] ?? 0 ) + count( $_ind_t['players'] ?? [] );
-                    if ( $total >= $_ind_cap ) {
-                        wp_send_json_error( [ 'message' => 'Este equipo ya alcanzó el límite de ' . $_ind_cap . ' jugadores.' ] );
+        $ind_limits     = fmdb_reg_player_limits( $event_id );
+        $ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+        $ind_disp_rama  = strpos( $ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
+                        : ( strpos( $ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $ind_stored_rama );
+        $ind_cap        = $ind_disp_rama === 'Mixto' ? $ind_limits['max_mixto'] : $ind_limits['max'];
+        if ( $ind_cap > 0 ) {
+            $ind_target = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
+            foreach ( fmdb_reg_get_event_teams( $event_id ) as $ind_team ) {
+                if ( mb_strtolower( trim( $ind_team['name'] ) ) === $ind_target && $ind_team['rama'] === $ind_disp_rama ) {
+                    $total = ( $ind_team['bulk_count'] ?? 0 ) + count( $ind_team['players'] ?? [] );
+                    if ( $total >= $ind_cap ) {
+                        wp_send_json_error( [ 'message' => 'Este equipo ya alcanzó el límite de ' . $ind_cap . ' jugadores.' ] );
+                        return;
                     }
                     break;
                 }
@@ -2028,18 +2013,8 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
         $room = sanitize_text_field( wp_unslash( $_POST['fmdb_hospedaje_room'] ?? '' ) );
         if ( in_array( $room, [ 'doble', 'triple', 'sencilla', 'cuadruple', 'doble_sc', 'triple_sc', 'sencilla_sc', 'cuadruple_sc' ], true ) ) {
             $cart_item_data['fmdb_hospedaje_type'] = $room;
-            $h_eid    = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
-            $meta_map = [
-                'doble'        => [ '_fmdb_hospedaje_doble_fee',        1415.0 ],
-                'triple'       => [ '_fmdb_hospedaje_triple_fee',       1355.0 ],
-                'sencilla'     => [ '_fmdb_hospedaje_sencilla_fee',     1200.0 ],
-                'cuadruple'    => [ '_fmdb_hospedaje_cuadruple_fee',    1500.0 ],
-                'doble_sc'     => [ '_fmdb_hospedaje_doble_sc_fee',      800.0 ],
-                'triple_sc'    => [ '_fmdb_hospedaje_triple_sc_fee',     750.0 ],
-                'sencilla_sc'  => [ '_fmdb_hospedaje_sencilla_sc_fee',   700.0 ],
-                'cuadruple_sc' => [ '_fmdb_hospedaje_cuadruple_sc_fee',  900.0 ],
-            ];
-            [ $h_meta_k, $h_default ] = $meta_map[ $room ];
+            $h_eid = absint( $_POST['fmdb_hospedaje_event_id'] ?? 0 );
+            [ $h_meta_k, $h_default ] = fmdb_hospedaje_fee_map()[ $room ];
             $h_price  = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta_k, true ) ?: $h_default ) : $h_default;
             $cart_item_data['fmdb_hospedaje_price']    = $h_price;
             $cart_item_data['fmdb_hospedaje_event_id'] = $h_eid;
@@ -2123,12 +2098,7 @@ add_action( 'woocommerce_cart_calculate_fees', function ( \WC_Cart $cart ) {
     // One-time courtesy coupon — waive all fees (venue + hospedaje).
     if ( in_array( 'fmdb-k7q2-9mpx', WC()->cart->get_applied_coupons(), true ) ) return;
 
-    $room_cap = [
-        'sencilla'     => 1, 'sencilla_sc'  => 1,
-        'doble'        => 2, 'doble_sc'     => 2,
-        'triple'       => 3, 'triple_sc'    => 3,
-        'cuadruple'    => 4, 'cuadruple_sc' => 4,
-    ];
+    $room_cap = fmdb_room_capacities();
 
     $total_players  = 0;
     $total_coverage = 0;
@@ -2222,178 +2192,8 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
         return $passed;
     }
 
-    $event_id = (int) get_post_meta( $product_id, '_fmdb_reg_event_id', true );
-    if ( ! $event_id ) return $passed;
-
-    // Limit: only 1 registration per cart to prevent venue-fee gaming.
-    foreach ( WC()->cart->get_cart() as $_existing ) {
-        if ( ! empty( $_existing['fmdb_event_id'] ) ) {
-            wc_add_notice( 'Ya tienes una inscripción en el carrito. Finaliza el pago antes de agregar otra.', 'error' );
-            return false;
-        }
-    }
-
-    if ( get_post_meta( $event_id, '_fmdb_reg_open', true ) !== 'on' ) {
-        wc_add_notice( 'La inscripción para este torneo no está abierta.', 'error' );
-        return false;
-    }
-
-    $deadline = get_post_meta( $event_id, '_fmdb_reg_deadline', true );
-    if ( $deadline && strtotime( $deadline . ' 23:59:59' ) < time() ) {
-        wc_add_notice( 'La fecha límite de inscripción ha pasado.', 'error' );
-        return false;
-    }
-
-    $type = $_POST['fmdb_reg_type'] ?? 'team';
-
-    if ( empty( $_POST['fmdb_rama'] ) ) {
-        wc_add_notice( 'Selecciona una rama.', 'error' );
-        $passed = false;
-    }
-    if ( empty( $_POST['fmdb_categoria'] ) ) {
-        wc_add_notice( 'Selecciona una categoría.', 'error' );
-        $passed = false;
-    }
-
-    if ( $type === 'individual' ) {
-        if ( empty( $_POST['fmdb_ind_team_name'] ) ) {
-            wc_add_notice( 'Ingresa el nombre de tu equipo.', 'error' );
-            $passed = false;
-        }
-        if ( empty( $_POST['fmdb_player_name'] ) ) {
-            wc_add_notice( 'Ingresa tu nombre.', 'error' );
-            $passed = false;
-        } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_player_name'] ) ) {
-            wc_add_notice( 'El nombre solo puede contener letras.', 'error' );
-            $passed = false;
-        }
-        if ( empty( $_POST['fmdb_player_apellido'] ) ) {
-            wc_add_notice( 'Ingresa tu apellido.', 'error' );
-            $passed = false;
-        } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_player_apellido'] ) ) {
-            wc_add_notice( 'El apellido solo puede contener letras.', 'error' );
-            $passed = false;
-        }
-        if ( empty( $_POST['fmdb_player_phone'] ) ) {
-            wc_add_notice( 'Ingresa tu teléfono.', 'error' );
-            $passed = false;
-        }
-        // Enforce roster cap per team — match by name + primary display rama (not Mixto).
-        // Mixto teams use a separate cap (max_mixto); 0 = unlimited.
-        if ( $passed && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
-            $_ind_limits      = fmdb_reg_player_limits( $event_id );
-            $teams            = fmdb_reg_get_event_teams( $event_id );
-            $target           = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
-            $_ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-            // Derive display rama: 'Varonil/Mixto' → 'Varonil', 'Femenil/Mixto' → 'Femenil'.
-            $_ind_disp_rama = strpos( $_ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
-                            : ( strpos( $_ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $_ind_stored_rama );
-            // Cap to apply: pure Mixto display uses max_mixto (0 = skip); Varonil/Femenil use max.
-            $_ind_cap = $_ind_disp_rama === 'Mixto' ? $_ind_limits['max_mixto'] : $_ind_limits['max'];
-            if ( $_ind_cap > 0 ) {
-                foreach ( $teams as $t ) {
-                    if ( mb_strtolower( trim( $t['name'] ) ) === $target && $t['rama'] === $_ind_disp_rama ) {
-                        $total = ( $t['bulk_count'] ?? 0 ) + count( $t['players'] ?? [] );
-                        if ( $total >= $_ind_cap ) {
-                            wc_add_notice( 'Este equipo ya alcanzó el límite de ' . $_ind_cap . ' jugadores.', 'error' );
-                            $passed = false;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    } else {
-        if ( empty( $_POST['fmdb_team_name'] ) ) {
-            wc_add_notice( 'Ingresa el nombre del equipo.', 'error' );
-            $passed = false;
-        } else {
-            $submitted_name = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
-            $submitted_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-            $submitted_cat  = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
-            // Check orders in any non-cancelled status (blocks from the moment a previous checkout created an order).
-            $_dup_orders = wc_get_orders( [
-                'meta_key'   => '_fmdb_reg_event_id',
-                'meta_value' => $event_id,
-                'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
-                'limit'      => -1,
-            ] );
-            foreach ( $_dup_orders as $_dord ) {
-                if ( $_dord->get_meta( '_fmdb_reg_type' ) !== 'team' ) continue;
-                foreach ( $_dord->get_items() as $_ditem ) {
-                    if ( mb_strtolower( trim( (string) $_ditem->get_meta( 'Equipo' ) ) ) === $submitted_name
-                      && $_ditem->get_meta( 'Rama' ) === $submitted_rama
-                      && $_ditem->get_meta( 'Categoría' ) === $submitted_cat ) {
-                        wc_add_notice( 'Este equipo ya ha sido registrado.', 'error' );
-                        $passed = false;
-                        break 2;
-                    }
-                }
-            }
-            // Also block if the same team is already sitting in the current cart.
-            if ( $passed && ! is_null( WC()->cart ) ) {
-                foreach ( WC()->cart->get_cart() as $_citem ) {
-                    if ( isset( $_citem['fmdb_team_name'], $_citem['fmdb_rama'] )
-                      && mb_strtolower( trim( $_citem['fmdb_team_name'] ) ) === $submitted_name
-                      && $_citem['fmdb_rama'] === $submitted_rama
-                      && ( $_citem['fmdb_categoria'] ?? '' ) === $submitted_cat
-                      && ( (int) ( $_citem['fmdb_event_id'] ?? 0 ) ) === $event_id ) {
-                        wc_add_notice( 'Este equipo ya ha sido registrado.', 'error' );
-                        $passed = false;
-                        break;
-                    }
-                }
-            }
-        }
-        if ( empty( $_POST['fmdb_captain_name'] ) ) {
-            wc_add_notice( 'Ingresa el nombre del encargado.', 'error' );
-            $passed = false;
-        } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_captain_name'] ) ) {
-            wc_add_notice( 'El nombre del encargado solo puede contener letras.', 'error' );
-            $passed = false;
-        }
-        if ( empty( $_POST['fmdb_captain_apellido'] ) ) {
-            wc_add_notice( 'Ingresa el apellido del encargado.', 'error' );
-            $passed = false;
-        } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $_POST['fmdb_captain_apellido'] ) ) {
-            wc_add_notice( 'El apellido del encargado solo puede contener letras.', 'error' );
-            $passed = false;
-        }
-        if ( empty( $_POST['fmdb_captain_phone'] ) ) {
-            wc_add_notice( 'Ingresa el teléfono del encargado.', 'error' );
-            $passed = false;
-        }
-        $count = (int) ( $_POST['fmdb_player_count'] ?? 0 );
-        $_team_limits = fmdb_reg_player_limits( $event_id );
-        if ( $count < 1 || $count > $_team_limits['max'] ) {
-            wc_add_notice( 'El número de jugadores debe ser entre 1 y ' . $_team_limits['max'] . '.', 'error' );
-            $passed = false;
-        }
-
-        // Validate extra player names (jugadores 2..N).
-        $raw_extra = isset( $_POST['fmdb_extra_player'] ) && is_array( $_POST['fmdb_extra_player'] )
-                     ? $_POST['fmdb_extra_player'] : [];
-        for ( $i = 2; $i <= $count; $i++ ) {
-            $p        = $raw_extra[ $i ] ?? [];
-            $nombre   = trim( $p['nombre']   ?? '' );
-            $apellido = trim( $p['apellido'] ?? '' );
-            if ( empty( $nombre ) ) {
-                wc_add_notice( "Ingresa el nombre del jugador $i.", 'error' );
-                $passed = false;
-            } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $nombre ) ) {
-                wc_add_notice( "El nombre del jugador $i solo puede contener letras.", 'error' );
-                $passed = false;
-            }
-            if ( empty( $apellido ) ) {
-                wc_add_notice( "Ingresa el apellido del jugador $i.", 'error' );
-                $passed = false;
-            } elseif ( ! preg_match( '/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ \'\-]+$/u', $apellido ) ) {
-                wc_add_notice( "El apellido del jugador $i solo puede contener letras.", 'error' );
-                $passed = false;
-            }
-        }
-    }
-
+    // Registration add-to-cart goes through fmdb_ajax_add_registration which never triggers this filter.
+    // For non-registration products, fall through.
     return $passed;
 }, 10, 2 );
 
@@ -2407,8 +2207,7 @@ add_action( 'woocommerce_checkout_process', function () {
             wc_add_notice( 'La inscripción para este torneo ya no está abierta.', 'error' );
             return;
         }
-        $deadline = get_post_meta( $eid, '_fmdb_reg_deadline', true );
-        if ( $deadline && strtotime( $deadline . ' 23:59:59' ) < time() ) {
+        if ( fmdb_reg_deadline_passed( $eid ) ) {
             wc_add_notice( 'La fecha límite de inscripción ha pasado.', 'error' );
             return;
         }
@@ -2472,17 +2271,7 @@ function fmdb_ajax_add_hospedaje(): void {
         $guests[] = [ 'nombre' => $gname, 'apellido' => $gape ];
     }
 
-    $meta_map  = [
-        'doble'        => [ '_fmdb_hospedaje_doble_fee',        1415.0 ],
-        'triple'       => [ '_fmdb_hospedaje_triple_fee',       1355.0 ],
-        'sencilla'     => [ '_fmdb_hospedaje_sencilla_fee',     1200.0 ],
-        'cuadruple'    => [ '_fmdb_hospedaje_cuadruple_fee',    1500.0 ],
-        'doble_sc'     => [ '_fmdb_hospedaje_doble_sc_fee',      800.0 ],
-        'triple_sc'    => [ '_fmdb_hospedaje_triple_sc_fee',     750.0 ],
-        'sencilla_sc'  => [ '_fmdb_hospedaje_sencilla_sc_fee',   700.0 ],
-        'cuadruple_sc' => [ '_fmdb_hospedaje_cuadruple_sc_fee',  900.0 ],
-    ];
-    [ $h_meta, $h_default ] = $meta_map[ $room ];
+    [ $h_meta, $h_default ] = fmdb_hospedaje_fee_map()[ $room ];
     $h_price   = $h_eid ? ( (float) get_post_meta( $h_eid, $h_meta, true ) ?: $h_default ) : $h_default;
 
     $result = WC()->cart->add_to_cart( $h_pid, 1, 0, [], [
