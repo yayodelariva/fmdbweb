@@ -653,11 +653,14 @@ function fmdb_event_registration_box( int $event_id ): void {
 
     if ( $fee < 0 || ! $prod_id ) return;
 
-    $product = wc_get_product( $prod_id );
-    if ( ! $product || $product->get_status() !== 'publish' ) return;
-
     $past_deadline = $deadline && strtotime( $deadline . ' 23:59:59' ) < time();
     $closed        = $past_deadline || ! $open;
+
+    $product = wc_get_product( $prod_id );
+    // If the product is unpublished treat it as closed rather than hiding the card entirely.
+    if ( ! $product || $product->get_status() !== 'publish' ) {
+        $closed = true;
+    }
 
     // Strip legacy values (pre-migration: Femenil, Mixta, Varonil) saved before the new rama model.
     $valid_ramas = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
