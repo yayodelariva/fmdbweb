@@ -65,20 +65,33 @@ function fmdb_reg_export_rows( int $event_id ): array {
             }
         }
 
+        $fee_registro = (float) $reg_item->get_subtotal();
+        $fee_room     = $hosp_item ? (float) $hosp_item->get_subtotal() : 0.0;
+        $fee_venue    = 0.0;
+        foreach ( $order->get_fees() as $fee_item ) {
+            if ( strpos( $fee_item->get_name(), 'Entrada al venue' ) !== false ) {
+                $fee_venue += (float) $fee_item->get_total();
+            }
+        }
+
         $rows[] = [
-            'order_id'   => $order->get_id(),
-            'status'     => $order->get_status(),
-            'reg_type'   => $reg_type,
-            'equipo'     => $reg_item->get_meta( 'Equipo' ),
-            'encargado'  => $encargado,
-            'telefono'   => $reg_item->get_meta( 'Teléfono' ),
-            'email'      => $order->get_billing_email(),
-            'rama'       => $reg_item->get_meta( 'Rama' ),
-            'categoria'  => $reg_item->get_meta( 'Categoría' ),
-            'modalidad'  => $reg_item->get_meta( 'Modalidad' ),
-            'jugadores'  => $jugadores,
-            'habitacion' => $habitacion,
-            'huespedes'  => $huespedes,
+            'order_id'     => $order->get_id(),
+            'status'       => $order->get_status(),
+            'reg_type'     => $reg_type,
+            'equipo'       => $reg_item->get_meta( 'Equipo' ),
+            'encargado'    => $encargado,
+            'telefono'     => $reg_item->get_meta( 'Teléfono' ),
+            'email'        => $order->get_billing_email(),
+            'rama'         => $reg_item->get_meta( 'Rama' ),
+            'categoria'    => $reg_item->get_meta( 'Categoría' ),
+            'modalidad'    => $reg_item->get_meta( 'Modalidad' ),
+            'jugadores'    => $jugadores,
+            'habitacion'   => $habitacion,
+            'huespedes'    => $huespedes,
+            'fee_registro' => $fee_registro,
+            'fee_venue'    => $fee_venue,
+            'fee_room'     => $fee_room,
+            'fee_total'    => (float) $order->get_total(),
         ];
     }
 
@@ -154,6 +167,10 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
                 <th>Rama / Cat. / Mod.</th>
                 <th>Jugadores</th>
                 <th>Hospedaje</th>
+                <th style="white-space:nowrap;">Registro</th>
+                <th style="white-space:nowrap;">Venue</th>
+                <th style="white-space:nowrap;">Cuarto</th>
+                <th style="white-space:nowrap;">Total</th>
             </tr>
         </thead>
         <tbody>
@@ -205,6 +222,10 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
                         <?php endif; ?>
                     <?php else : ?>—<?php endif; ?>
                 </td>
+                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;">$<?php echo number_format( $r['fee_registro'], 2 ); ?></td>
+                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;"><?php echo $r['fee_venue'] > 0 ? '$' . number_format( $r['fee_venue'], 2 ) : '—'; ?></td>
+                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;"><?php echo $r['fee_room'] > 0 ? '$' . number_format( $r['fee_room'], 2 ) : '—'; ?></td>
+                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;">$<?php echo number_format( $r['fee_total'], 2 ); ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -252,6 +273,10 @@ add_action( 'admin_post_fmdb_reg_export', function () {
         'Jugadores',
         'Habitación',
         'Huéspedes',
+        'Registro (MXN)',
+        'Venue (MXN)',
+        'Cuarto (MXN)',
+        'Total (MXN)',
     ] );
 
     $status_labels = array_map( fn( $v ) => $v[0], fmdb_reg_status_labels() );
@@ -271,6 +296,10 @@ add_action( 'admin_post_fmdb_reg_export', function () {
             implode( ' | ', $r['jugadores'] ),
             $r['habitacion'],
             implode( ' | ', $r['huespedes'] ),
+            number_format( $r['fee_registro'], 2, '.', '' ),
+            number_format( $r['fee_venue'],    2, '.', '' ),
+            number_format( $r['fee_room'],     2, '.', '' ),
+            number_format( $r['fee_total'],    2, '.', '' ),
         ] );
     }
 
