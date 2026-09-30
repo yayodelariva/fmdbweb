@@ -278,19 +278,21 @@ a.fmdb-event-item.fmdb-cat--miscelaneo .fmdb-event-date small {
     color: #aaa;
     margin: 0 0 32px;
 }
-.fmdb-sponsors-strip { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+.fmdb-sponsors-strip { display: flex; gap: 40px; justify-content: center; align-items: center; flex-wrap: wrap; }
 .fmdb-sponsor-logo {
-    width: 160px;
-    height: 80px;
-    border: 2px dashed var(--fmdb-neutral);
-    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ccc;
-    font-size: 0.78rem;
-    text-align: center;
 }
+.fmdb-sponsor-logo img {
+    display: block;
+    height: 72px;
+    width: auto;
+    object-fit: contain;
+    opacity: 0.88;
+    transition: opacity 0.2s;
+}
+.fmdb-sponsor-logo img:hover { opacity: 1; }
 
 /* Badge colors (needed by events section) */
 .fmdb-badge { padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; }

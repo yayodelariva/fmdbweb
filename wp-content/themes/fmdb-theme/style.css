@@ -563,54 +563,6 @@ body .header-navigation .header-menu-container ul ul li.menu-item:focus-within >
     .fmdb-404__search .fmdb-btn { width: 100%; }
 }
 
-/* === Sponsors bar === */
-.fmdb-sponsors {
-    background: #f9f9f8;
-    border-top: 1px solid rgba(8, 80, 65, 0.1);
-    border-bottom: 1px solid rgba(8, 80, 65, 0.08);
-}
-.fmdb-sponsors__inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 24px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 32px;
-    flex-wrap: wrap;
-}
-.fmdb-sponsors__label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #999;
-    flex-shrink: 0;
-}
-.fmdb-sponsors__logos {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-.fmdb-sponsors__logo {
-    display: block;
-    object-fit: contain;
-    opacity: 0.85;
-    transition: opacity 0.2s;
-}
-.fmdb-sponsors__logo:hover { opacity: 1; }
-.fmdb-sponsors__logo--asc    { height: 64px; width: auto; }
-.fmdb-sponsors__logo--phyxed { height: 48px; width: auto; }
-
-@media (max-width: 480px) {
-    .fmdb-sponsors__inner { gap: 20px; padding: 20px 16px; }
-    .fmdb-sponsors__logos  { gap: 28px; }
-    .fmdb-sponsors__logo--asc    { height: 52px; }
-    .fmdb-sponsors__logo--phyxed { height: 38px; }
-}
-
 /* Footer — Kadence renders the footer with its own palette colors.
    Override to the dark neutral used site-wide. */
 #colophon,

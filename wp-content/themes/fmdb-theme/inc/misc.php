@@ -51,28 +51,6 @@ add_action( 'admin_head', function () {
     echo '<style>.toplevel_page_user-registration{display:none!important}</style>';
 } );
 
-// Sponsors bar above the footer
-add_action( 'kadence_before_footer', function () {
-    $dir = get_stylesheet_directory_uri() . '/assets/img/';
-    ?>
-    <div class="fmdb-sponsors">
-        <div class="fmdb-sponsors__inner">
-            <span class="fmdb-sponsors__label">Con el apoyo de</span>
-            <div class="fmdb-sponsors__logos">
-                <img src="<?php echo esc_url( $dir . 'logo-asc.png' ); ?>"
-                     alt="All Star Champions"
-                     class="fmdb-sponsors__logo fmdb-sponsors__logo--asc"
-                     loading="lazy">
-                <img src="<?php echo esc_url( $dir . 'logo-phyxed.png' ); ?>"
-                     alt="Phyxed Clinic"
-                     class="fmdb-sponsors__logo fmdb-sponsors__logo--phyxed"
-                     loading="lazy">
-            </div>
-        </div>
-    </div>
-    <?php
-} );
-
 // Translate Kadence parent-theme strings that ship with es_ES only
 // (site runs es_MX so WP doesn't fall back to es_ES).
 add_filter( 'gettext', function ( $translation, $text, $domain ) {

@@ -163,11 +163,14 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
         <div class="fmdb-home-sponsors__inner">
             <h2 class="fmdb-home-sponsors__title">Patrocinadores</h2>
             <div class="fmdb-sponsors-strip">
-                <?php for ( $i = 1; $i <= 5; $i++ ) : ?>
-                    <div class="fmdb-sponsor-logo">
-                        <span>Patrocinador <?php echo $i; ?></span>
-                    </div>
-                <?php endfor; ?>
+                <div class="fmdb-sponsor-logo">
+                    <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/assets/img/logo-asc.png' ); ?>"
+                         alt="All Star Champions" loading="lazy">
+                </div>
+                <div class="fmdb-sponsor-logo">
+                    <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/assets/img/logo-phyxed.png' ); ?>"
+                         alt="Phyxed Clinic" loading="lazy">
+                </div>
             </div>
         </div>
     </section>
