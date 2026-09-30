@@ -169,6 +169,79 @@ function fmdb_render_affiliation_profile_fields( $user ) {
 add_action( 'show_user_profile', 'fmdb_render_affiliation_profile_fields' );
 add_action( 'edit_user_profile', 'fmdb_render_affiliation_profile_fields' );
 
+// Extended affiliation data section.
+function fmdb_render_affiliation_data_fields( WP_User $user ): void {
+    if ( ! current_user_can( 'fmdb_manage_affiliations' ) ) return;
+
+    $g = fn( $key ) => esc_attr( (string) get_user_meta( $user->ID, $key, true ) );
+
+    $text_row = function ( string $label, string $key, bool $wide = false ) use ( $g ): void {
+        $class = $wide ? 'large-text' : 'regular-text';
+        echo '<tr>';
+        echo '<th><label for="' . esc_attr( $key ) . '">' . esc_html( $label ) . '</label></th>';
+        echo '<td><input type="text" name="' . esc_attr( $key ) . '" id="' . esc_attr( $key ) . '" value="' . $g( $key ) . '" class="' . $class . '"></td>';
+        echo '</tr>';
+    };
+    ?>
+    <h2>Datos personales</h2>
+    <table class="form-table" role="presentation">
+        <?php
+        $text_row( 'Apellido materno',   'fmdb_apellido_materno' );
+        $text_row( 'Fecha de nacimiento','fmdb_fecha_nacimiento' );
+        $text_row( 'Género',             'fmdb_genero' );
+        $text_row( 'CURP',               'fmdb_curp' );
+        $text_row( 'Teléfono',           'fmdb_telefono' );
+        $text_row( 'Tipo de sangre',     'fmdb_tipo_sangre' );
+        $text_row( 'Email de tutor',     'fmdb_email_tutor' );
+        ?>
+    </table>
+
+    <h2>Dirección</h2>
+    <table class="form-table" role="presentation">
+        <?php
+        $text_row( 'Dirección',    'fmdb_direccion', true );
+        $text_row( 'Ciudad',       'fmdb_ciudad' );
+        $text_row( 'Estado',       'fmdb_estado' );
+        $text_row( 'Código postal','fmdb_codigo_postal' );
+        ?>
+    </table>
+
+    <h2>Contacto de emergencia</h2>
+    <table class="form-table" role="presentation">
+        <?php
+        $text_row( 'Nombre',      'fmdb_emergencia_nombre' );
+        $text_row( 'Teléfono',    'fmdb_emergencia_telefono' );
+        $text_row( 'Parentesco',  'fmdb_emergencia_parentesco' );
+        ?>
+    </table>
+
+    <h2>Afiliación — detalle</h2>
+    <table class="form-table" role="presentation">
+        <?php
+        $text_row( 'Tipo de afiliación', 'fmdb_tipo_afiliacion' );
+        $text_row( 'Folio de pago',      'fmdb_folio_pago' );
+        $text_row( 'Precio (MXN)',        'fmdb_precio_afiliacion' );
+        $text_row( 'Vigencia',           'fmdb_vigencia' );
+        $text_row( 'Fecha de creación',  'fmdb_fecha_creacion' );
+        ?>
+    </table>
+
+    <h2>Información deportiva</h2>
+    <table class="form-table" role="presentation">
+        <?php
+        $text_row( 'Club',                     'fmdb_club' );
+        $text_row( '¿Representa a su estado?', 'fmdb_representa_estado' );
+        $text_row( 'Posición',                 'fmdb_posicion' );
+        $text_row( 'Categoría',                'fmdb_categoria' );
+        $text_row( 'Modalidad',                'fmdb_modalidad' );
+        $text_row( 'Asociación / estado',       'fmdb_asociacion_estado', true );
+        ?>
+    </table>
+    <?php
+}
+add_action( 'show_user_profile', 'fmdb_render_affiliation_data_fields' );
+add_action( 'edit_user_profile', 'fmdb_render_affiliation_data_fields' );
+
 function fmdb_save_affiliation_profile_fields( $user_id ) {
     if ( ! current_user_can( 'edit_user', $user_id ) || ! current_user_can( 'fmdb_manage_affiliations' ) ) return;
 
@@ -181,10 +254,25 @@ function fmdb_save_affiliation_profile_fields( $user_id ) {
         $allowed = [ '', 'pending', 'verified', 'rejected' ];
         if ( in_array( $status, $allowed, true ) ) {
             update_user_meta( $user_id, 'fmdb_affiliation_status', $status );
-            // Clear any pending token when the admin overrides directly.
             if ( $status !== 'pending' ) {
                 delete_user_meta( $user_id, 'fmdb_affiliation_token' );
             }
+        }
+    }
+
+    $text_fields = [
+        'fmdb_apellido_materno', 'fmdb_fecha_nacimiento', 'fmdb_genero', 'fmdb_curp',
+        'fmdb_telefono', 'fmdb_tipo_sangre', 'fmdb_email_tutor',
+        'fmdb_direccion', 'fmdb_ciudad', 'fmdb_estado', 'fmdb_codigo_postal',
+        'fmdb_emergencia_nombre', 'fmdb_emergencia_telefono', 'fmdb_emergencia_parentesco',
+        'fmdb_tipo_afiliacion', 'fmdb_folio_pago', 'fmdb_precio_afiliacion',
+        'fmdb_vigencia', 'fmdb_fecha_creacion',
+        'fmdb_club', 'fmdb_representa_estado', 'fmdb_posicion',
+        'fmdb_categoria', 'fmdb_modalidad', 'fmdb_asociacion_estado',
+    ];
+    foreach ( $text_fields as $key ) {
+        if ( isset( $_POST[ $key ] ) ) {
+            update_user_meta( $user_id, $key, sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) );
         }
     }
 }
