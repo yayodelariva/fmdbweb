@@ -292,6 +292,14 @@ add_action( 'admin_menu', function () {
         'fmdb-affiliations',
         'fmdb_render_affiliations_page'
     );
+    add_submenu_page(
+        'users.php',
+        'Datos de Afiliación',
+        'Datos de Afiliación',
+        'fmdb_manage_affiliations',
+        'fmdb-affiliation-data',
+        'fmdb_render_affiliation_data_page'
+    );
 } );
 
 function fmdb_render_affiliations_page() {
@@ -408,6 +416,161 @@ function fmdb_render_affiliations_page() {
                 <?php endforeach; ?>
             </tbody>
         </table>
+    </div>
+    <?php
+}
+
+/* =========================================================================
+ * wp-admin → Usuarios → Datos de Afiliación page
+ * =======================================================================*/
+
+function fmdb_render_affiliation_data_page(): void {
+    if ( ! current_user_can( 'fmdb_manage_affiliations' ) ) {
+        wp_die( 'No tienes permiso para acceder a esta página.' );
+    }
+
+    $users = get_users( [
+        'number'     => -1,
+        'orderby'    => 'meta_value',
+        'meta_key'   => 'fmdb_affiliation_id',
+        'order'      => 'ASC',
+        'meta_query' => [ [ 'key' => 'fmdb_affiliation_status', 'value' => 'verified' ] ],
+    ] );
+
+    $um = fn( int $id, string $key ) => esc_html( (string) get_user_meta( $id, $key, true ) );
+
+    // CSV export
+    if ( isset( $_GET['export'] ) && $_GET['export'] === 'csv'
+        && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'fmdb_affil_data_export' ) ) {
+
+        $filename = 'datos-afiliacion-' . date( 'Y-m-d' ) . '.csv';
+        header( 'Content-Type: text/csv; charset=UTF-8' );
+        header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+        header( 'Pragma: no-cache' );
+        $out = fopen( 'php://output', 'w' );
+        fwrite( $out, "\xEF\xBB\xBF" );
+        fputcsv( $out, [
+            'NUI', 'Nombre', 'Apellido paterno', 'Apellido materno', 'Fecha nacimiento',
+            'Género', 'CURP', 'Tipo sangre', 'Email', 'Email tutor', 'Teléfono',
+            'Dirección', 'Ciudad', 'Estado', 'CP',
+            'Emergencia nombre', 'Emergencia tel.', 'Emergencia parentesco',
+            'Tipo afiliación', 'Folio pago', 'Precio', 'Vigencia', 'Fecha creación',
+            'Club', 'Representa estado', 'Posición', 'Categoría', 'Modalidad', 'Asociación/estado',
+        ] );
+        foreach ( $users as $u ) {
+            $id = $u->ID;
+            fputcsv( $out, [
+                get_user_meta( $id, 'fmdb_affiliation_id', true ),
+                $u->first_name, $u->last_name,
+                get_user_meta( $id, 'fmdb_apellido_materno', true ),
+                get_user_meta( $id, 'fmdb_fecha_nacimiento', true ),
+                get_user_meta( $id, 'fmdb_genero', true ),
+                get_user_meta( $id, 'fmdb_curp', true ),
+                get_user_meta( $id, 'fmdb_tipo_sangre', true ),
+                $u->user_email,
+                get_user_meta( $id, 'fmdb_email_tutor', true ),
+                get_user_meta( $id, 'fmdb_telefono', true ),
+                get_user_meta( $id, 'fmdb_direccion', true ),
+                get_user_meta( $id, 'fmdb_ciudad', true ),
+                get_user_meta( $id, 'fmdb_estado', true ),
+                get_user_meta( $id, 'fmdb_codigo_postal', true ),
+                get_user_meta( $id, 'fmdb_emergencia_nombre', true ),
+                get_user_meta( $id, 'fmdb_emergencia_telefono', true ),
+                get_user_meta( $id, 'fmdb_emergencia_parentesco', true ),
+                get_user_meta( $id, 'fmdb_tipo_afiliacion', true ),
+                get_user_meta( $id, 'fmdb_folio_pago', true ),
+                get_user_meta( $id, 'fmdb_precio_afiliacion', true ),
+                get_user_meta( $id, 'fmdb_vigencia', true ),
+                get_user_meta( $id, 'fmdb_fecha_creacion', true ),
+                get_user_meta( $id, 'fmdb_club', true ),
+                get_user_meta( $id, 'fmdb_representa_estado', true ),
+                get_user_meta( $id, 'fmdb_posicion', true ),
+                get_user_meta( $id, 'fmdb_categoria', true ),
+                get_user_meta( $id, 'fmdb_modalidad', true ),
+                get_user_meta( $id, 'fmdb_asociacion_estado', true ),
+            ] );
+        }
+        fclose( $out );
+        exit;
+    }
+
+    $export_url = add_query_arg( [
+        'page'      => 'fmdb-affiliation-data',
+        'export'    => 'csv',
+        '_wpnonce'  => wp_create_nonce( 'fmdb_affil_data_export' ),
+    ], admin_url( 'users.php' ) );
+    ?>
+    <div class="wrap">
+        <h1 style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            Datos de Afiliación
+            <a href="<?php echo esc_url( $export_url ); ?>" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px;">
+                <span class="dashicons dashicons-download" style="margin-top:3px;font-size:16px;"></span>
+                Exportar CSV
+            </a>
+        </h1>
+        <p style="color:#666;"><?php echo count( $users ); ?> afiliados verificados</p>
+
+        <div style="overflow-x:auto;">
+        <table class="wp-list-table widefat fixed striped" style="font-size:12px;min-width:1400px;">
+            <thead>
+                <tr>
+                    <th style="width:100px;">NUI</th>
+                    <th style="width:150px;">Nombre</th>
+                    <th style="width:80px;">Género</th>
+                    <th style="width:90px;">Nacimiento</th>
+                    <th style="width:130px;">CURP</th>
+                    <th style="width:120px;">Email</th>
+                    <th style="width:90px;">Teléfono</th>
+                    <th style="width:120px;">Ciudad / Estado</th>
+                    <th style="width:130px;">Tipo afiliación</th>
+                    <th style="width:120px;">Folio pago</th>
+                    <th style="width:80px;">Precio</th>
+                    <th style="width:90px;">Vigencia</th>
+                    <th style="width:120px;">Club</th>
+                    <th style="width:80px;">Categoría</th>
+                    <th style="width:80px;">Modalidad</th>
+                    <th style="width:80px;">Tipo sangre</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php if ( empty( $users ) ) : ?>
+                <tr><td colspan="16" style="text-align:center;padding:20px;color:#888;">No hay afiliados verificados.</td></tr>
+            <?php endif; ?>
+            <?php foreach ( $users as $u ) :
+                $id       = $u->ID;
+                $name     = trim( $u->first_name . ' ' . $u->last_name ) ?: $u->display_name;
+                $apm      = $um( $id, 'fmdb_apellido_materno' );
+                $fullname = trim( $name . ' ' . $apm );
+            ?>
+                <tr>
+                    <td><code><?php echo $um( $id, 'fmdb_affiliation_id' ); ?></code></td>
+                    <td>
+                        <a href="<?php echo esc_url( get_edit_user_link( $id ) ); ?>" style="font-weight:600;">
+                            <?php echo esc_html( $fullname ); ?>
+                        </a>
+                    </td>
+                    <td><?php echo $um( $id, 'fmdb_genero' ); ?></td>
+                    <td style="white-space:nowrap;"><?php echo $um( $id, 'fmdb_fecha_nacimiento' ); ?></td>
+                    <td><small><?php echo $um( $id, 'fmdb_curp' ); ?></small></td>
+                    <td><small><?php echo esc_html( $u->user_email ); ?></small></td>
+                    <td><?php echo $um( $id, 'fmdb_telefono' ); ?></td>
+                    <td>
+                        <?php echo $um( $id, 'fmdb_ciudad' ); ?>
+                        <?php $estado = $um( $id, 'fmdb_estado' ); if ( $estado ) echo '<br><small style="color:#888;">' . $estado . '</small>'; ?>
+                    </td>
+                    <td><?php echo $um( $id, 'fmdb_tipo_afiliacion' ); ?></td>
+                    <td><code><?php echo $um( $id, 'fmdb_folio_pago' ); ?></code></td>
+                    <td style="white-space:nowrap;">$<?php echo $um( $id, 'fmdb_precio_afiliacion' ); ?></td>
+                    <td style="white-space:nowrap;"><?php echo $um( $id, 'fmdb_vigencia' ); ?></td>
+                    <td><?php echo $um( $id, 'fmdb_club' ); ?></td>
+                    <td><?php echo $um( $id, 'fmdb_categoria' ); ?></td>
+                    <td><?php echo $um( $id, 'fmdb_modalidad' ); ?></td>
+                    <td><?php echo $um( $id, 'fmdb_tipo_sangre' ); ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
     </div>
     <?php
 }
