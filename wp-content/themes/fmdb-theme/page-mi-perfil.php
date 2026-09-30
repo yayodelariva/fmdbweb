@@ -176,6 +176,7 @@ get_header();
                                value="<?php echo esc_attr( $affiliation_suffix ); ?>"
                                maxlength="5"
                                pattern="[A-Za-z0-9]{1,5}"
+                               placeholder="12345"
                                autocomplete="off"
                                <?php echo $affil_state === 'verified' ? 'readonly' : 'oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')"'; ?>>
                     </div>
