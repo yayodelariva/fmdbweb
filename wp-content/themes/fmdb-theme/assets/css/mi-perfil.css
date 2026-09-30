@@ -126,7 +126,6 @@
     align-items: stretch;
     margin-top: 6px;
 }
-.fmdb-perfil__affiliation-row input { flex: 1; min-width: 0; }
 .fmdb-perfil__affiliation-btn { flex: 0 0 auto; padding: 0 18px; white-space: nowrap; }
 .fmdb-perfil__affiliation-hint {
     margin: 8px 0 0;
@@ -134,6 +133,55 @@
     font-size: 0.85rem;
     line-height: 1.4;
 }
+
+/* Prefix-addon input (FMDB-[  5 chars  ]) */
+.fmdb-input-addon {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--wp--preset--color--contrast, #ccc);
+    border-radius: 4px;
+    overflow: hidden;
+    flex: 0 0 auto;
+}
+.fmdb-input-addon__prefix {
+    background: #f0f0f0;
+    color: #555;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    font-family: monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-right: 1px solid #ccc;
+    white-space: nowrap;
+    user-select: none;
+    pointer-events: none;
+}
+.fmdb-input-addon input {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none;
+    padding: 0 10px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    width: calc(5ch + 20px);
+    background: transparent;
+    border-radius: 0 !important;
+}
+.fmdb-input-addon input:focus { background: #fafafa; }
+
+/* Tipo / vigencia below the ID row */
+.fmdb-perfil__affiliation-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    margin-top: 10px;
+    font-size: 0.82rem;
+    color: #555;
+}
+.fmdb-perfil__affiliation-detail-item strong { color: #333; }
 
 @media (max-width: 520px) {
     .fmdb-perfil__card { padding: 32px 20px; }

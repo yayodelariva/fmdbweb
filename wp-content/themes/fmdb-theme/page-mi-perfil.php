@@ -74,7 +74,8 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         if ( ! wp_verify_nonce( $_POST['fmdb_affiliation_nonce'], 'fmdb_affiliation' ) ) {
             $notices[] = [ 'type' => 'error', 'msg' => 'Solicitud inválida. Intenta de nuevo.' ];
         } else {
-            $affiliation_id = sanitize_text_field( $_POST['fmdb_affiliation_id'] ?? '' );
+            $raw_suffix     = strtoupper( preg_replace( '/[^A-Z0-9]/i', '', sanitize_text_field( $_POST['fmdb_affiliation_suffix'] ?? '' ) ) );
+            $affiliation_id = $raw_suffix !== '' ? 'FMDB-' . $raw_suffix : '';
 
             if ( $affiliation_id === '' ) {
                 $notices[] = [ 'type' => 'error', 'msg' => 'Ingresa tu ID de afiliación antes de solicitar verificación.' ];
@@ -98,8 +99,11 @@ if ( $first_name === '' && $last_name === '' && $user->display_name ) {
 $pic_id         = get_user_meta( $user_id, 'fmdb_profile_picture', true );
 $pic_url        = $pic_id ? wp_get_attachment_image_url( (int) $pic_id, 'medium' ) : '';
 $initial        = esc_html( strtoupper( substr( $user->display_name, 0, 1 ) ) );
-$affiliation_id = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
-$affil_status   = fmdb_affiliation_status( $user_id );
+$affiliation_id     = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
+$affiliation_suffix = strtoupper( preg_replace( '/^FMDB-/i', '', (string) $affiliation_id ) );
+$tipo_afiliacion    = get_user_meta( $user_id, 'fmdb_tipo_afiliacion', true );
+$vigencia           = get_user_meta( $user_id, 'fmdb_vigencia', true );
+$affil_status       = fmdb_affiliation_status( $user_id );
 [ $affil_state, $affil_label ] = fmdb_affiliation_status_label( $affil_status );
 
 get_header();
@@ -166,7 +170,15 @@ get_header();
                     <span class="fmdb-perfil__affiliation-badge fmdb-perfil__affiliation-badge--<?php echo esc_attr( $affil_state ); ?>"><?php echo esc_html( $affil_label ); ?></span>
                 </label>
                 <div class="fmdb-perfil__affiliation-row">
-                    <input type="text" id="fmdb_affiliation_id" name="fmdb_affiliation_id" value="<?php echo esc_attr( $affiliation_id ); ?>" <?php echo $affil_state === 'verified' ? 'readonly' : ''; ?>>
+                    <div class="fmdb-input-addon">
+                        <span class="fmdb-input-addon__prefix">FMDB-</span>
+                        <input type="text" id="fmdb_affiliation_id" name="fmdb_affiliation_suffix"
+                               value="<?php echo esc_attr( $affiliation_suffix ); ?>"
+                               maxlength="5"
+                               pattern="[A-Za-z0-9]{1,5}"
+                               autocomplete="off"
+                               <?php echo $affil_state === 'verified' ? 'readonly' : 'oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')"'; ?>>
+                    </div>
                     <?php if ( $affil_state !== 'verified' ) : ?>
                         <button type="submit" class="fmdb-btn fmdb-btn--outline fmdb-perfil__affiliation-btn">Verificar</button>
                     <?php endif; ?>
@@ -175,6 +187,20 @@ get_header();
                     <p class="fmdb-perfil__affiliation-hint">Un administrador está revisando tu solicitud. Te avisaremos por correo cuando esté lista.</p>
                 <?php elseif ( $affil_state === 'rejected' ) : ?>
                     <p class="fmdb-perfil__affiliation-hint">Tu ID anterior no fue aprobado. Corrígelo y vuelve a solicitar verificación.</p>
+                <?php endif; ?>
+                <?php if ( $tipo_afiliacion || $vigencia ) : ?>
+                    <div class="fmdb-perfil__affiliation-details">
+                        <?php if ( $tipo_afiliacion ) : ?>
+                            <span class="fmdb-perfil__affiliation-detail-item">
+                                <strong>Tipo:</strong> <?php echo esc_html( $tipo_afiliacion ); ?>
+                            </span>
+                        <?php endif; ?>
+                        <?php if ( $vigencia ) : ?>
+                            <span class="fmdb-perfil__affiliation-detail-item">
+                                <strong>Vigencia:</strong> <?php echo esc_html( $vigencia ); ?>
+                            </span>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
             </div>
         </form>
