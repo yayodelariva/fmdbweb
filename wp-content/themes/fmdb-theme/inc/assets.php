@@ -59,6 +59,10 @@ add_action( 'wp_enqueue_scripts', function () {
         wp_enqueue_style( 'fmdb-registro', get_stylesheet_directory_uri() . '/assets/css/registro.css', [], $ver( 'assets/css/registro.css' ) );
         wp_enqueue_style( 'fmdb-perfil',   get_stylesheet_directory_uri() . '/assets/css/mi-perfil.css', [ 'fmdb-registro' ], $ver( 'assets/css/mi-perfil.css' ) );
     }
+    if ( is_page( 'afiliaciones' ) ) {
+        wp_enqueue_style( 'fmdb-registro',     get_stylesheet_directory_uri() . '/assets/css/registro.css',     [], $ver( 'assets/css/registro.css' ) );
+        wp_enqueue_style( 'fmdb-afiliaciones', get_stylesheet_directory_uri() . '/assets/css/afiliaciones.css', [ 'fmdb-registro' ], $ver( 'assets/css/afiliaciones.css' ) );
+    }
     if ( is_page( 'eventos' ) || is_singular( 'tribe_events' ) ) {
         wp_enqueue_style( 'fmdb-eventos', get_stylesheet_directory_uri() . '/assets/css/eventos.css', [], $ver( 'assets/css/eventos.css' ) );
     }
