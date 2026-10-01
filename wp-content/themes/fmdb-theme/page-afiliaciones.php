@@ -135,8 +135,6 @@ get_header();
 			<p class="fmdb-afil__subtitle">Completa tu información para afiliarte a la Federación Mexicana de Dodgeball</p>
 		</div>
 
-		<div class="fmdb-afil__body">
-
 		<?php if ( $is_verified ) :
 			$affiliation_id  = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
 			$tipo_afiliacion = get_user_meta( $user_id, 'fmdb_tipo_afiliacion', true );
@@ -432,8 +430,6 @@ get_header();
 			<?php endif; ?>
 
 		<?php endif; ?>
-
-		</div><!-- .fmdb-afil__body -->
 
 	</div>
 </main>

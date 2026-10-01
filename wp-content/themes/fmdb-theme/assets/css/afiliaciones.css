@@ -48,16 +48,12 @@
 	line-height: 1.5;
 }
 
-/* Card body — all content below the header */
-.fmdb-afil__body {
-	padding: 36px 40px 0;
-}
-
 /* ── Step indicator ────────────────────────────────────────────────── */
 .fmdb-afil__steps-nav {
 	display: flex;
 	align-items: flex-start;
 	margin-bottom: 32px;
+	padding: 32px 40px 0;
 }
 .fmdb-afil__step-dot {
 	display: flex;
@@ -120,6 +116,8 @@
 }
 .fmdb-afil__step-dot.is-done .fmdb-afil__step-dot-label { color: var(--fmdb-dark-green); }
 .fmdb-afil__step-dot.is-done + .fmdb-afil__step-dot-line { background: var(--fmdb-green); }
+
+.fmdb-afil__form { padding: 0 40px; }
 
 /* ── Step panels ───────────────────────────────────────────────────── */
 .fmdb-afil__step { display: none; }
@@ -280,6 +278,7 @@
 	gap: 12px;
 	margin-top: 32px;
 	padding-top: 22px;
+	padding-bottom: 40px;
 	border-top: 1px solid #efefef;
 }
 .fmdb-afil__btn-prev { margin-right: auto; }
@@ -290,7 +289,7 @@
 }
 
 /* ── Already-affiliated state ──────────────────────────────────────── */
-.fmdb-afil__already { text-align: center; padding: 0 20px 40px; }
+.fmdb-afil__already { text-align: center; padding: 32px 40px 40px; }
 .fmdb-afil__already-icon {
 	width: 64px;
 	height: 64px;
@@ -337,7 +336,9 @@
 	.fmdb-afil { padding: 0 0 40px; }
 	.fmdb-afil__card { border-radius: 0 0 16px 16px; }
 	.fmdb-afil__header { padding: 28px 20px 24px; }
-	.fmdb-afil__body { padding: 24px 20px 28px; }
+	.fmdb-afil__steps-nav { padding: 24px 20px 0; }
+	.fmdb-afil__form { padding: 0 20px; }
+	.fmdb-afil__already { padding: 24px 20px 32px; }
 	.fmdb-afil__grid--2 { grid-template-columns: 1fr; }
 	.fmdb-afil__grid--span2 { grid-column: span 1; }
 	.fmdb-afil__tier-grid { grid-template-columns: 1fr; }
