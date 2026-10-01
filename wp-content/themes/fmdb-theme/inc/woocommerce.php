@@ -266,13 +266,20 @@ add_action( 'wp_enqueue_scripts', function () {
     );
 }, 20 );
 
-// After adding an affiliation product, redirect to checkout instead of the referer.
-add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
-    if ( ! empty( $_GET['fmdb_afil_checkout'] ) ) {
-        return wc_get_checkout_url();
-    }
-    return $url;
-} );
+// On checkout with ?fmdb_afil=1, pull the pending product from the transient and add to cart.
+add_action( 'wp_loaded', function () {
+    if ( empty( $_GET['fmdb_afil'] ) ) return;
+    if ( ! is_user_logged_in() ) return;
+    if ( ! function_exists( 'WC' ) || ! WC()->cart ) return;
+
+    $user_id    = get_current_user_id();
+    $product_id = (int) get_transient( 'fmdb_afil_cart_' . $user_id );
+    if ( ! $product_id ) return;
+
+    delete_transient( 'fmdb_afil_cart_' . $user_id );
+    WC()->cart->empty_cart();
+    WC()->cart->add_to_cart( $product_id );
+}, 20 );
 
 // Returns true when the cart contains at least one affiliation product (matched by SKU).
 function fmdb_cart_has_affiliation_product(): bool {
