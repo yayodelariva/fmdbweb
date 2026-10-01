@@ -17,10 +17,30 @@ $is_verified  = $affil_status === 'verified';
 $notices = [];
 
 $tiers = [
-	'basica'     => [ 'label' => 'Afiliación FMDB Básica',         'sku' => 'afiliacion-basica' ],
-	'plus'       => [ 'label' => 'Afiliación FMDB Plus',           'sku' => 'afiliacion-plus' ],
-	'oro'        => [ 'label' => 'Afiliación FMDB Oro',            'sku' => 'afiliacion-oro' ],
-	'directivos' => [ 'label' => 'Directivos, Coaches y Árbitros', 'sku' => 'afiliacion-directivos' ],
+	'basica'     => [
+		'label' => 'Afiliación FMDB Básica',
+		'sku'   => 'afiliacion-basica',
+		'tag'   => 'Jugador',
+		'desc'  => 'Para jugadores que participan en ligas y torneos oficiales de la FMDB.',
+	],
+	'plus'       => [
+		'label' => 'Afiliación FMDB Plus',
+		'sku'   => 'afiliacion-plus',
+		'tag'   => 'Jugador Plus',
+		'desc'  => 'Beneficios adicionales para jugadores con mayor actividad competitiva.',
+	],
+	'oro'        => [
+		'label' => 'Afiliación FMDB Oro',
+		'sku'   => 'afiliacion-oro',
+		'tag'   => 'Élite',
+		'desc'  => 'Afiliación premium para atletas de alto rendimiento en competencia nacional.',
+	],
+	'directivos' => [
+		'label' => 'Directivos, Coaches y Árbitros',
+		'sku'   => 'afiliacion-directivos',
+		'tag'   => 'Cuerpo Técnico',
+		'desc'  => 'Para directivos de club, entrenadores y árbitros certificados por la FMDB.',
+	],
 ];
 
 if ( ! $is_verified && $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_afiliacion_nonce'] ) ) {
@@ -110,9 +130,12 @@ get_header();
 	<div class="fmdb-afil__card">
 
 		<div class="fmdb-afil__header">
+			<div class="fmdb-afil__header-badge">FMDB</div>
 			<h1 class="fmdb-afil__title">Afiliación FMDB</h1>
 			<p class="fmdb-afil__subtitle">Completa tu información para afiliarte a la Federación Mexicana de Dodgeball</p>
 		</div>
+
+		<div class="fmdb-afil__body">
 
 		<?php if ( $is_verified ) :
 			$affiliation_id  = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
@@ -387,11 +410,14 @@ get_header();
 									name="fmdb_afiliacion_tier"
 									value="<?php echo esc_attr( $key ); ?>"
 									class="fmdb-afil__tier-radio">
+								<div class="fmdb-afil__tier-check" aria-hidden="true"></div>
+								<span class="fmdb-afil__tier-tag"><?php echo esc_html( $tier['tag'] ); ?></span>
 								<span class="fmdb-afil__tier-name"><?php echo esc_html( $tier['label'] ); ?></span>
+								<p class="fmdb-afil__tier-desc"><?php echo esc_html( $tier['desc'] ); ?></p>
 							</label>
 						<?php endforeach; ?>
 					</div>
-					<p class="fmdb-afil__tier-note">El costo de cada tipo de afiliación se mostrará en el siguiente paso al proceder al pago.</p>
+					<p class="fmdb-afil__tier-note">El costo se mostrará al proceder al pago.</p>
 				</div>
 
 				<!-- ─── Navigation ───────────────────────────────────────────── -->
@@ -406,6 +432,8 @@ get_header();
 			<?php endif; ?>
 
 		<?php endif; ?>
+
+		</div><!-- .fmdb-afil__body -->
 
 	</div>
 </main>
