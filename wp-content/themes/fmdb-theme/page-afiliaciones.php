@@ -210,7 +210,7 @@ get_header();
 				<?php endforeach; ?>
 			</div>
 
-			<form class="fmdb-afil__form" method="post" id="fmdb-afil-form">
+			<form class="fmdb-afil__form" method="post" id="fmdb-afil-form" novalidate>
 				<?php wp_nonce_field( 'fmdb_afiliacion_form', 'fmdb_afiliacion_nonce' ); ?>
 
 				<!-- ─── Step 1: Datos personales ─────────────────────────────── -->
@@ -504,6 +504,11 @@ get_header();
 
 	btnNext.addEventListener('click', function () {
 		if (validateStep(current)) showStep(current + 1);
+	});
+
+	btnSubmit.addEventListener('click', function (e) {
+		e.preventDefault();
+		if (validateStep(TOTAL)) form.submit();
 	});
 	btnPrev.addEventListener('click', function () {
 		showStep(current - 1);
