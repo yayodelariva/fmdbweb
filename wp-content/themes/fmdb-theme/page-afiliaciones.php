@@ -43,60 +43,7 @@ $tiers = [
 	],
 ];
 
-if ( ! $is_verified && $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_afiliacion_nonce'] ) ) {
-	if ( ! wp_verify_nonce( $_POST['fmdb_afiliacion_nonce'], 'fmdb_afiliacion_form' ) ) {
-		$notices[] = [ 'type' => 'error', 'msg' => 'Solicitud inválida. Intenta de nuevo.' ];
-	} elseif ( empty( trim( $_POST['fmdb_apellido_materno'] ?? '' ) ) ) {
-		$notices[] = [ 'type' => 'error', 'msg' => 'El apellido materno es obligatorio.' ];
-	} elseif ( empty( trim( $_POST['fmdb_curp'] ?? '' ) ) ) {
-		$notices[] = [ 'type' => 'error', 'msg' => 'El CURP es obligatorio.' ];
-	} else {
-		// --- Name update ---
-		$fn = sanitize_text_field( $_POST['first_name'] ?? '' ) ?: (string) $user->first_name;
-		$ln = sanitize_text_field( $_POST['last_name']  ?? '' ) ?: (string) $user->last_name;
-		wp_update_user( [
-			'ID'           => $user_id,
-			'first_name'   => $fn,
-			'last_name'    => $ln,
-			'display_name' => trim( "$fn $ln" ) ?: $user->user_login,
-		] );
-
-		// --- All meta fields ---
-		$meta_keys = [
-			'fmdb_apellido_materno', 'fmdb_fecha_nacimiento', 'fmdb_genero',
-			'fmdb_curp', 'fmdb_telefono', 'fmdb_tipo_sangre', 'fmdb_email_tutor',
-			'fmdb_direccion', 'fmdb_ciudad', 'fmdb_estado', 'fmdb_codigo_postal',
-			'fmdb_emergencia_nombre', 'fmdb_emergencia_telefono', 'fmdb_emergencia_parentesco',
-			'fmdb_club', 'fmdb_representa_estado', 'fmdb_posicion',
-			'fmdb_categoria', 'fmdb_modalidad', 'fmdb_asociacion_estado',
-		];
-		foreach ( $meta_keys as $key ) {
-			if ( isset( $_POST[ $key ] ) ) {
-				update_user_meta( $user_id, $key, sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) );
-			}
-		}
-
-		// --- Tier + checkout ---
-		$chosen_tier = sanitize_key( $_POST['fmdb_afiliacion_tier'] ?? '' );
-
-		if ( ! $chosen_tier || ! isset( $tiers[ $chosen_tier ] ) ) {
-			$notices[] = [ 'type' => 'error', 'msg' => 'Selecciona un tipo de afiliación para continuar.' ];
-		} else {
-			$sku        = $tiers[ $chosen_tier ]['sku'];
-			$product_id = function_exists( 'wc_get_product_id_by_sku' ) ? (int) wc_get_product_id_by_sku( $sku ) : 0;
-
-			if ( $product_id ) {
-				set_transient( 'fmdb_afil_cart_' . $user_id, $product_id, 5 * MINUTE_IN_SECONDS );
-				wp_redirect( add_query_arg( 'fmdb_afil', 1, wc_get_checkout_url() ) );
-				exit;
-			}
-
-			// Product not yet configured in WooCommerce — save intent and confirm.
-			update_user_meta( $user_id, 'fmdb_tipo_afiliacion', $tiers[ $chosen_tier ]['label'] );
-			$notices[] = [ 'type' => 'success', 'msg' => 'Tu información fue guardada. Un administrador te contactará para completar el proceso de pago.' ];
-		}
-	}
-}
+// Form submission is handled via wp_ajax_fmdb_afiliacion_submit in inc/woocommerce.php.
 
 // Pre-fill values from existing user meta.
 $g = fn( string $k ) => esc_attr( (string) get_user_meta( $user_id, $k, true ) );
@@ -427,7 +374,7 @@ get_header();
 				<div class="fmdb-afil__nav">
 					<button type="button" class="fmdb-btn fmdb-btn--outline fmdb-afil__btn-prev" id="fmdb-afil-prev">Anterior</button>
 					<button type="button" class="fmdb-btn fmdb-btn--primary fmdb-afil__btn-next" id="fmdb-afil-next">Siguiente</button>
-					<button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-afil__btn-submit" id="fmdb-afil-submit">Ir al pago</button>
+					<button type="button" class="fmdb-btn fmdb-btn--primary fmdb-afil__btn-submit" id="fmdb-afil-submit">Ir al pago</button>
 				</div>
 
 			</form>
@@ -504,9 +451,37 @@ get_header();
 		if (validateStep(current)) showStep(current + 1);
 	});
 
-	btnSubmit.addEventListener('click', function (e) {
-		e.preventDefault();
-		if (validateStep(TOTAL)) form.submit();
+	btnSubmit.addEventListener('click', function () {
+		if (!validateStep(TOTAL)) return;
+
+		btnSubmit.disabled = true;
+		btnSubmit.textContent = 'Procesando…';
+
+		var data = new FormData(form);
+		data.append('action', 'fmdb_afiliacion_submit');
+		data.append('nonce',  '<?php echo wp_create_nonce( "fmdb_afiliacion_submit" ); ?>');
+
+		fetch('<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>', {
+			method: 'POST',
+			body: data,
+			credentials: 'same-origin'
+		})
+		.then(function(r) { return r.json(); })
+		.then(function(res) {
+			if (res.success && res.data && res.data.checkout_url) {
+				window.location.href = res.data.checkout_url;
+			} else {
+				var msg = (res.data && res.data.message) ? res.data.message : 'Error al procesar. Intenta de nuevo.';
+				alert(msg);
+				btnSubmit.disabled = false;
+				btnSubmit.textContent = 'Ir al pago';
+			}
+		})
+		.catch(function() {
+			alert('Error de conexión. Intenta de nuevo.');
+			btnSubmit.disabled = false;
+			btnSubmit.textContent = 'Ir al pago';
+		});
 	});
 	btnPrev.addEventListener('click', function () {
 		showStep(current - 1);

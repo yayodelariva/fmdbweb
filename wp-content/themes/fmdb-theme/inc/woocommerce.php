@@ -266,20 +266,81 @@ add_action( 'wp_enqueue_scripts', function () {
     );
 }, 20 );
 
-// On checkout with ?fmdb_afil=1, pull the pending product from the transient and add to cart.
-add_action( 'wp_loaded', function () {
-    if ( empty( $_GET['fmdb_afil'] ) ) return;
-    if ( ! is_user_logged_in() ) return;
-    if ( ! function_exists( 'WC' ) || ! WC()->cart ) return;
+// AJAX handler: save affiliation meta, add product to cart, return checkout URL.
+add_action( 'wp_ajax_fmdb_afiliacion_submit', 'fmdb_ajax_afiliacion_submit' );
+function fmdb_ajax_afiliacion_submit(): void {
+    check_ajax_referer( 'fmdb_afiliacion_submit', 'nonce' );
 
-    $user_id    = get_current_user_id();
-    $product_id = (int) get_transient( 'fmdb_afil_cart_' . $user_id );
-    if ( ! $product_id ) return;
+    if ( ! is_user_logged_in() ) {
+        wp_send_json_error( [ 'message' => 'Debes iniciar sesión.' ] );
+    }
 
-    delete_transient( 'fmdb_afil_cart_' . $user_id );
+    $user_id = get_current_user_id();
+    $user    = get_userdata( $user_id );
+
+    $tiers = [
+        'basica'     => [ 'label' => 'Afiliación FMDB Básica',         'sku' => 'afiliacion-basica' ],
+        'plus'       => [ 'label' => 'Afiliación FMDB Plus',            'sku' => 'afiliacion-plus' ],
+        'oro'        => [ 'label' => 'Afiliación FMDB Oro',             'sku' => 'afiliacion-oro' ],
+        'directivos' => [ 'label' => 'Directivos, Coaches y Árbitros',  'sku' => 'afiliacion-directivos' ],
+    ];
+
+    // Validate required fields.
+    if ( empty( trim( $_POST['fmdb_apellido_materno'] ?? '' ) ) ) {
+        wp_send_json_error( [ 'message' => 'El apellido materno es obligatorio.' ] );
+    }
+    if ( empty( trim( $_POST['fmdb_curp'] ?? '' ) ) ) {
+        wp_send_json_error( [ 'message' => 'El CURP es obligatorio.' ] );
+    }
+
+    $chosen_tier = sanitize_key( $_POST['fmdb_afiliacion_tier'] ?? '' );
+    if ( ! $chosen_tier || ! isset( $tiers[ $chosen_tier ] ) ) {
+        wp_send_json_error( [ 'message' => 'Selecciona un tipo de afiliación para continuar.' ] );
+    }
+
+    // Save name.
+    $fn = sanitize_text_field( $_POST['first_name'] ?? '' ) ?: (string) $user->first_name;
+    $ln = sanitize_text_field( $_POST['last_name']  ?? '' ) ?: (string) $user->last_name;
+    wp_update_user( [
+        'ID'           => $user_id,
+        'first_name'   => $fn,
+        'last_name'    => $ln,
+        'display_name' => trim( "$fn $ln" ) ?: $user->user_login,
+    ] );
+
+    // Save all meta fields.
+    $meta_keys = [
+        'fmdb_apellido_materno', 'fmdb_fecha_nacimiento', 'fmdb_genero',
+        'fmdb_curp', 'fmdb_telefono', 'fmdb_tipo_sangre', 'fmdb_email_tutor',
+        'fmdb_direccion', 'fmdb_ciudad', 'fmdb_estado', 'fmdb_codigo_postal',
+        'fmdb_emergencia_nombre', 'fmdb_emergencia_telefono', 'fmdb_emergencia_parentesco',
+        'fmdb_club', 'fmdb_representa_estado', 'fmdb_posicion',
+        'fmdb_categoria', 'fmdb_modalidad', 'fmdb_asociacion_estado',
+    ];
+    foreach ( $meta_keys as $key ) {
+        if ( isset( $_POST[ $key ] ) ) {
+            update_user_meta( $user_id, $key, sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) );
+        }
+    }
+
+    // Add product to cart.
+    $sku        = $tiers[ $chosen_tier ]['sku'];
+    $product_id = (int) wc_get_product_id_by_sku( $sku );
+
+    if ( ! $product_id || ! function_exists( 'WC' ) || ! WC()->cart ) {
+        update_user_meta( $user_id, 'fmdb_tipo_afiliacion', $tiers[ $chosen_tier ]['label'] );
+        wp_send_json_error( [ 'message' => 'Tu información fue guardada. Un administrador te contactará para completar el proceso de pago.' ] );
+    }
+
     WC()->cart->empty_cart();
-    WC()->cart->add_to_cart( $product_id );
-}, 20 );
+    $result = WC()->cart->add_to_cart( $product_id );
+
+    if ( ! $result ) {
+        wp_send_json_error( [ 'message' => 'No se pudo agregar el producto al carrito. Intenta de nuevo.' ] );
+    }
+
+    wp_send_json_success( [ 'checkout_url' => wc_get_checkout_url() ] );
+}
 
 // Returns true when the cart contains at least one affiliation product (matched by SKU).
 function fmdb_cart_has_affiliation_product(): bool {
