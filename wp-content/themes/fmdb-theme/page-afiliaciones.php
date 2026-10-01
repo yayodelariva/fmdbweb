@@ -4,6 +4,17 @@
  * Slug: afiliaciones
  */
 
+// Respect draft status — non-admins get a 404 when the page is unpublished.
+$_afil_page = get_page_by_path( 'afiliaciones' );
+if ( ( ! $_afil_page || $_afil_page->post_status !== 'publish' ) && ! current_user_can( 'manage_options' ) ) {
+	global $wp_query;
+	$wp_query->set_404();
+	status_header( 404 );
+	nocache_headers();
+	include get_404_template();
+	exit;
+}
+
 if ( ! is_user_logged_in() ) {
 	wp_safe_redirect( home_url( '/login/' ) );
 	exit;
