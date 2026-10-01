@@ -266,7 +266,27 @@ add_action( 'wp_enqueue_scripts', function () {
     );
 }, 20 );
 
-// Shop + checkout: under construction (checkout exempt when cart has tournament registrations)
+// Returns true when the cart contains at least one affiliation product (matched by SKU).
+function fmdb_cart_has_affiliation_product(): bool {
+    if ( ! function_exists( 'WC' ) || ! WC()->cart ) return false;
+    $skus = [ 'afiliacion-basica', 'afiliacion-plus', 'afiliacion-oro', 'afiliacion-directivos' ];
+    foreach ( WC()->cart->get_cart() as $item ) {
+        $product = wc_get_product( $item['product_id'] );
+        if ( $product && in_array( $product->get_sku(), $skus, true ) ) return true;
+    }
+    return false;
+}
+
+// Cart page: skip straight to checkout when it only contains an affiliation product.
+add_action( 'template_redirect', function () {
+    if ( ! function_exists( 'is_cart' ) || ! is_cart() ) return;
+    if ( fmdb_cart_has_affiliation_product() ) {
+        wp_redirect( wc_get_checkout_url() );
+        exit;
+    }
+} );
+
+// Shop + checkout: under construction (checkout exempt when cart has tournament registrations or affiliation products)
 add_action( 'template_redirect', function () {
     if ( function_exists( 'is_shop' ) && is_shop() ) {
         $is_wip = true;
@@ -277,6 +297,7 @@ add_action( 'template_redirect', function () {
                 if ( ! empty( $_item['fmdb_event_id'] ) || ! empty( $_item['fmdb_hospedaje_type'] ) ) { $has_reg = true; break; }
             }
         }
+        if ( ! $has_reg ) $has_reg = fmdb_cart_has_affiliation_product();
         $is_wip = ! $has_reg;
     } else {
         $is_wip = false;
