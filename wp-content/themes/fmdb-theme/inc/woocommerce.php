@@ -278,6 +278,11 @@ function fmdb_ajax_afiliacion_submit(): void {
     $user_id = get_current_user_id();
     $user    = get_userdata( $user_id );
 
+    // Block already-verified members from purchasing again.
+    if ( function_exists( 'fmdb_affiliation_status' ) && fmdb_affiliation_status( $user_id ) === 'verified' ) {
+        wp_send_json_error( [ 'message' => 'Ya tienes una afiliación activa y verificada.' ] );
+    }
+
     $tiers = [
         'basica'     => [ 'label' => 'Afiliación FMDB Básica',         'sku' => 'afiliacion-basica' ],
         'plus'       => [ 'label' => 'Afiliación FMDB Plus',            'sku' => 'afiliacion-plus' ],
@@ -332,7 +337,14 @@ function fmdb_ajax_afiliacion_submit(): void {
         wp_send_json_error( [ 'message' => 'Tu información fue guardada. Un administrador te contactará para completar el proceso de pago.' ] );
     }
 
-    WC()->cart->empty_cart();
+    // Remove any existing affiliation products without wiping the whole cart.
+    $afil_ids = fmdb_affiliation_product_ids();
+    foreach ( WC()->cart->get_cart() as $key => $item ) {
+        if ( in_array( (int) $item['product_id'], $afil_ids, true ) ) {
+            WC()->cart->remove_cart_item( $key );
+        }
+    }
+
     $result = WC()->cart->add_to_cart( $product_id );
 
     if ( ! $result ) {
@@ -341,6 +353,27 @@ function fmdb_ajax_afiliacion_submit(): void {
 
     wp_send_json_success( [ 'checkout_url' => wc_get_checkout_url() ] );
 }
+
+// Block adding a second affiliation product or purchasing if already verified.
+add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_id ) {
+    $afil_ids = fmdb_affiliation_product_ids();
+    if ( ! in_array( (int) $product_id, $afil_ids, true ) ) return $passed;
+
+    if ( is_user_logged_in() && function_exists( 'fmdb_affiliation_status' )
+        && fmdb_affiliation_status( get_current_user_id() ) === 'verified' ) {
+        wc_add_notice( 'Ya tienes una afiliación activa y verificada.', 'error' );
+        return false;
+    }
+
+    foreach ( WC()->cart->get_cart() as $item ) {
+        if ( in_array( (int) $item['product_id'], $afil_ids, true ) ) {
+            wc_add_notice( 'Solo puedes tener una afiliación en el carrito a la vez.', 'error' );
+            return false;
+        }
+    }
+
+    return $passed;
+}, 10, 2 );
 
 // Returns true when the cart contains at least one affiliation product (matched by SKU).
 function fmdb_cart_has_affiliation_product(): bool {
