@@ -50,7 +50,7 @@
 
 /* Card body — all content below the header */
 .fmdb-afil__body {
-	padding: 36px 40px 40px;
+	padding: 36px 40px 0;
 }
 
 /* ── Step indicator ────────────────────────────────────────────────── */
