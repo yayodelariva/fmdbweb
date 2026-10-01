@@ -351,7 +351,7 @@ function fmdb_ajax_afiliacion_submit(): void {
         wp_send_json_error( [ 'message' => 'No se pudo agregar el producto al carrito. Intenta de nuevo.' ] );
     }
 
-    wp_send_json_success( [ 'checkout_url' => wc_get_checkout_url() ] );
+    wp_send_json_success( [ 'checkout_url' => wc_get_cart_url() ] );
 }
 
 // Block adding a second affiliation product or purchasing if already verified.
