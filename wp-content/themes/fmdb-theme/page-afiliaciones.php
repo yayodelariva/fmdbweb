@@ -130,7 +130,6 @@ get_header();
 	<div class="fmdb-afil__card">
 
 		<div class="fmdb-afil__header">
-			<div class="fmdb-afil__header-badge">FMDB</div>
 			<h1 class="fmdb-afil__title">Afiliación FMDB</h1>
 			<p class="fmdb-afil__subtitle">Completa tu información para afiliarte a la Federación Mexicana de Dodgeball</p>
 		</div>
