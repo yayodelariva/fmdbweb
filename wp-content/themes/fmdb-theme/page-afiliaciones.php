@@ -86,10 +86,7 @@ if ( ! $is_verified && $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['f
 			$product_id = function_exists( 'wc_get_product_id_by_sku' ) ? (int) wc_get_product_id_by_sku( $sku ) : 0;
 
 			if ( $product_id ) {
-				wp_redirect( add_query_arg( [
-					'add-to-cart'    => $product_id,
-					'fmdb_afil_checkout' => 1,
-				], home_url( '/' ) ) );
+				wp_redirect( add_query_arg( 'add-to-cart', $product_id, wc_get_checkout_url() ) );
 				exit;
 			}
 
