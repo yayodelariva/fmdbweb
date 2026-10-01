@@ -266,6 +266,14 @@ add_action( 'wp_enqueue_scripts', function () {
     );
 }, 20 );
 
+// After adding an affiliation product, redirect to checkout instead of the referer.
+add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
+    if ( ! empty( $_GET['fmdb_afil_checkout'] ) ) {
+        return wc_get_checkout_url();
+    }
+    return $url;
+} );
+
 // Returns true when the cart contains at least one affiliation product (matched by SKU).
 function fmdb_cart_has_affiliation_product(): bool {
     if ( ! function_exists( 'WC' ) || ! WC()->cart ) return false;
