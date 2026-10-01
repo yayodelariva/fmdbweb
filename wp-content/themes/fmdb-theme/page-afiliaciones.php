@@ -46,6 +46,10 @@ $tiers = [
 if ( ! $is_verified && $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_afiliacion_nonce'] ) ) {
 	if ( ! wp_verify_nonce( $_POST['fmdb_afiliacion_nonce'], 'fmdb_afiliacion_form' ) ) {
 		$notices[] = [ 'type' => 'error', 'msg' => 'Solicitud inválida. Intenta de nuevo.' ];
+	} elseif ( empty( trim( $_POST['fmdb_apellido_materno'] ?? '' ) ) ) {
+		$notices[] = [ 'type' => 'error', 'msg' => 'El apellido materno es obligatorio.' ];
+	} elseif ( empty( trim( $_POST['fmdb_curp'] ?? '' ) ) ) {
+		$notices[] = [ 'type' => 'error', 'msg' => 'El CURP es obligatorio.' ];
 	} else {
 		// --- Name update ---
 		$fn = sanitize_text_field( $_POST['first_name'] ?? '' ) ?: (string) $user->first_name;
@@ -225,10 +229,10 @@ get_header();
 								required autocomplete="family-name">
 						</div>
 						<div class="fmdb-registro__field">
-							<label for="fmdb_apellido_materno">Apellido materno</label>
+							<label for="fmdb_apellido_materno">Apellido materno <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="fmdb_apellido_materno" name="fmdb_apellido_materno"
 								value="<?php echo $v['fmdb_apellido_materno']; ?>"
-								autocomplete="additional-name">
+								autocomplete="additional-name" required>
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_fecha_nacimiento">Fecha de nacimiento <span class="fmdb-afil__req">*</span></label>
@@ -255,11 +259,11 @@ get_header();
 							</select>
 						</div>
 						<div class="fmdb-registro__field">
-							<label for="fmdb_curp">CURP</label>
+							<label for="fmdb_curp">CURP <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="fmdb_curp" name="fmdb_curp"
 								value="<?php echo $v['fmdb_curp']; ?>"
 								maxlength="18" placeholder="ABCD000101HXYZXY09"
-								oninput="this.value=this.value.toUpperCase()">
+								oninput="this.value=this.value.toUpperCase()" required>
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
