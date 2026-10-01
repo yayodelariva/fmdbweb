@@ -269,7 +269,9 @@ get_header();
 							<label for="fmdb_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
 							<input type="tel" id="fmdb_telefono" name="fmdb_telefono"
 								value="<?php echo $v['fmdb_telefono']; ?>"
-								required autocomplete="tel">
+								required autocomplete="tel"
+								pattern="[0-9]+" inputmode="numeric"
+								oninput="this.value=this.value.replace(/[^0-9]/g,'')">
 						</div>
 						<div class="fmdb-registro__field fmdb-afil__grid--span2">
 							<label>Correo electrónico</label>
@@ -339,7 +341,8 @@ get_header();
 							<label for="fmdb_emergencia_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
 							<input type="tel" id="fmdb_emergencia_telefono" name="fmdb_emergencia_telefono"
 								value="<?php echo $v['fmdb_emergencia_telefono']; ?>"
-								required>
+								required pattern="[0-9]+" inputmode="numeric"
+								oninput="this.value=this.value.replace(/[^0-9]/g,'')">
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_emergencia_parentesco">Parentesco <span class="fmdb-afil__req">*</span></label>
