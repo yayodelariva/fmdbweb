@@ -359,10 +359,9 @@ get_header();
 
 					<div class="fmdb-afil__grid fmdb-afil__grid--2">
 						<div class="fmdb-registro__field">
-							<label for="fmdb_club">Club <span class="fmdb-afil__req">*</span></label>
+							<label for="fmdb_club">Club</label>
 							<input type="text" id="fmdb_club" name="fmdb_club"
-								value="<?php echo $v['fmdb_club']; ?>"
-								required>
+								value="<?php echo $v['fmdb_club']; ?>">
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_asociacion_estado">Asociación / Estado</label>
