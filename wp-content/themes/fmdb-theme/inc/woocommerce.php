@@ -289,12 +289,17 @@ function fmdb_affiliation_product_ids(): array {
     return $ids;
 }
 
-// Exclude from all shop/catalog queries.
-add_action( 'woocommerce_product_query', function ( WP_Query $q ) {
+// Exclude from every frontend product query — covers the classic shop loop,
+// wc_get_products(), and Gutenberg block Store API queries (which bypass
+// woocommerce_product_query and need pre_get_posts to be caught).
+add_action( 'pre_get_posts', function ( WP_Query $q ) {
+    if ( is_admin() ) return;
+    $type = (array) $q->get( 'post_type' );
+    if ( ! in_array( 'product', $type, true ) ) return;
+    if ( ! function_exists( 'wc_get_product_id_by_sku' ) ) return;
     $exclude = fmdb_affiliation_product_ids();
-    if ( $exclude ) {
-        $q->set( 'post__not_in', array_merge( (array) $q->get( 'post__not_in' ), $exclude ) );
-    }
+    if ( ! $exclude ) return;
+    $q->set( 'post__not_in', array_unique( array_merge( (array) $q->get( 'post__not_in' ), $exclude ) ) );
 } );
 
 // Exclude from cart cross-sell suggestions.
