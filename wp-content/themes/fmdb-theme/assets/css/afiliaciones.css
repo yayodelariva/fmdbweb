@@ -290,7 +290,7 @@
 }
 
 /* ── Already-affiliated state ──────────────────────────────────────── */
-.fmdb-afil__already { text-align: center; padding: 40px 20px; }
+.fmdb-afil__already { text-align: center; padding: 0 20px 40px; }
 .fmdb-afil__already-icon {
 	width: 64px;
 	height: 64px;
