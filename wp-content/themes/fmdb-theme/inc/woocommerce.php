@@ -277,11 +277,40 @@ function fmdb_cart_has_affiliation_product(): bool {
     return false;
 }
 
-// Cart page: skip straight to checkout when it only contains an affiliation product.
+// Affiliation products are only accessible via /afiliaciones/ — hide from catalog,
+// cross-sells, and redirect any direct product-page hits back to /afiliaciones/.
+
+// Returns the WC product IDs for the four affiliation SKUs (cached per request).
+function fmdb_affiliation_product_ids(): array {
+    static $ids = null;
+    if ( $ids !== null ) return $ids;
+    $skus = [ 'afiliacion-basica', 'afiliacion-plus', 'afiliacion-oro', 'afiliacion-directivos' ];
+    $ids  = array_values( array_filter( array_map( 'wc_get_product_id_by_sku', $skus ) ) );
+    return $ids;
+}
+
+// Exclude from all shop/catalog queries.
+add_action( 'woocommerce_product_query', function ( WP_Query $q ) {
+    $exclude = fmdb_affiliation_product_ids();
+    if ( $exclude ) {
+        $q->set( 'post__not_in', array_merge( (array) $q->get( 'post__not_in' ), $exclude ) );
+    }
+} );
+
+// Exclude from cart cross-sell suggestions.
+add_filter( 'woocommerce_cross_sell_products', function ( array $products ) {
+    $exclude = fmdb_affiliation_product_ids();
+    if ( ! $exclude ) return $products;
+    return array_values( array_filter( $products, fn( $p ) => ! in_array( $p->get_id(), $exclude, true ) ) );
+} );
+
+// Redirect direct product-page hits to /afiliaciones/.
 add_action( 'template_redirect', function () {
-    if ( ! function_exists( 'is_cart' ) || ! is_cart() ) return;
-    if ( fmdb_cart_has_affiliation_product() ) {
-        wp_redirect( wc_get_checkout_url() );
+    if ( ! is_singular( 'product' ) ) return;
+    global $post;
+    if ( ! $post ) return;
+    if ( in_array( $post->ID, fmdb_affiliation_product_ids(), true ) ) {
+        wp_redirect( home_url( '/afiliaciones/' ), 302 );
         exit;
     }
 } );
