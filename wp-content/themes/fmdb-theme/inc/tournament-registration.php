@@ -401,32 +401,14 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
 
     $teams = []; // keyed by normalized team name
 
+    // Pass 1: build all team entries from captain and non-hub individual registrations.
+    // Hub player items are skipped here so they land in pass 2 after all teams exist.
     foreach ( $orders as $order ) {
         $reg_type = $order->get_meta( '_fmdb_reg_type' ) ?: 'team';
 
         foreach ( $order->get_items() as $item ) {
-            // Hub multi-team individual: player listed under multiple teams in one order item.
-            $hub_teams_json = ( $reg_type !== 'team' ) ? $item->get_meta( 'Hub Teams' ) : '';
-            if ( $hub_teams_json ) {
-                $player_name = trim( $item->get_meta( 'Jugador' ) . ' ' . $item->get_meta( 'Apellido' ) );
-                if ( $player_name ) {
-                    foreach ( json_decode( $hub_teams_json, true ) ?? [] as $ht ) {
-                        $ht_name = trim( $ht['name'] ?? '' );
-                        $ht_rama = $ht['rama'] ?? '';
-                        $ht_cat  = $ht['categoria'] ?? '';
-                        if ( ! $ht_name || ! $ht_rama || ! $ht_cat ) continue;
-                        $is_new  = strpos( $ht_rama, '/' ) !== false;
-                        $ht_key  = mb_strtolower( $ht_name ) . '|' . $ht_rama . '|' . $ht_cat;
-                        if ( isset( $teams[ $ht_key ] ) ) {
-                            $teams[ $ht_key ]['players'][] = [
-                                'name'   => $player_name,
-                                'status' => $order->get_status(),
-                            ];
-                        }
-                    }
-                }
-                continue;
-            }
+            // Hub multi-team individual: defer to pass 2.
+            if ( $reg_type !== 'team' && $item->get_meta( 'Hub Teams' ) ) continue;
 
             $team_name = $item->get_meta( 'Equipo' );
             if ( ! $team_name ) continue;
@@ -444,19 +426,19 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
 
             if ( ! isset( $teams[ $key ] ) ) {
                 $teams[ $key ] = [
-                    'name'         => $team_name,
-                    'rama'         => $rama,
-                    'categoria'    => $categoria,
-                    'modalidad'    => $modalidad,
-                    'captain'      => '',
+                    'name'          => $team_name,
+                    'rama'          => $rama,
+                    'categoria'     => $categoria,
+                    'modalidad'     => $modalidad,
+                    'captain'       => '',
                     'extra_players' => [],
-                    'bulk_count'   => 0,
-                    'order_id'     => 0,
-                    'status'       => '',
-                    'on_waitlist'  => false,
-                    'confirmed'    => false,
-                    'players'      => [],
-                    'is_hub_reg'   => false,
+                    'bulk_count'    => 0,
+                    'order_id'      => 0,
+                    'status'        => '',
+                    'on_waitlist'   => false,
+                    'confirmed'     => false,
+                    'players'       => [],
+                    'is_hub_reg'    => false,
                 ];
             }
 
@@ -481,6 +463,35 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
                 $player_name = trim( $item->get_meta( 'Jugador' ) . ' ' . $item->get_meta( 'Apellido' ) );
                 if ( $player_name ) {
                     $teams[ $key ]['players'][] = [
+                        'name'   => $player_name,
+                        'status' => $order->get_status(),
+                    ];
+                }
+            }
+        }
+    }
+
+    // Pass 2: attach hub (individual multi-team) players — all team entries now exist
+    // regardless of whether the player's order ID precedes the captain's.
+    foreach ( $orders as $order ) {
+        $reg_type = $order->get_meta( '_fmdb_reg_type' ) ?: 'team';
+        if ( $reg_type === 'team' ) continue;
+
+        foreach ( $order->get_items() as $item ) {
+            $hub_teams_json = $item->get_meta( 'Hub Teams' );
+            if ( ! $hub_teams_json ) continue;
+
+            $player_name = trim( $item->get_meta( 'Jugador' ) . ' ' . $item->get_meta( 'Apellido' ) );
+            if ( ! $player_name ) continue;
+
+            foreach ( json_decode( $hub_teams_json, true ) ?? [] as $ht ) {
+                $ht_name = trim( $ht['name'] ?? '' );
+                $ht_rama = $ht['rama'] ?? '';
+                $ht_cat  = $ht['categoria'] ?? '';
+                if ( ! $ht_name || ! $ht_rama || ! $ht_cat ) continue;
+                $ht_key = mb_strtolower( $ht_name ) . '|' . $ht_rama . '|' . $ht_cat;
+                if ( isset( $teams[ $ht_key ] ) ) {
+                    $teams[ $ht_key ]['players'][] = [
                         'name'   => $player_name,
                         'status' => $order->get_status(),
                     ];
