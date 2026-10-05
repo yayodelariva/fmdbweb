@@ -183,8 +183,98 @@
 }
 .fmdb-perfil__affiliation-detail-item strong { color: #333; }
 
+/* ── Tournament registrations ───────────────────────────────────────── */
+
+.fmdb-perfil__torneos {
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid #eee;
+}
+.fmdb-perfil__torneos-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 4px;
+}
+.fmdb-perfil__torneos-toggle:hover,
+.fmdb-perfil__torneos-toggle:focus { color: #555; background: none; outline: none; }
+.fmdb-perfil__torneos-chevron {
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+.fmdb-perfil__torneos-toggle[aria-expanded="true"] .fmdb-perfil__torneos-chevron {
+    transform: rotate(180deg);
+}
+.fmdb-perfil__torneo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.fmdb-perfil__torneo-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.fmdb-perfil__torneo-row:last-child { border-bottom: none; }
+
+.fmdb-perfil__torneo-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+.fmdb-perfil__torneo-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #111;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+a.fmdb-perfil__torneo-name:hover { color: var(--fmdb-primary, #1a73e8); }
+.fmdb-perfil__torneo-role {
+    font-size: 0.78rem;
+    color: #666;
+}
+
+.fmdb-perfil__torneo-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.fmdb-perfil__torneo-date {
+    font-size: 0.75rem;
+    color: #888;
+}
+.fmdb-perfil__torneo-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.fmdb-perfil__torneo-badge--pending { background: #fff8ee; color: #b45309; }
+.fmdb-perfil__torneo-badge--hold    { background: #eff6ff; color: #1d4ed8; }
+.fmdb-perfil__torneo-badge--ok      { background: #f0fdf4; color: #15803d; }
+
 @media (max-width: 520px) {
     .fmdb-perfil__card { padding: 32px 20px; }
     .fmdb-perfil__affiliation-row { flex-direction: column; }
     .fmdb-perfil__affiliation-btn { width: 100%; }
+    .fmdb-perfil__torneo-row { flex-wrap: wrap; }
+    .fmdb-perfil__torneo-meta { align-items: flex-start; }
 }

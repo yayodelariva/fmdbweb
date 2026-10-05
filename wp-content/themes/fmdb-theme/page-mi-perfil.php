@@ -206,10 +206,103 @@ get_header();
             </div>
         </form>
 
+        <?php
+        /* ── Tournament registrations ─────────────────────────────────── */
+        $reg_orders = function_exists( 'wc_get_orders' ) ? wc_get_orders( [
+            'customer' => $user_id,
+            'meta_key' => '_fmdb_reg_event_id',
+            'status'   => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+            'limit'    => -1,
+            'orderby'  => 'ID',
+            'order'    => 'DESC',
+        ] ) : [];
+
+        $status_map = [
+            'pending'    => [ 'label' => 'Pendiente de pago', 'mod' => 'pending' ],
+            'on-hold'    => [ 'label' => 'Pago recibido',     'mod' => 'hold'    ],
+            'processing' => [ 'label' => 'Pago confirmado',   'mod' => 'ok'      ],
+            'completed'  => [ 'label' => 'Completado',        'mod' => 'ok'      ],
+        ];
+
+        $reg_entries = [];
+        foreach ( $reg_orders as $reg_order ) {
+            $ev_id      = (int) $reg_order->get_meta( '_fmdb_reg_event_id' );
+            $ev_title   = $ev_id ? get_the_title( $ev_id ) : '—';
+            $ev_url     = $ev_id ? get_permalink( $ev_id ) : '';
+            $ev_start   = $ev_id ? get_post_meta( $ev_id, '_EventStartDate', true ) : '';
+            $ev_ts      = $ev_start ? strtotime( $ev_start ) : 0;
+            $raw_status = $reg_order->get_status();
+            $st         = $status_map[ $raw_status ] ?? [ 'label' => ucfirst( $raw_status ), 'mod' => 'pending' ];
+
+            foreach ( $reg_order->get_items() as $item ) {
+                $tipo = $item->get_meta( 'Tipo' );
+                if ( ! $tipo ) continue;
+
+                if ( $tipo === 'Equipo' ) {
+                    $role = 'Capitán · ' . $item->get_meta( 'Equipo' );
+                } elseif ( ! empty( $item->get_meta( 'Hub Teams' ) ) ) {
+                    $ht_names = array_column( json_decode( $item->get_meta( 'Hub Teams' ), true ) ?? [], 'name' );
+                    $role = 'Jugador · ' . implode( ', ', $ht_names );
+                } else {
+                    $team = $item->get_meta( 'Equipo' );
+                    $role = 'Jugador' . ( $team ? ' · ' . $team : '' );
+                }
+
+                $reg_entries[] = [
+                    'ev_title' => $ev_title,
+                    'ev_url'   => $ev_url,
+                    'ev_ts'    => $ev_ts,
+                    'st'       => $st,
+                    'role'     => $role,
+                ];
+            }
+        }
+
+        if ( ! empty( $reg_entries ) ) :
+            usort( $reg_entries, fn( $a, $b ) => $b['ev_ts'] - $a['ev_ts'] );
+        ?>
+        <div class="fmdb-perfil__torneos">
+            <button type="button" class="fmdb-perfil__torneos-toggle" aria-expanded="false">
+                <span>Mis torneos</span>
+                <svg class="fmdb-perfil__torneos-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="fmdb-perfil__torneo-list" hidden>
+            <?php foreach ( $reg_entries as $e ) : ?>
+                <div class="fmdb-perfil__torneo-row">
+                    <div class="fmdb-perfil__torneo-info">
+                        <?php if ( $e['ev_url'] ) : ?>
+                            <a href="<?php echo esc_url( $e['ev_url'] ); ?>" class="fmdb-perfil__torneo-name"><?php echo esc_html( $e['ev_title'] ); ?></a>
+                        <?php else : ?>
+                            <span class="fmdb-perfil__torneo-name"><?php echo esc_html( $e['ev_title'] ); ?></span>
+                        <?php endif; ?>
+                        <span class="fmdb-perfil__torneo-role"><?php echo esc_html( $e['role'] ); ?></span>
+                    </div>
+                    <div class="fmdb-perfil__torneo-meta">
+                        <?php if ( $e['ev_ts'] ) : ?>
+                            <span class="fmdb-perfil__torneo-date"><?php echo date_i18n( 'j M Y', $e['ev_ts'] ); ?></span>
+                        <?php endif; ?>
+                        <span class="fmdb-perfil__torneo-badge fmdb-perfil__torneo-badge--<?php echo esc_attr( $e['st']['mod'] ); ?>"><?php echo esc_html( $e['st']['label'] ); ?></span>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </div>
 </main>
 
 <script>
+var _torneosToggle = document.querySelector('.fmdb-perfil__torneos-toggle');
+if (_torneosToggle) {
+    _torneosToggle.addEventListener('click', function () {
+        var list = this.closest('.fmdb-perfil__torneos').querySelector('.fmdb-perfil__torneo-list');
+        var open = list.hasAttribute('hidden');
+        if (open) { list.removeAttribute('hidden'); } else { list.setAttribute('hidden', ''); }
+        this.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+}
+
 document.getElementById('profile_picture').addEventListener('change', function () {
     var file = this.files[0];
     if (!file || !file.type.startsWith('image/')) return;
