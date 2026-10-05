@@ -27,6 +27,7 @@ if ( $event_id ) {
     $reg_closed  = ! $reg_open || fmdb_reg_deadline_passed( $event_id );
     $has_access  = fmdb_user_has_event_access( $current_user->ID, $event_id );
     $has_paid    = fmdb_user_has_paid_for_event( $current_user->ID, $event_id );
+    $has_pending = ! $has_paid && fmdb_user_has_pending_order_for_event( $current_user->ID, $event_id );
 
     // Event meta for display
     $start_raw = get_post_meta( $event_id, '_EventStartDate', true );
@@ -78,14 +79,14 @@ if ( $event_id ) {
 
         <div class="fmdb-torneos__form-card">
 
-            <?php if ( $has_access && ! $has_paid ) : ?>
+            <?php if ( $has_pending ) : ?>
 
                 <div class="fmdb-torneos__already">
-                    <div class="fmdb-torneos__already-icon">✓</div>
-                    <h2 class="fmdb-torneos__already-title">¡Ya estás inscrito!</h2>
-                    <p class="fmdb-torneos__already-text">Tu acceso al directorio de equipos de este torneo está confirmado.</p>
-                    <a href="<?php echo esc_url( get_permalink( $event_id ) . '#fmdb-teams-' . $event_id ); ?>"
-                       class="fmdb-btn fmdb-btn--primary">Ver equipos registrados →</a>
+                    <div class="fmdb-torneos__already-icon fmdb-torneos__already-icon--pending">⏳</div>
+                    <h2 class="fmdb-torneos__already-title">Registro en proceso</h2>
+                    <p class="fmdb-torneos__already-text">Tu registro está siendo procesado. Una vez que tu pago haya sido reflejado tendrás acceso al directorio de equipos.</p>
+                    <a href="<?php echo esc_url( home_url( '/torneos/' ) ); ?>"
+                       class="fmdb-btn fmdb-btn--secondary">← Volver a torneos</a>
                 </div>
 
             <?php elseif ( $reg_closed ) : ?>
@@ -123,10 +124,11 @@ if ( $event_id ) {
                 <?php
                 $hub_teams    = fmdb_reg_get_event_teams( $event_id );
                 $captain_keys = fmdb_get_user_captain_team_keys( $current_user->ID, $event_id );
-                $hub_teams    = array_values( array_filter( $hub_teams, function ( $ht ) use ( $captain_keys ) {
+                foreach ( $hub_teams as &$ht ) {
                     $key = mb_strtolower( $ht['name'] ?? '' ) . '|' . ( $ht['rama'] ?? '' ) . '|' . ( $ht['categoria'] ?? '' );
-                    return ! in_array( $key, $captain_keys, true );
-                } ) );
+                    $ht['_captain'] = in_array( $key, $captain_keys, true );
+                }
+                unset( $ht );
                 usort( $hub_teams, fn( $a, $b ) => strcasecmp( $a['name'] ?? '', $b['name'] ?? '' ) );
                 ?>
 
@@ -199,13 +201,19 @@ if ( $event_id ) {
                         <?php else : ?>
                             <h3 class="fmdb-torneos__section-title">Elige el equipo al que quieres unirte</h3>
                             <div class="fmdb-torneos__team-checklist">
-                                <?php foreach ( $hub_teams as $ht ) : ?>
-                                <label class="fmdb-torneos__team-check-opt">
+                                <?php foreach ( $hub_teams as $ht ) :
+                                    $is_cap = ! empty( $ht['_captain'] );
+                                ?>
+                                <label class="fmdb-torneos__team-check-opt<?php echo $is_cap ? ' fmdb-torneos__team-check-opt--disabled' : ''; ?>">
                                     <input type="checkbox" class="fmdb-team-check"
+                                           <?php echo $is_cap ? 'disabled' : ''; ?>
                                            value="<?php echo esc_attr( wp_json_encode( [ 'name' => $ht['name'], 'rama' => $ht['rama'], 'categoria' => $ht['categoria'] ] ) ); ?>">
                                     <span class="fmdb-torneos__team-check-body">
                                         <span class="fmdb-torneos__team-check-name"><?php echo esc_html( $ht['name'] ); ?></span>
                                         <span class="fmdb-torneos__team-check-tags">
+                                            <?php if ( $is_cap ) : ?>
+                                            <span class="fmdb-torneos__team-tag fmdb-torneos__team-tag--own">Tu equipo</span>
+                                            <?php endif; ?>
                                             <?php if ( ! empty( $ht['modalidad'] ) ) : ?>
                                             <span class="fmdb-torneos__team-tag fmdb-torneos__team-tag--cat"><?php echo esc_html( $ht['modalidad'] ); ?></span>
                                             <?php endif; ?>

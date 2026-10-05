@@ -317,6 +317,10 @@
     justify-content: center;
     margin: 0 auto 16px;
 }
+.fmdb-torneos__already-icon--pending {
+    background: #fff8ee;
+    color: #b45309;
+}
 .fmdb-torneos__already-title {
     font-size: 1.2rem;
     font-weight: 700;
@@ -427,6 +431,21 @@
 .fmdb-torneos__team-tag--cat {
     background: #f3f4f6;
     color: #555;
+}
+.fmdb-torneos__team-tag--own {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.fmdb-torneos__team-check-opt--disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: #fafafa;
+}
+.fmdb-torneos__team-check-opt--disabled:hover {
+    border-color: #e0e0e0;
+    background: #fafafa;
 }
 
 /* Error message */

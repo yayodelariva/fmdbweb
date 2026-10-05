@@ -745,7 +745,7 @@ function fmdb_user_has_event_access( int $user_id, int $event_id ): bool {
         'customer'   => $user_id,
         'meta_key'   => '_fmdb_reg_event_id',
         'meta_value' => $event_id,
-        'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+        'status'     => [ 'wc-on-hold', 'wc-processing', 'wc-completed' ],
         'limit'      => 1,
     ] );
     return ! empty( $orders );
@@ -770,6 +770,18 @@ function fmdb_get_user_captain_team_keys( int $user_id, int $event_id ): array {
         }
     }
     return $keys;
+}
+
+function fmdb_user_has_pending_order_for_event( int $user_id, int $event_id ): bool {
+    if ( ! function_exists( 'wc_get_orders' ) || ! $user_id || ! $event_id ) return false;
+    $orders = wc_get_orders( [
+        'customer'   => $user_id,
+        'meta_key'   => '_fmdb_reg_event_id',
+        'meta_value' => $event_id,
+        'status'     => [ 'wc-pending' ],
+        'limit'      => 1,
+    ] );
+    return ! empty( $orders );
 }
 
 function fmdb_user_has_paid_for_event( int $user_id, int $event_id ): bool {
