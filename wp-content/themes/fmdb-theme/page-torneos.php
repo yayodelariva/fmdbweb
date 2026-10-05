@@ -126,7 +126,7 @@ if ( $event_id ) {
                 $captain_keys = fmdb_get_user_captain_team_keys( $current_user->ID, $event_id );
                 $player_keys  = fmdb_get_user_player_team_keys( $current_user->ID, $event_id );
                 foreach ( $hub_teams as &$ht ) {
-                    $key = mb_strtolower( $ht['name'] ?? '' ) . '|' . ( $ht['rama'] ?? '' ) . '|' . ( $ht['categoria'] ?? '' );
+                    $key = fmdb_team_key( $ht['name'] ?? '', $ht['rama'] ?? '', $ht['categoria'] ?? '' );
                     $ht['_captain'] = in_array( $key, $captain_keys, true );
                     $ht['_member']  = ! $ht['_captain'] && in_array( $key, $player_keys, true );
                 }

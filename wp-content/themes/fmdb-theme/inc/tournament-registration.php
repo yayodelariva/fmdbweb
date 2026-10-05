@@ -417,11 +417,10 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
             $categoria = $item->get_meta( 'Categoría' );
             $modalidad = $item->get_meta( 'Modalidad' );
 
-            // Key on name + division so same-named teams in different divisions are independent.
-            // New format (rama contains '/'): key omits modalidad — one registration covers all modalidades.
-            // Old format (pre-migration): include modalidad for backward compat.
+            // Key on name + division. Old format (pre-migration) includes modalidad for backward compat;
+            // new format (rama contains '/') omits it — one registration covers all modalidades.
             $is_new_fmt = strpos( $rama, '/' ) !== false;
-            $key = mb_strtolower( trim( $team_name ) ) . '|' . $rama . '|' . $categoria
+            $key = fmdb_team_key( $team_name, $rama, $categoria )
                  . ( $is_new_fmt ? '' : '|' . $modalidad );
 
             if ( ! isset( $teams[ $key ] ) ) {
@@ -501,7 +500,7 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
                 $ht_rama = $ht['rama'] ?? '';
                 $ht_cat  = $ht['categoria'] ?? '';
                 if ( ! $ht_name || ! $ht_rama || ! $ht_cat ) continue;
-                $ht_key = mb_strtolower( $ht_name ) . '|' . $ht_rama . '|' . $ht_cat;
+                $ht_key = fmdb_team_key( $ht_name, $ht_rama, $ht_cat );
                 // Old-format keys include modalidad; fall back to the prefix match.
                 $resolved = isset( $teams[ $ht_key ] ) ? $ht_key : ( $prefix_lookup[ $ht_key ] ?? '' );
                 if ( $resolved && isset( $teams[ $resolved ] ) ) {
@@ -723,7 +722,7 @@ function fmdb_hospedaje_sold_count( int $event_id, string $room_type ): int {
     ];
     $labels = $room_labels[ $room_type ] ?? [ ucfirst( $room_type ) ];
     $orders = wc_get_orders( [
-        'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+        'status'     => fmdb_reg_active_statuses(),
         'limit'      => -1,
         'meta_query' => [
             'relation' => 'OR',
@@ -776,50 +775,63 @@ function fmdb_reg_deadline_passed( int $event_id ): bool {
     return $d && strtotime( $d . ' 23:59:59' ) < time();
 }
 
-// True when the user has any non-cancelled order for this event (access check).
-function fmdb_user_has_event_access( int $user_id, int $event_id ): bool {
-    if ( ! function_exists( 'wc_get_orders' ) || ! $user_id || ! $event_id ) return false;
-    $orders = wc_get_orders( [
+// Canonical team key: lowercase name + rama + categoria.
+function fmdb_team_key( string $name, string $rama, string $categoria ): string {
+    return mb_strtolower( trim( $name ) ) . '|' . $rama . '|' . $categoria;
+}
+
+// Statuses for orders that grant event access (payment confirmed or bank-transfer on-hold).
+function fmdb_reg_paid_statuses(): array {
+    return [ 'wc-on-hold', 'wc-processing', 'wc-completed' ];
+}
+
+// All non-cancelled statuses, including payment-pending.
+function fmdb_reg_active_statuses(): array {
+    return [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ];
+}
+
+// Fetch all orders for a user+event with the given statuses.
+function fmdb_reg_get_user_event_orders( int $user_id, int $event_id, array $statuses, int $limit = -1 ): array {
+    if ( ! function_exists( 'wc_get_orders' ) || ! $user_id || ! $event_id ) return [];
+    return wc_get_orders( [
         'customer'   => $user_id,
         'meta_key'   => '_fmdb_reg_event_id',
         'meta_value' => $event_id,
-        'status'     => [ 'wc-on-hold', 'wc-processing', 'wc-completed' ],
-        'limit'      => 1,
+        'status'     => $statuses,
+        'limit'      => $limit,
     ] );
-    return ! empty( $orders );
+}
+
+// True when the user has any non-cancelled order for this event (access check).
+function fmdb_user_has_event_access( int $user_id, int $event_id ): bool {
+    return ! empty( fmdb_reg_get_user_event_orders( $user_id, $event_id, fmdb_reg_paid_statuses(), 1 ) );
+}
+
+function fmdb_user_has_paid_for_event( int $user_id, int $event_id ): bool {
+    return ! empty( fmdb_reg_get_user_event_orders( $user_id, $event_id, fmdb_reg_paid_statuses(), 1 ) );
+}
+
+function fmdb_user_has_pending_order_for_event( int $user_id, int $event_id ): bool {
+    return ! empty( fmdb_reg_get_user_event_orders( $user_id, $event_id, [ 'wc-pending' ], 1 ) );
 }
 
 function fmdb_get_user_captain_team_keys( int $user_id, int $event_id ): array {
-    if ( ! function_exists( 'wc_get_orders' ) || ! $user_id || ! $event_id ) return [];
-    $orders = wc_get_orders( [
-        'customer'   => $user_id,
-        'meta_key'   => '_fmdb_reg_event_id',
-        'meta_value' => $event_id,
-        'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
-        'limit'      => -1,
-    ] );
-    $keys = [];
+    $orders = fmdb_reg_get_user_event_orders( $user_id, $event_id, fmdb_reg_active_statuses() );
+    $keys   = [];
     foreach ( $orders as $order ) {
         foreach ( $order->get_items() as $item ) {
             if ( $item->get_meta( 'Tipo' ) !== 'Equipo' ) continue;
-            $name = mb_strtolower( trim( (string) $item->get_meta( 'Equipo' ) ) );
+            $name = trim( (string) $item->get_meta( 'Equipo' ) );
             if ( ! $name ) continue;
-            $keys[] = $name . '|' . $item->get_meta( 'Rama' ) . '|' . $item->get_meta( 'Categoría' );
+            $keys[] = fmdb_team_key( $name, $item->get_meta( 'Rama' ), $item->get_meta( 'Categoría' ) );
         }
     }
     return $keys;
 }
 
 function fmdb_get_user_player_team_keys( int $user_id, int $event_id ): array {
-    if ( ! function_exists( 'wc_get_orders' ) || ! $user_id || ! $event_id ) return [];
-    $orders = wc_get_orders( [
-        'customer'   => $user_id,
-        'meta_key'   => '_fmdb_reg_event_id',
-        'meta_value' => $event_id,
-        'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
-        'limit'      => -1,
-    ] );
-    $keys = [];
+    $orders = fmdb_reg_get_user_event_orders( $user_id, $event_id, fmdb_reg_active_statuses() );
+    $keys   = [];
     foreach ( $orders as $order ) {
         if ( ( $order->get_meta( '_fmdb_reg_type' ) ?: 'team' ) === 'team' ) continue;
         foreach ( $order->get_items() as $item ) {
@@ -830,36 +842,12 @@ function fmdb_get_user_player_team_keys( int $user_id, int $event_id ): array {
                 $rama = $ht['rama'] ?? '';
                 $cat  = $ht['categoria'] ?? '';
                 if ( $name && $rama && $cat ) {
-                    $keys[] = mb_strtolower( $name ) . '|' . $rama . '|' . $cat;
+                    $keys[] = fmdb_team_key( $name, $rama, $cat );
                 }
             }
         }
     }
     return array_unique( $keys );
-}
-
-function fmdb_user_has_pending_order_for_event( int $user_id, int $event_id ): bool {
-    if ( ! function_exists( 'wc_get_orders' ) || ! $user_id || ! $event_id ) return false;
-    $orders = wc_get_orders( [
-        'customer'   => $user_id,
-        'meta_key'   => '_fmdb_reg_event_id',
-        'meta_value' => $event_id,
-        'status'     => [ 'wc-pending' ],
-        'limit'      => 1,
-    ] );
-    return ! empty( $orders );
-}
-
-function fmdb_user_has_paid_for_event( int $user_id, int $event_id ): bool {
-    if ( ! function_exists( 'wc_get_orders' ) || ! $user_id || ! $event_id ) return false;
-    $orders = wc_get_orders( [
-        'customer'   => $user_id,
-        'meta_key'   => '_fmdb_reg_event_id',
-        'meta_value' => $event_id,
-        'status'     => [ 'wc-on-hold', 'wc-processing', 'wc-completed' ],
-        'limit'      => 1,
-    ] );
-    return ! empty( $orders );
 }
 
 /* ─── 4. Frontend: registration card ──────────────────────────────────── */
@@ -1895,7 +1883,7 @@ function fmdb_ajax_add_registration(): void {
         $dup_orders = wc_get_orders( [
             'meta_key'   => '_fmdb_reg_event_id',
             'meta_value' => $event_id,
-            'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+            'status'     => fmdb_reg_active_statuses(),
             'limit'      => -1,
         ] );
         foreach ( $dup_orders as $dup_order ) {
@@ -1969,12 +1957,14 @@ function fmdb_ajax_hub_reg_submit(): void {
 
     if ( ! is_user_logged_in() ) {
         wp_send_json_error( [ 'message' => 'Debes iniciar sesión.' ] );
+        return;
     }
 
     $user_id  = get_current_user_id();
     $event_id = absint( $_POST['fmdb_event_id'] ?? 0 );
     if ( ! $event_id ) {
         wp_send_json_error( [ 'message' => 'Evento inválido.' ] );
+        return;
     }
 
     // Bypass TEC's Chunker — intercepts get_post_meta for tribe_events.
@@ -1985,24 +1975,29 @@ function fmdb_ajax_hub_reg_submit(): void {
     ) );
     if ( $open_val !== 'on' ) {
         wp_send_json_error( [ 'message' => 'La inscripción para este torneo no está abierta.' ] );
+        return;
     }
     if ( fmdb_reg_deadline_passed( $event_id ) ) {
         wp_send_json_error( [ 'message' => 'La fecha límite de inscripción ha pasado.' ] );
+        return;
     }
 
     $prod_id = (int) get_post_meta( $event_id, '_fmdb_reg_product_id', true );
     if ( ! $prod_id || ! function_exists( 'WC' ) || ! WC()->cart ) {
         wp_send_json_error( [ 'message' => 'Producto de inscripción no disponible.' ] );
+        return;
     }
     $product = wc_get_product( $prod_id );
     if ( ! $product || $product->get_status() !== 'publish' ) {
         wp_send_json_error( [ 'message' => 'La inscripción para este torneo está cerrada.' ] );
+        return;
     }
 
     // Enforce one registration per cart at a time.
     foreach ( WC()->cart->get_cart() as $existing ) {
         if ( ! empty( $existing['fmdb_event_id'] ) ) {
             wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en el carrito.' ] );
+            return;
         }
     }
 
@@ -2013,6 +2008,7 @@ function fmdb_ajax_hub_reg_submit(): void {
         if ( fmdb_user_has_event_access( $user_id, $event_id ) ) {
             if ( ! fmdb_user_has_paid_for_event( $user_id, $event_id ) ) {
                 wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en proceso para este torneo.' ] );
+                return;
             }
             $_POST['fmdb_free_rereg'] = '1';
         }
@@ -2024,22 +2020,26 @@ function fmdb_ajax_hub_reg_submit(): void {
 
         if ( ! $team_name ) {
             wp_send_json_error( [ 'message' => 'Ingresa el nombre del equipo.' ] );
+            return;
         }
         if ( ! in_array( $rama, [ 'Varonil', 'Femenil', 'Mixto' ], true ) ) {
             wp_send_json_error( [ 'message' => 'Selecciona una rama válida.' ] );
+            return;
         }
         if ( ! in_array( $categoria, [ 'Infantil', 'Libre' ], true ) ) {
             wp_send_json_error( [ 'message' => 'Selecciona una categoría válida.' ] );
+            return;
         }
         if ( ! in_array( $modalidad, [ 'Cloth', 'Foam' ], true ) ) {
             wp_send_json_error( [ 'message' => 'Selecciona una modalidad válida.' ] );
+            return;
         }
 
-        // Duplicate team check.
+        // Duplicate team check against all active orders for this event.
         $dup_orders = wc_get_orders( [
             'meta_key'   => '_fmdb_reg_event_id',
             'meta_value' => $event_id,
-            'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+            'status'     => fmdb_reg_active_statuses(),
             'limit'      => -1,
         ] );
         foreach ( $dup_orders as $dup_order ) {
@@ -2049,6 +2049,7 @@ function fmdb_ajax_hub_reg_submit(): void {
                   && $dup_item->get_meta( 'Categoría' ) === $categoria
                   && $dup_item->get_meta( 'Modalidad' ) === $modalidad ) {
                     wp_send_json_error( [ 'message' => 'Este equipo ya está registrado en esa rama, categoría y modalidad.' ] );
+                    return;
                 }
             }
         }
@@ -2067,6 +2068,7 @@ function fmdb_ajax_hub_reg_submit(): void {
             $msg     = ! empty( $notices ) ? wp_strip_all_tags( $notices[0]['notice'] ) : 'No se pudo agregar al carrito. Intenta de nuevo.';
             wc_clear_notices();
             wp_send_json_error( [ 'message' => $msg ] );
+            return;
         }
 
     } else {
@@ -2076,13 +2078,14 @@ function fmdb_ajax_hub_reg_submit(): void {
 
         if ( empty( $selected_teams ) || ! is_array( $selected_teams ) ) {
             wp_send_json_error( [ 'message' => 'Selecciona al menos un equipo para continuar.' ] );
+            return;
         }
 
         // Build lookup of valid team keys from current registrations.
         $registered_teams = fmdb_reg_get_event_teams( $event_id );
         $valid_keys       = [];
         foreach ( $registered_teams as $rt ) {
-            $valid_keys[] = mb_strtolower( trim( $rt['name'] ) ) . '|' . ( $rt['rama'] ?? '' ) . '|' . ( $rt['categoria'] ?? '' );
+            $valid_keys[] = fmdb_team_key( $rt['name'] ?? '', $rt['rama'] ?? '', $rt['categoria'] ?? '' );
         }
 
         $captain_keys = fmdb_get_user_captain_team_keys( $user_id, $event_id );
@@ -2097,7 +2100,7 @@ function fmdb_ajax_hub_reg_submit(): void {
             $rama      = sanitize_text_field( $st['rama']      ?? '' );
             $categoria = sanitize_text_field( $st['categoria'] ?? '' );
             if ( ! $team_name || ! $rama || ! $categoria ) continue;
-            $team_key = mb_strtolower( $team_name ) . '|' . $rama . '|' . $categoria;
+            $team_key = fmdb_team_key( $team_name, $rama, $categoria );
             if ( ! in_array( $team_key, $valid_keys, true ) ) continue;
             if ( in_array( $team_key, $captain_keys, true ) ) continue;
             $validated[] = [ 'name' => $team_name, 'rama' => $rama, 'categoria' => $categoria ];
@@ -2105,6 +2108,7 @@ function fmdb_ajax_hub_reg_submit(): void {
 
         if ( empty( $validated ) ) {
             wp_send_json_error( [ 'message' => 'No puedes unirte a un equipo que ya registraste como capitán.' ] );
+            return;
         }
 
         if ( fmdb_user_has_paid_for_event( $user_id, $event_id ) ) {
@@ -2127,6 +2131,7 @@ function fmdb_ajax_hub_reg_submit(): void {
             $msg     = ! empty( $notices ) ? wp_strip_all_tags( $notices[0]['notice'] ) : 'No se pudo agregar al carrito. Intenta de nuevo.';
             wc_clear_notices();
             wp_send_json_error( [ 'message' => $msg ] );
+            return;
         }
     }
 
@@ -2807,7 +2812,7 @@ add_action( 'woocommerce_checkout_order_created', function ( \WC_Order $order ) 
         // Collect all order IDs for this event+base-room (both variants count toward shared cap).
         $all_orders = wc_get_orders( [
             'limit'      => -1,
-            'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+            'status'     => fmdb_reg_active_statuses(),
             'meta_query' => [
                 'relation' => 'OR',
                 [ 'key' => '_fmdb_reg_event_id',       'value' => $h_eid, 'compare' => '=' ],
