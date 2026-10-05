@@ -124,9 +124,11 @@ if ( $event_id ) {
                 <?php
                 $hub_teams    = fmdb_reg_get_event_teams( $event_id );
                 $captain_keys = fmdb_get_user_captain_team_keys( $current_user->ID, $event_id );
+                $player_keys  = fmdb_get_user_player_team_keys( $current_user->ID, $event_id );
                 foreach ( $hub_teams as &$ht ) {
                     $key = mb_strtolower( $ht['name'] ?? '' ) . '|' . ( $ht['rama'] ?? '' ) . '|' . ( $ht['categoria'] ?? '' );
                     $ht['_captain'] = in_array( $key, $captain_keys, true );
+                    $ht['_member']  = ! $ht['_captain'] && in_array( $key, $player_keys, true );
                 }
                 unset( $ht );
                 usort( $hub_teams, fn( $a, $b ) => strcasecmp( $a['name'] ?? '', $b['name'] ?? '' ) );
@@ -202,17 +204,21 @@ if ( $event_id ) {
                             <h3 class="fmdb-torneos__section-title">Elige el equipo al que quieres unirte</h3>
                             <div class="fmdb-torneos__team-checklist">
                                 <?php foreach ( $hub_teams as $ht ) :
-                                    $is_cap = ! empty( $ht['_captain'] );
+                                    $is_cap  = ! empty( $ht['_captain'] );
+                                    $is_mem  = ! empty( $ht['_member'] );
+                                    $is_dis  = $is_cap || $is_mem;
                                 ?>
-                                <label class="fmdb-torneos__team-check-opt<?php echo $is_cap ? ' fmdb-torneos__team-check-opt--disabled' : ''; ?>">
+                                <label class="fmdb-torneos__team-check-opt<?php echo $is_dis ? ' fmdb-torneos__team-check-opt--disabled' : ''; ?>">
                                     <input type="checkbox" class="fmdb-team-check"
-                                           <?php echo $is_cap ? 'disabled' : ''; ?>
+                                           <?php echo $is_dis ? 'disabled' : ''; ?>
                                            value="<?php echo esc_attr( wp_json_encode( [ 'name' => $ht['name'], 'rama' => $ht['rama'], 'categoria' => $ht['categoria'] ] ) ); ?>">
                                     <span class="fmdb-torneos__team-check-body">
                                         <span class="fmdb-torneos__team-check-name"><?php echo esc_html( $ht['name'] ); ?></span>
                                         <span class="fmdb-torneos__team-check-tags">
                                             <?php if ( $is_cap ) : ?>
                                             <span class="fmdb-torneos__team-tag fmdb-torneos__team-tag--own">Tu equipo</span>
+                                            <?php elseif ( $is_mem ) : ?>
+                                            <span class="fmdb-torneos__team-tag fmdb-torneos__team-tag--member">Ya eres miembro</span>
                                             <?php endif; ?>
                                             <?php if ( ! empty( $ht['modalidad'] ) ) : ?>
                                             <span class="fmdb-torneos__team-tag fmdb-torneos__team-tag--cat"><?php echo esc_html( $ht['modalidad'] ); ?></span>

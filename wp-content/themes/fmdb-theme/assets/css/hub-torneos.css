@@ -436,6 +436,10 @@
     background: #fef3c7;
     color: #92400e;
 }
+.fmdb-torneos__team-tag--member {
+    background: #e0f2fe;
+    color: #0369a1;
+}
 
 .fmdb-torneos__team-check-opt--disabled {
     opacity: 0.55;

@@ -514,6 +514,19 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
         }
     }
 
+    // Deduplicate hub players per team — a player who submitted multiple orders
+    // (e.g. two hub registrations) would otherwise appear twice.
+    foreach ( $teams as &$team ) {
+        $seen = [];
+        $team['players'] = array_values( array_filter( $team['players'], function ( $p ) use ( &$seen ) {
+            $n = $p['name'];
+            if ( isset( $seen[ $n ] ) ) return false;
+            $seen[ $n ] = true;
+            return true;
+        } ) );
+    }
+    unset( $team );
+
     // Compute confirmed: paid + (≥ min players OR hub registration) + not on waitlist.
     $limits = fmdb_reg_player_limits( $event_id );
     $min_players = $limits['min'];
@@ -795,6 +808,34 @@ function fmdb_get_user_captain_team_keys( int $user_id, int $event_id ): array {
         }
     }
     return $keys;
+}
+
+function fmdb_get_user_player_team_keys( int $user_id, int $event_id ): array {
+    if ( ! function_exists( 'wc_get_orders' ) || ! $user_id || ! $event_id ) return [];
+    $orders = wc_get_orders( [
+        'customer'   => $user_id,
+        'meta_key'   => '_fmdb_reg_event_id',
+        'meta_value' => $event_id,
+        'status'     => [ 'wc-pending', 'wc-on-hold', 'wc-processing', 'wc-completed' ],
+        'limit'      => -1,
+    ] );
+    $keys = [];
+    foreach ( $orders as $order ) {
+        if ( ( $order->get_meta( '_fmdb_reg_type' ) ?: 'team' ) === 'team' ) continue;
+        foreach ( $order->get_items() as $item ) {
+            $hub_json = $item->get_meta( 'Hub Teams' );
+            if ( ! $hub_json ) continue;
+            foreach ( json_decode( $hub_json, true ) ?? [] as $ht ) {
+                $name = trim( $ht['name'] ?? '' );
+                $rama = $ht['rama'] ?? '';
+                $cat  = $ht['categoria'] ?? '';
+                if ( $name && $rama && $cat ) {
+                    $keys[] = mb_strtolower( $name ) . '|' . $rama . '|' . $cat;
+                }
+            }
+        }
+    }
+    return array_unique( $keys );
 }
 
 function fmdb_user_has_pending_order_for_event( int $user_id, int $event_id ): bool {
