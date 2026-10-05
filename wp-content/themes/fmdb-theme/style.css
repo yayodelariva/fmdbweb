@@ -334,15 +334,16 @@ body #masthead .kadence-sticky-header.item-is-fixed:not(.item-at-start) > .site-
     height: 100%;
 }
 
-/* Organigrama submenus — Kadence styles these with high-specificity rules
-   (dark palette3 background, near-white palette8 links) emitted inline in the
-   <head>. Match its selector path + a `body` prefix so our navbar palette wins
-   regardless of cascade order: light bg, dark-green text, green hover. */
+/* Kadence emits high-specificity inline styles (dark palette3 bg, near-white
+   links). Use !important on the critical properties so our palette always wins. */
 body .header-navigation .header-menu-container ul ul.sub-menu {
-    background: #f2f2f2;
+    background:    #f2f2f2 !important;
+    border:        1px solid rgba(8, 80, 65, 0.15) !important;
+    border-radius: 10px !important;
+    box-shadow:    0 8px 24px rgba(8, 80, 65, 0.12) !important;
+    padding:       6px 0 !important;
+    overflow:      hidden;
 }
-/* Kadence's item divider is a white line (invisible on the light bg) — swap it
-   for a subtle dark-green tint. */
 body .header-navigation .header-menu-container ul ul li.menu-item {
     border-bottom: 1px solid rgba(8, 80, 65, 0.1);
 }
@@ -351,17 +352,19 @@ body .header-navigation .header-menu-container ul ul li.menu-item:last-child {
 }
 body .header-navigation .header-menu-container ul ul li.menu-item > a,
 body .header-navigation .header-menu-container ul ul li.menu-item > .fmdb-nav-heading {
-    color: #085041;
+    color:       #085041 !important;
+    background:  transparent !important;
     font-family: "Nunito", var(--global-body-font-family, sans-serif);
-    font-size: 15px;
-    width: auto;
+    font-size:   0.88rem;
+    padding:     9px 18px;
+    width:       auto;
 }
 body .header-navigation .header-menu-container ul ul li.menu-item > a:hover,
 body .header-navigation .header-menu-container ul ul li.menu-item > a:focus,
 body .header-navigation .header-menu-container ul ul li.menu-item:hover > .fmdb-nav-heading,
 body .header-navigation .header-menu-container ul ul li.menu-item:focus-within > .fmdb-nav-heading {
-    color: #117554;
-    background: var(--fmdb-pale-green);
+    color:      #117554 !important;
+    background: var(--fmdb-pale-green) !important;
 }
 
 /* Mobile drawer submenus. Scoped to #mobile-drawer (not a width media query)
