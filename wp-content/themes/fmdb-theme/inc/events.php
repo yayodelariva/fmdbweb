@@ -17,8 +17,9 @@ function fmdb_event_types(): array {
 add_filter( 'use_block_editor_for_post_type', function ( $use, $post_type ) {
     return $post_type === 'tribe_events' ? false : $use;
 }, 10, 2 );
-// Also tell TEC's own editor to not load blocks — controls the date/time metabox visibility
-add_filter( 'tribe_editor_should_load_blocks', '__return_false' );
+// Tell TEC not to load blocks — gates tribe_events_event_details (date/time) metabox registration
+add_filter( 'tribe_editor_should_load_blocks',   '__return_false', 200 );
+add_filter( 'tribe_editor_are_blocks_enabled',   '__return_false', 200 );
 
 // Fix TEC Spanish translations
 add_filter( 'gettext_the-events-calendar', function ( $translation, $text ) {
