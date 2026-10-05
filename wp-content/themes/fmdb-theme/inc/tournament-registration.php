@@ -471,6 +471,18 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
         }
     }
 
+    // Build a no-modalidad index for old-format team keys (name|rama|cat|modalidad).
+    // Hub-team JSON never stores modalidad, so the lookup key (name|rama|cat) won't
+    // match directly; fall back to the first team key that shares the same prefix.
+    $prefix_lookup = [];
+    foreach ( $teams as $k => $t ) {
+        $parts = explode( '|', $k );
+        if ( count( $parts ) === 4 ) {
+            $prefix = $parts[0] . '|' . $parts[1] . '|' . $parts[2];
+            $prefix_lookup[ $prefix ] ??= $k;
+        }
+    }
+
     // Pass 2: attach hub (individual multi-team) players — all team entries now exist
     // regardless of whether the player's order ID precedes the captain's.
     foreach ( $orders as $order ) {
@@ -490,8 +502,10 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
                 $ht_cat  = $ht['categoria'] ?? '';
                 if ( ! $ht_name || ! $ht_rama || ! $ht_cat ) continue;
                 $ht_key = mb_strtolower( $ht_name ) . '|' . $ht_rama . '|' . $ht_cat;
-                if ( isset( $teams[ $ht_key ] ) ) {
-                    $teams[ $ht_key ]['players'][] = [
+                // Old-format keys include modalidad; fall back to the prefix match.
+                $resolved = isset( $teams[ $ht_key ] ) ? $ht_key : ( $prefix_lookup[ $ht_key ] ?? '' );
+                if ( $resolved && isset( $teams[ $resolved ] ) ) {
+                    $teams[ $resolved ]['players'][] = [
                         'name'   => $player_name,
                         'status' => $order->get_status(),
                     ];
