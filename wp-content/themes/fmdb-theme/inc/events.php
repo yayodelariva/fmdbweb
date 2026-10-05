@@ -13,6 +13,11 @@ function fmdb_event_types(): array {
     return [ 'torneo', 'liga', 'campamento', 'entrenamiento', 'anuncio', 'miscelaneo' ];
 }
 
+// Force classic editor for tribe_events so TEC date/time metabox is always available
+add_filter( 'use_block_editor_for_post_type', function ( $use, $post_type ) {
+    return $post_type === 'tribe_events' ? false : $use;
+}, 10, 2 );
+
 // Fix TEC Spanish translations
 add_filter( 'gettext_the-events-calendar', function ( $translation, $text ) {
     if ( $text === '%s Cost' ) return 'Costo del %s';
