@@ -111,7 +111,7 @@ if ( $event_id ) {
                 <?php if ( $has_paid ) : ?>
                 <p class="fmdb-torneos__form-desc">Ya tienes una inscripción pagada — puedes registrarte de nuevo de forma gratuita.</p>
                 <?php else : ?>
-                <p class="fmdb-torneos__form-desc">Al inscribirte obtienes acceso al directorio de equipos registrados donde podrás unirte a uno.</p>
+                <p class="fmdb-torneos__form-desc">Al hacer el pago único de inscripción, obtienes acceso a la lista de equipos donde podrás unirte a cualquiera de ellos.</p>
                 <?php endif; ?>
 
                 <?php if ( $deadline ) : ?>
