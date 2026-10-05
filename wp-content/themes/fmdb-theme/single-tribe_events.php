@@ -328,7 +328,35 @@ while ( have_posts() ) : the_post();
                     <?php endif; ?>
                 </div>
 
-                <?php fmdb_event_registration_box( $id ); ?>
+                <?php
+                $_reg_open   = get_post_meta( $id, '_fmdb_reg_open', true ) === 'on';
+                $_reg_closed = ! $_reg_open || ( function_exists( 'fmdb_reg_deadline_passed' ) && fmdb_reg_deadline_passed( $id ) );
+                $_reg_prod   = (int) get_post_meta( $id, '_fmdb_reg_product_id', true );
+                if ( $_reg_prod && ! $_reg_closed ) :
+                    $_has_access = is_user_logged_in()
+                                && function_exists( 'fmdb_user_has_event_access' )
+                                && fmdb_user_has_event_access( get_current_user_id(), $id );
+                    $_has_paid   = $_has_access
+                                && function_exists( 'fmdb_user_has_paid_for_event' )
+                                && fmdb_user_has_paid_for_event( get_current_user_id(), $id );
+                ?>
+                <div class="fmdb-evento-single__meta-card">
+                    <h3 class="fmdb-evento-single__meta-title">Inscripción</h3>
+                    <?php if ( $_has_access ) : ?>
+                        <span class="fmdb-reg-box__inscrito-badge">✓ Ya estás inscrito</span>
+                        <a href="#fmdb-teams-<?php echo $id; ?>"
+                           class="fmdb-btn fmdb-btn--secondary fmdb-reg-box__btn" style="margin-top:10px;">
+                            Ver equipos registrados ↓
+                        </a>
+                    <?php else : ?>
+                        <p style="font-size:0.82rem;color:#666;margin:0 0 12px;">Inscríbete para acceder al directorio de equipos.</p>
+                    <?php endif; ?>
+                    <a href="<?php echo esc_url( add_query_arg( 'evento', $id, home_url( '/torneos/' ) ) ); ?>"
+                       class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn" style="margin-top:10px;">
+                        <?php echo $_has_paid ? 'Regístrate de nuevo (gratis) →' : 'Regístrate →'; ?>
+                    </a>
+                </div>
+                <?php endif; ?>
             </aside>
 
         </div>
