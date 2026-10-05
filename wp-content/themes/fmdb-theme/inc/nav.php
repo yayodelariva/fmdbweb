@@ -179,19 +179,6 @@ add_action( 'wp_footer', function () {
             e.stopPropagation();
             heading.parentElement.classList.toggle('is-open');
         }, true);
-
-        // Kadence's mobile drawer splits parent items into a <a> (left, navigates)
-        // and a .drawer-sub-toggle <button> (right, expands submenu). Make the full
-        // row tap-to-expand by redirecting taps on the <a> to the toggle button.
-        document.addEventListener('pointerup', function (e) {
-            var link = e.target.closest('#mobile-drawer .drawer-nav-drop-wrap > a');
-            if (!link) return;
-            var toggle = link.parentElement.querySelector('.drawer-sub-toggle');
-            if (!toggle) return;
-            e.preventDefault();
-            e.stopPropagation();
-            toggle.click();
-        }, true);
     })();
     </script>
     <?php
