@@ -396,21 +396,23 @@
     flex: 1;
     min-width: 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 10px;
+    gap: 6px 10px;
     flex-wrap: wrap;
 }
 
 .fmdb-torneos__team-check-name {
     font-size: 0.92rem;
     font-weight: 600;
+    min-width: 0;
+    word-break: break-word;
 }
 
 .fmdb-torneos__team-check-tags {
     display: flex;
-    gap: 6px;
-    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 4px 6px;
 }
 
 .fmdb-torneos__team-tag {
