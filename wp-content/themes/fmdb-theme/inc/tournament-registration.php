@@ -2302,7 +2302,7 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
             <ul class="fmdb-reg-team-card__roster">
                 <?php if ( $team['captain'] ) : ?>
                     <li class="fmdb-reg-team-card__player">
-                        <span class="fmdb-reg-team-card__role">Encargado</span>
+                        <span class="fmdb-reg-team-card__role">Capitán</span>
                         <?php echo esc_html( $team['captain'] ); ?>
                     </li>
                 <?php endif; ?>
