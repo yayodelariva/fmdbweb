@@ -131,7 +131,22 @@ if ( $event_id ) {
                     $ht['_member']  = ! $ht['_captain'] && in_array( $key, $player_keys, true );
                 }
                 unset( $ht );
-                usort( $hub_teams, fn( $a, $b ) => strcasecmp( $a['name'] ?? '', $b['name'] ?? '' ) );
+                $hub_cat_order = array_flip( array_keys( fmdb_reg_all_categories() ) );
+                $hub_mod_order = [ 'Cloth' => 0, 'Foam' => 1 ];
+                $hub_rama_order = [ 'Femenil' => 0, 'Mixto' => 1, 'Varonil' => 2 ];
+                usort( $hub_teams, function ( $a, $b ) use ( $hub_cat_order, $hub_mod_order, $hub_rama_order ) {
+                    $nc = strcasecmp( $a['name'] ?? '', $b['name'] ?? '' );
+                    if ( $nc !== 0 ) return $nc;
+                    $ra = $hub_rama_order[ $a['rama'] ?? '' ] ?? 99;
+                    $rb = $hub_rama_order[ $b['rama'] ?? '' ] ?? 99;
+                    if ( $ra !== $rb ) return $ra <=> $rb;
+                    $ma = $hub_mod_order[ $a['modalidad'] ?? '' ] ?? 99;
+                    $mb = $hub_mod_order[ $b['modalidad'] ?? '' ] ?? 99;
+                    if ( $ma !== $mb ) return $ma <=> $mb;
+                    $ca = $hub_cat_order[ $a['categoria'] ?? '' ] ?? 99;
+                    $cb = $hub_cat_order[ $b['categoria'] ?? '' ] ?? 99;
+                    return $ca <=> $cb;
+                } );
                 ?>
 
                 <form novalidate id="fmdb-hub-form" class="fmdb-torneos__form">
