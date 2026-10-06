@@ -194,6 +194,14 @@ while ( have_posts() ) : the_post();
                         </ul>
                     </div>
                 <?php endif; ?>
+
+                <?php if ( $id === 184 ) : ?>
+                    <div class="fmdb-evento-single__promo-img">
+                        <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/assets/img/Circuito2Cuautla.jpeg' ); ?>"
+                             alt="Circuito Mexicano de Dodgeball 2026 — 2da Parada Cuautla"
+                             style="width:100%;height:auto;border-radius:12px;display:block;">
+                    </div>
+                <?php endif; ?>
             </div>
             <?php endif; // $has_content ?>
 
