@@ -45,7 +45,7 @@ if ( $event_id ) {
     $valid_ramas   = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
     $allowed_ramas = array_values( array_intersect( $allowed_ramas, $valid_ramas ) );
     if ( empty( $allowed_ramas ) ) $allowed_ramas = $valid_ramas;
-    if ( empty( $allowed_cats ) )  $allowed_cats  = [ 'Infantil', 'Libre' ];
+    if ( empty( $allowed_cats ) )  $allowed_cats  = array_keys( fmdb_reg_all_categories() );
 
     // Expand to display ramas
     $display_ramas = [];
@@ -175,8 +175,10 @@ if ( $event_id ) {
                                 <label for="fmdb-categoria">Categoría <span style="color:#c0392b">*</span></label>
                                 <select id="fmdb-categoria" name="fmdb_categoria">
                                     <option value="">— Seleccionar —</option>
-                                    <?php foreach ( $allowed_cats as $c ) :
-                                        $clabel = $c === 'Infantil' ? 'Infantil (8-12 años)' : 'Libre (13+ años)';
+                                    <?php
+                                    $_all_cat_labels = fmdb_reg_all_categories();
+                                    foreach ( $allowed_cats as $c ) :
+                                        $clabel = $_all_cat_labels[ $c ] ?? $c;
                                     ?>
                                         <option value="<?php echo esc_attr( $c ); ?>"><?php echo esc_html( $clabel ); ?></option>
                                     <?php endforeach; ?>

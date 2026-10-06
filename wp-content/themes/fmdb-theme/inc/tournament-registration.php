@@ -45,15 +45,15 @@ add_action( 'cmb2_init', function () {
         'date_format' => 'Y-m-d',
     ] );
     $cmb->add_field( [
-        'name'       => __( 'Cupo de equipos por rama/modalidad (Libre)', 'fmdb' ),
-        'desc'       => __( '0 = sin límite. Aplica por cada Rama × Modalidad.', 'fmdb' ),
+        'name'       => __( 'Cupo de equipos por rama (Libre / Juvenil / Máster)', 'fmdb' ),
+        'desc'       => __( '0 = sin límite. Aplica por cada Rama en estas categorías.', 'fmdb' ),
         'id'         => '_fmdb_reg_max_teams',
         'type'       => 'text_small',
         'attributes' => [ 'type' => 'number', 'min' => '0' ],
     ] );
     $cmb->add_field( [
-        'name'       => __( 'Cupo de equipos por rama/modalidad (Infantil)', 'fmdb' ),
-        'desc'       => __( '0 = sin límite. Aplica por cada Rama × Modalidad en categoría Infantil.', 'fmdb' ),
+        'name'       => __( 'Cupo de equipos por rama (Infantil Intermedia / Infantil Mayor)', 'fmdb' ),
+        'desc'       => __( '0 = sin límite. Aplica por cada Rama en categorías Infantil.', 'fmdb' ),
         'id'         => '_fmdb_reg_max_teams_infantil',
         'type'       => 'text_small',
         'attributes' => [ 'type' => 'number', 'min' => '0' ],
@@ -91,7 +91,7 @@ add_action( 'cmb2_init', function () {
         'desc'    => __( 'Dejar vacío para mostrar todas.', 'fmdb' ),
         'id'      => '_fmdb_reg_categorias',
         'type'    => 'multicheck',
-        'options' => [ 'Infantil' => 'Infantil (8-12 años)', 'Libre' => 'Libre (13+ años)' ],
+        'options' => fmdb_reg_all_categories(),
     ] );
     $cmb->add_field( [
         'name'       => __( 'Hospedaje – Habitación Sencilla (MXN)', 'fmdb' ),
@@ -614,9 +614,11 @@ function fmdb_reg_user_team( int $user_id ): ?WP_Post {
 
 /* ─── 3c. Slot cap and confirmed-team count ───────────────────────────── */
 
-// Cap per (rama × modalidad) for a given categoria. Infantil is always 12.
+// Cap per rama for a given categoria.
+// Infantil Intermedia and Infantil Mayor share the _fmdb_reg_max_teams_infantil cap.
+// All other categories use _fmdb_reg_max_teams.
 function fmdb_reg_slot_cap( int $event_id, string $categoria ): int {
-    if ( $categoria === 'Infantil' ) {
+    if ( strpos( $categoria, 'Infantil' ) === 0 ) {
         return (int) get_post_meta( $event_id, '_fmdb_reg_max_teams_infantil', true );
     }
     return (int) get_post_meta( $event_id, '_fmdb_reg_max_teams', true );
@@ -775,6 +777,17 @@ function fmdb_reg_deadline_passed( int $event_id ): bool {
     return $d && strtotime( $d . ' 23:59:59' ) < time();
 }
 
+// All valid tournament categories, keyed by value → display label.
+function fmdb_reg_all_categories(): array {
+    return [
+        'Infantil Intermedia' => 'Infantil Intermedia (8 a 10 años)',
+        'Infantil Mayor'      => 'Infantil Mayor (11 a 12 años)',
+        'Juvenil'             => 'Juvenil (13 a 15 años)',
+        'Libre'               => 'Libre (16+)',
+        'Máster'              => 'Máster (40+)',
+    ];
+}
+
 // Canonical team key: lowercase name + rama + categoria.
 function fmdb_team_key( string $name, string $rama, string $categoria ): string {
     return mb_strtolower( trim( $name ) ) . '|' . $rama . '|' . $categoria;
@@ -880,9 +893,9 @@ function fmdb_event_registration_box( int $event_id ): void {
     $ramas = array_values( array_intersect( $ramas, $valid_ramas ) );
     // Fallback: show all options if admin left division fields empty (or only had legacy values).
     if ( empty( $ramas ) ) $ramas = $valid_ramas;
-    if ( empty( $cats ) )  $cats  = [ 'Infantil', 'Libre' ];
+    if ( empty( $cats ) )  $cats  = array_keys( fmdb_reg_all_categories() );
 
-    $cat_labels    = [ 'Infantil' => 'Infantil (8-12 años)', 'Libre' => 'Libre (13+ años)' ];
+    $cat_labels    = fmdb_reg_all_categories();
     $player_limits = fmdb_reg_player_limits( $event_id );
     $min_players   = $player_limits['min'];
     $max_players   = $player_limits['max'];
@@ -2026,7 +2039,7 @@ function fmdb_ajax_hub_reg_submit(): void {
             wp_send_json_error( [ 'message' => 'Selecciona una rama válida.' ] );
             return;
         }
-        if ( ! in_array( $categoria, [ 'Infantil', 'Libre' ], true ) ) {
+        if ( ! array_key_exists( $categoria, fmdb_reg_all_categories() ) ) {
             wp_send_json_error( [ 'message' => 'Selecciona una categoría válida.' ] );
             return;
         }
@@ -2243,7 +2256,7 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
     }
     if ( $_has_mixto ) $_display_ramas[] = 'Mixto';
     $all_ramas = $_display_ramas;
-    if ( empty( $all_cats ) )  $all_cats  = [ 'Infantil', 'Libre' ];
+    if ( empty( $all_cats ) )  $all_cats  = array_keys( fmdb_reg_all_categories() );
 
     $sid = 'fmdb-teams-' . $event_id;
 
