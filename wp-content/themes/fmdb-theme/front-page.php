@@ -183,7 +183,7 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
         <button class="fmdb-announce-modal__close" aria-label="Cerrar">&#x2715;</button>
         <div class="fmdb-announce-modal__eyebrow">Inscripciones abiertas &mdash; Cuautla</div>
         <h2 class="fmdb-announce-modal__title" id="fmdb-announce-title">Circuito Mexicano<br>de Dodgeball<br><span>2026 &mdash; 2da Parada</span></h2>
-        <p class="fmdb-announce-modal__body">La segunda parada del circuito nacional llega a Puebla. Regístrate ahora, los cupos son limitados.</p>
+        <p class="fmdb-announce-modal__body">La segunda parada del circuito nacional llega a Cuautla. Regístrate ahora, los cupos son limitados.</p>
         <div class="fmdb-announce-modal__actions">
             <a href="/torneos/?evento=184" class="fmdb-announce-modal__cta">Inscríbete ahora</a>
             <button class="fmdb-announce-modal__dismiss">Recordar después</button>
