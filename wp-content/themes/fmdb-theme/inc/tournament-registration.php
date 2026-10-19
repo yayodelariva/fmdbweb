@@ -84,7 +84,7 @@ add_action( 'cmb2_init', function () {
         'desc'    => __( 'Dejar vacío para mostrar todas. Cada rama incluye Foam y Cloth automáticamente.', 'fmdb' ),
         'id'      => '_fmdb_reg_ramas',
         'type'    => 'multicheck',
-        'options' => [ 'Varonil/Mixto' => 'Varonil/Mixto', 'Femenil/Mixto' => 'Femenil/Mixto' ],
+        'options' => [ 'Varonil' => 'Varonil', 'Femenil' => 'Femenil', 'Mixto' => 'Mixto' ],
     ] );
     $cmb->add_field( [
         'name'    => __( 'Categorías', 'fmdb' ),
@@ -330,62 +330,6 @@ add_action( 'save_post_tribe_events', function ( $post_id ) {
 
 /* ─── 3a. Helper: get all teams registered for an event ───────────────── */
 
-/**
- * Expands Varonil/Mixto and Femenil/Mixto registrations into two display entries each:
- * a primary team (Varonil or Femenil) and a shared Mixto team that merges all contributions
- * for the same team name + categoria.
- */
-function fmdb_expand_team_ramas( array $teams ): array {
-    $out      = [];
-    $mixto    = []; // lc-name|categoria → index in $out
-
-    foreach ( $teams as $team ) {
-        $rama = $team['rama'] ?? '';
-
-        if ( strpos( $rama, '/' ) === false ) {
-            $out[] = $team; // old-format or already expanded — pass through
-            continue;
-        }
-
-        $primary_rama = ( strpos( $rama, 'Varonil' ) !== false ) ? 'Varonil' : 'Femenil';
-        $mixto_key    = mb_strtolower( trim( $team['name'] ?? '' ) ) . '|' . ( $team['categoria'] ?? '' );
-
-        // Primary team (Varonil or Femenil).
-        $primary         = $team;
-        $primary['rama'] = $primary_rama;
-        $out[]           = $primary;
-
-        // Mixto team.
-        if ( ! isset( $mixto[ $mixto_key ] ) ) {
-            $mt = $team;
-            $mt['rama'] = 'Mixto';
-            unset( $mt['confirmed'] ); // recomputed by normalization pass
-            $out[] = $mt;
-            $mixto[ $mixto_key ] = array_key_last( $out );
-        } else {
-            $idx = $mixto[ $mixto_key ];
-            // Merge captain as extra player if different.
-            $captain = trim( $team['captain'] ?? '' );
-            if ( $captain && $captain !== ( $out[ $idx ]['captain'] ?? '' ) ) {
-                $out[ $idx ]['extra_players'][] = $captain;
-            }
-            foreach ( $team['extra_players'] ?? [] as $ep ) {
-                $out[ $idx ]['extra_players'][] = $ep;
-            }
-            $out[ $idx ]['bulk_count'] += (int) ( $team['bulk_count'] ?? 0 );
-            foreach ( $team['players'] ?? [] as $p ) {
-                $out[ $idx ]['players'][] = $p;
-            }
-            // Promote status to the "better" of the two registrations.
-            $rank = [ 'completed' => 3, 'processing' => 2, 'on-hold' => 1, 'pending' => 0 ];
-            if ( ( $rank[ $team['status'] ?? '' ] ?? -1 ) > ( $rank[ $out[ $idx ]['status'] ?? '' ] ?? -1 ) ) {
-                $out[ $idx ]['status'] = $team['status'];
-            }
-        }
-    }
-
-    return $out;
-}
 
 function fmdb_reg_get_event_teams( int $event_id ): array {
     if ( ! function_exists( 'wc_get_orders' ) ) return [];
@@ -417,11 +361,7 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
             $categoria = $item->get_meta( 'Categoría' );
             $modalidad = $item->get_meta( 'Modalidad' );
 
-            // Key on name + division. Old format (pre-migration) includes modalidad for backward compat;
-            // new format (rama contains '/') omits it — one registration covers all modalidades.
-            $is_new_fmt = strpos( $rama, '/' ) !== false;
-            $key = fmdb_team_key( $team_name, $rama, $categoria )
-                 . ( $is_new_fmt ? '' : '|' . $modalidad );
+            $key = fmdb_team_key( $team_name, $rama, $categoria ) . '|' . $modalidad;
 
             if ( ! isset( $teams[ $key ] ) ) {
                 $teams[ $key ] = [
@@ -470,9 +410,8 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
         }
     }
 
-    // Build a no-modalidad index for old-format team keys (name|rama|cat|modalidad).
-    // Hub-team JSON never stores modalidad, so the lookup key (name|rama|cat) won't
-    // match directly; fall back to the first team key that shares the same prefix.
+    // Hub-team JSON uses name|rama|cat as key; actual team keys include |modalidad.
+    // Build a prefix lookup so hub players can be attached to the right team entry.
     $prefix_lookup = [];
     foreach ( $teams as $k => $t ) {
         $parts = explode( '|', $k );
@@ -538,9 +477,6 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
     unset( $team );
 
     $all = apply_filters( 'fmdb_reg_event_teams', array_values( $teams ), $event_id );
-
-    // Expand Varonil/Mixto → Varonil + Mixto, Femenil/Mixto → Femenil + Mixto.
-    $all = fmdb_expand_team_ramas( $all );
 
     // Normalize fixture/filtered data that may be missing computed fields.
     $normalized = array_map( function ( $t ) use ( $min_players ) {
@@ -888,10 +824,8 @@ function fmdb_event_registration_box( int $event_id ): void {
         $closed = true;
     }
 
-    // Strip legacy values (pre-migration: Femenil, Mixta, Varonil) saved before the new rama model.
-    $valid_ramas = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
+    $valid_ramas = [ 'Varonil', 'Femenil', 'Mixto' ];
     $ramas = array_values( array_intersect( $ramas, $valid_ramas ) );
-    // Fallback: show all options if admin left division fields empty (or only had legacy values).
     if ( empty( $ramas ) ) $ramas = $valid_ramas;
     if ( empty( $cats ) )  $cats  = array_keys( fmdb_reg_all_categories() );
 
@@ -1194,15 +1128,10 @@ function fmdb_event_registration_box( int $event_id ): void {
                         <select id="fmdb-ind-sel-<?php echo $eid; ?>" class="fmdb-reg-ind-sel">
                             <option value="">— Selecciona tu equipo —</option>
                             <?php foreach ( $registered_teams as $rt ) :
-                                if ( ( $rt['rama'] ?? '' ) === 'Mixto' ) continue; // Mixto is derived; join via the primary team
                                 $rt_div = implode( ' · ', array_filter( [ $rt['rama'], $rt['categoria'] ] ) );
-                                // Stored/compound rama for the hidden field (must match team order's Rama meta).
-                                $_rt_stored_rama = ( $rt['rama'] ?? '' ) === 'Varonil' ? 'Varonil/Mixto'
-                                                 : ( ( $rt['rama'] ?? '' ) === 'Femenil' ? 'Femenil/Mixto' : ( $rt['rama'] ?? '' ) );
                             ?>
                                 <option value="<?php echo esc_attr( $rt['name'] ); ?>"
                                         data-rama="<?php echo esc_attr( $rt['rama'] ); ?>"
-                                        data-stored-rama="<?php echo esc_attr( $_rt_stored_rama ); ?>"
                                         data-cat="<?php echo esc_attr( $rt['categoria'] ); ?>"
                                         <?php selected( mb_strtolower( trim( $rt['name'] ) ) === $ind_lower ); ?>>
                                     <?php echo esc_html( $rt['name'] . ( $rt_div ? '  —  ' . $rt_div : '' ) ); ?>
@@ -1239,12 +1168,8 @@ function fmdb_event_registration_box( int $event_id ): void {
                 <?php if ( ! empty( $registered_teams ) ) : ?>
                 <div class="fmdb-reg-form__section-title">División</div>
                 <?php
-                $_ind_disp_rama  = $ind_reg_match ? ( $ind_reg_match['rama'] ?? '' ) : '';
+                $ind_rama_val    = $ind_reg_match ? ( $ind_reg_match['rama'] ?? '' ) : '';
                 $ind_cat_val     = $ind_reg_match ? $ind_reg_match['categoria']  : '';
-                // Convert display rama back to stored/compound rama for the hidden field and cart.
-                $ind_stored_rama = $_ind_disp_rama === 'Varonil' ? 'Varonil/Mixto'
-                                 : ( $_ind_disp_rama === 'Femenil' ? 'Femenil/Mixto' : $_ind_disp_rama );
-                $ind_rama_val    = $_ind_disp_rama; // display-only (visible span)
                 $show_div_card   = (bool) $ind_reg_match;
                 ?>
                 <div class="fmdb-reg-ind-div-card<?php echo $show_div_card ? '' : ' fmdb-reg-form--hidden'; ?>"
@@ -1258,7 +1183,7 @@ function fmdb_event_registration_box( int $event_id ): void {
                         <span class="fmdb-reg-ind-div-card__val" id="fmdb-ind-div-cat-<?php echo $eid; ?>"><?php echo esc_html( $cat_labels[ $ind_cat_val ] ?? $ind_cat_val ); ?></span>
                     </div>
                     <input type="hidden" name="fmdb_rama"      id="fmdb-ind-hrama-<?php echo $eid; ?>"
-                           value="<?php echo esc_attr( $ind_stored_rama ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
+                           value="<?php echo esc_attr( $ind_rama_val ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
                     <input type="hidden" name="fmdb_categoria" id="fmdb-ind-hcat-<?php echo $eid; ?>"
                            value="<?php echo esc_attr( $ind_cat_val ); ?>"<?php echo $show_div_card ? '' : ' disabled'; ?>>
                 </div>
@@ -1930,14 +1855,12 @@ function fmdb_ajax_add_registration(): void {
     // Individual join: enforce roster cap before adding to cart.
     if ( ( $_POST['fmdb_reg_type'] ?? '' ) === 'individual' && ! empty( $_POST['fmdb_ind_team_name'] ) ) {
         $ind_limits     = fmdb_reg_player_limits( $event_id );
-        $ind_stored_rama = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-        $ind_disp_rama  = strpos( $ind_stored_rama, 'Varonil' ) !== false ? 'Varonil'
-                        : ( strpos( $ind_stored_rama, 'Femenil' ) !== false ? 'Femenil' : $ind_stored_rama );
-        $ind_cap        = $ind_disp_rama === 'Mixto' ? $ind_limits['max_mixto'] : $ind_limits['max'];
+        $ind_rama  = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
+        $ind_cap   = $ind_rama === 'Mixto' ? $ind_limits['max_mixto'] : $ind_limits['max'];
         if ( $ind_cap > 0 ) {
             $ind_target = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_ind_team_name'] ) ) );
             foreach ( fmdb_reg_get_event_teams( $event_id ) as $ind_team ) {
-                if ( mb_strtolower( trim( $ind_team['name'] ) ) === $ind_target && $ind_team['rama'] === $ind_disp_rama ) {
+                if ( mb_strtolower( trim( $ind_team['name'] ) ) === $ind_target && $ind_team['rama'] === $ind_rama ) {
                     $total = ( $ind_team['bulk_count'] ?? 0 ) + count( $ind_team['players'] ?? [] );
                     if ( $total >= $ind_cap ) {
                         wp_send_json_error( [ 'message' => 'Este equipo ya alcanzó el límite de ' . $ind_cap . ' jugadores.' ] );
@@ -2245,18 +2168,8 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
     // Use event-configured options for filters (fallback to full list).
     $all_ramas = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_ramas', true ) ) );
     $all_cats  = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_categorias', true ) ) );
-    $all_ramas = array_values( array_intersect( $all_ramas, [ 'Varonil/Mixto', 'Femenil/Mixto' ] ) );
-    if ( empty( $all_ramas ) ) $all_ramas = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
-    // Expand stored ramas to display ramas: Varonil/Mixto → Varonil; Femenil/Mixto → Femenil; Mixto appended once.
-    $_display_ramas = [];
-    $_has_mixto     = false;
-    foreach ( $all_ramas as $_r ) {
-        $_primary = strpos( $_r, 'Varonil' ) !== false ? 'Varonil' : 'Femenil';
-        if ( ! in_array( $_primary, $_display_ramas, true ) ) $_display_ramas[] = $_primary;
-        $_has_mixto = true;
-    }
-    if ( $_has_mixto ) $_display_ramas[] = 'Mixto';
-    $all_ramas = $_display_ramas;
+    $all_ramas = array_values( array_intersect( $all_ramas, [ 'Varonil', 'Femenil', 'Mixto' ] ) );
+    if ( empty( $all_ramas ) ) $all_ramas = [ 'Varonil', 'Femenil', 'Mixto' ];
     if ( empty( $all_cats ) )  $all_cats  = array_keys( fmdb_reg_all_categories() );
 
     $sid = 'fmdb-teams-' . $event_id;

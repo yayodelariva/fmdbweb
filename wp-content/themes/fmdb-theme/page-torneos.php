@@ -42,18 +42,11 @@ if ( $event_id ) {
 
     $allowed_ramas = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_ramas',      true ) ) );
     $allowed_cats  = array_values( array_filter( (array) get_post_meta( $event_id, '_fmdb_reg_categorias', true ) ) );
-    $valid_ramas   = [ 'Varonil/Mixto', 'Femenil/Mixto' ];
+    $valid_ramas   = [ 'Varonil', 'Femenil', 'Mixto' ];
     $allowed_ramas = array_values( array_intersect( $allowed_ramas, $valid_ramas ) );
     if ( empty( $allowed_ramas ) ) $allowed_ramas = $valid_ramas;
     if ( empty( $allowed_cats ) )  $allowed_cats  = array_keys( fmdb_reg_all_categories() );
-
-    // Expand to display ramas
-    $display_ramas = [];
-    foreach ( $allowed_ramas as $ar ) {
-        $primary = strpos( $ar, 'Varonil' ) !== false ? 'Varonil' : 'Femenil';
-        if ( ! in_array( $primary, $display_ramas, true ) ) $display_ramas[] = $primary;
-    }
-    if ( ! empty( $allowed_ramas ) ) $display_ramas[] = 'Mixto';
+    $display_ramas = $allowed_ramas;
 ?>
 <main class="fmdb-torneos">
     <div class="fmdb-torneos__wrap">
