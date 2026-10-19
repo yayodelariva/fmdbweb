@@ -17,6 +17,23 @@ function fmdb_reg_export_rows( int $event_id ): array {
         'order'      => 'ASC',
     ] );
 
+    // Build a modalidad lookup from captain orders for back-filling hub entries
+    // whose stored Hub Teams JSON predates the modalidad field being added.
+    // key = lower(name)|rama|categoria  →  [modalidad, ...]  (usually one value)
+    $modalidad_map = [];
+    foreach ( $orders as $o ) {
+        if ( ( $o->get_meta( '_fmdb_reg_type' ) ?: 'team' ) !== 'team' ) continue;
+        foreach ( $o->get_items() as $it ) {
+            $eq = trim( (string) $it->get_meta( 'Equipo' ) );
+            $m  = (string) $it->get_meta( 'Modalidad' );
+            if ( $eq && $m ) {
+                $k = mb_strtolower( $eq ) . '|' . $it->get_meta( 'Rama' ) . '|' . $it->get_meta( 'Categoría' );
+                $modalidad_map[ $k ][] = $m;
+            }
+            break;
+        }
+    }
+
     $rows = [];
 
     foreach ( $orders as $order ) {
@@ -50,10 +67,23 @@ function fmdb_reg_export_rows( int $event_id ): array {
             $hub_ramas = [];
             $hub_cats  = [];
             foreach ( json_decode( $reg_item->get_meta( 'Hub Teams' ), true ) ?? [] as $ht ) {
-                $parts = array_filter( [ $ht['name'] ?? '', $ht['rama'] ?? '', $ht['modalidad'] ?? '', $ht['categoria'] ?? '' ] );
+                $ht_name = $ht['name'] ?? '';
+                $ht_rama = $ht['rama'] ?? '';
+                $ht_cat  = $ht['categoria'] ?? '';
+                $ht_mod  = $ht['modalidad'] ?? '';
+
+                // Back-fill modalidad from captain orders when the stored JSON lacks it.
+                if ( $ht_mod === '' && $ht_name !== '' ) {
+                    $lk = mb_strtolower( trim( $ht_name ) ) . '|' . $ht_rama . '|' . $ht_cat;
+                    if ( ! empty( $modalidad_map[ $lk ] ) ) {
+                        $ht_mod = implode( '/', array_unique( $modalidad_map[ $lk ] ) );
+                    }
+                }
+
+                $parts = array_filter( [ $ht_name, $ht_rama, $ht_mod, $ht_cat ] );
                 if ( $parts ) $team_list[] = implode( ' ', $parts );
-                if ( ! empty( $ht['rama'] ) )     $hub_ramas[] = $ht['rama'];
-                if ( ! empty( $ht['categoria'] ) ) $hub_cats[]  = $ht['categoria'];
+                if ( $ht_rama ) $hub_ramas[] = $ht_rama;
+                if ( $ht_cat )  $hub_cats[]  = $ht_cat;
             }
             $rama      = implode( ', ', array_unique( $hub_ramas ) );
             $categoria = implode( ', ', array_unique( $hub_cats ) );
