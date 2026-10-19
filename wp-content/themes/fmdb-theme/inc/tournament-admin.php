@@ -19,12 +19,11 @@ function fmdb_reg_export_rows( int $event_id ): array {
 
     // Build a prefix lookup from the canonical team-card data so old hub entries
     // (JSON without modalidad) resolve to the same single modalidad the team card shows.
-    // key = lower(name)|rama|categoria  →  modalidad string
+    // fmdb_reg_get_event_teams() returns array_values so keys are integers — build from value fields.
     $prefix_lookup = [];
-    foreach ( fmdb_reg_get_event_teams( $event_id ) as $k => $t ) {
-        $parts = explode( '|', $k );
-        if ( count( $parts ) === 4 ) {
-            $prefix = $parts[0] . '|' . $parts[1] . '|' . $parts[2];
+    foreach ( fmdb_reg_get_event_teams( $event_id ) as $t ) {
+        if ( ! empty( $t['modalidad'] ) ) {
+            $prefix = fmdb_team_key( $t['name'], $t['rama'], $t['categoria'] );
             $prefix_lookup[ $prefix ] ??= $t['modalidad'];
         }
     }
@@ -69,8 +68,7 @@ function fmdb_reg_export_rows( int $event_id ): array {
 
                 // Back-fill modalidad from team-card data when the stored JSON lacks it.
                 if ( $ht_mod === '' && $ht_name !== '' ) {
-                    $lk     = mb_strtolower( trim( $ht_name ) ) . '|' . $ht_rama . '|' . $ht_cat;
-                    $ht_mod = $prefix_lookup[ $lk ] ?? '';
+                    $ht_mod = $prefix_lookup[ fmdb_team_key( $ht_name, $ht_rama, $ht_cat ) ] ?? '';
                 }
 
                 $parts = array_filter( [ $ht_name, $ht_rama, $ht_mod, $ht_cat ] );
