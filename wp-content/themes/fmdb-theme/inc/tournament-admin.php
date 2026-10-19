@@ -96,6 +96,11 @@ function fmdb_reg_export_rows( int $event_id ): array {
             $team_list = [ implode( ' ', $parts ) ];
         }
 
+        // Rama / Categoría / Modalidad columns are only meaningful for Capitán rows.
+        if ( $reg_type !== 'team' ) {
+            $rama = $categoria = $modalidad = '';
+        }
+
         $fee_registro = (float) $reg_item->get_subtotal();
 
         $rows[] = [
