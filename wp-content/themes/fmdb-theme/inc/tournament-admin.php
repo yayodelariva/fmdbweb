@@ -36,26 +36,36 @@ function fmdb_reg_export_rows( int $event_id ): array {
         $nombre_first   = $reg_item->get_meta( 'Encargado' ) ?: $reg_item->get_meta( 'Capitán' ) ?: $reg_item->get_meta( 'Jugador' );
         $nombre         = trim( $nombre_first . ' ' . $reg_item->get_meta( 'Apellido' ) );
 
-        // For hub registrations pull team names + rama/categoria from the JSON payload.
-        $equipo   = $reg_item->get_meta( 'Equipo' );
-        $rama     = $reg_item->get_meta( 'Rama' );
+        $equipo    = $reg_item->get_meta( 'Equipo' );
+        $rama      = $reg_item->get_meta( 'Rama' );
         $categoria = $reg_item->get_meta( 'Categoría' );
         $modalidad = $reg_item->get_meta( 'Modalidad' );
 
-        if ( $is_hub ) {
-            $hub_names = [];
+        // Build a display list of team entries for Jugador rows.
+        // Each entry is a formatted string: "Name Rama [Modalidad] Categoria".
+        $team_list = [];
+        if ( $reg_type === 'team' ) {
+            $team_list = [ $equipo ];
+        } elseif ( $is_hub ) {
+            // Hub JSON has name/rama/categoria but no modalidad (covers all).
             $hub_ramas = [];
             $hub_cats  = [];
             foreach ( json_decode( $reg_item->get_meta( 'Hub Teams' ), true ) ?? [] as $ht ) {
-                $tn = trim( $ht['name'] ?? '' );
-                if ( $tn ) $hub_names[] = $tn;
+                $parts = array_filter( [ $ht['name'] ?? '', $ht['rama'] ?? '', $ht['categoria'] ?? '' ] );
+                if ( $parts ) $team_list[] = implode( ' ', $parts );
                 if ( ! empty( $ht['rama'] ) )     $hub_ramas[] = $ht['rama'];
                 if ( ! empty( $ht['categoria'] ) ) $hub_cats[]  = $ht['categoria'];
             }
-            $equipo    = implode( ', ', $hub_names );
             $rama      = implode( ', ', array_unique( $hub_ramas ) );
             $categoria = implode( ', ', array_unique( $hub_cats ) );
             $modalidad = '';
+            $equipo    = implode( ', ', array_column(
+                array_map( fn( $t ) => [ 'n' => $t ], $team_list ), 'n'
+            ) );
+        } else {
+            // Single-team individual join — has full rama/modalidad/categoria.
+            $parts     = array_filter( [ $equipo, $rama, $modalidad, $categoria ] );
+            $team_list = [ implode( ' ', $parts ) ];
         }
 
         $fee_registro = (float) $reg_item->get_subtotal();
@@ -66,6 +76,7 @@ function fmdb_reg_export_rows( int $event_id ): array {
             'reg_type'    => $reg_type,
             'is_hub'      => $is_hub,
             'equipo'      => $equipo,
+            'team_list'   => $team_list,
             'nombre'      => $nombre,
             'telefono'    => $reg_item->get_meta( 'Teléfono' ),
             'email'       => $order->get_billing_email(),
@@ -176,7 +187,17 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
                         <span title="Se unió al equipo">Jugador</span>
                     <?php endif; ?>
                 </td>
-                <td style="font-weight:600;"><?php echo esc_html( $r['equipo'] ); ?></td>
+                <td style="font-weight:600;">
+                    <?php if ( $r['reg_type'] !== 'team' && count( $r['team_list'] ) > 0 ) : ?>
+                        <ol style="margin:0;padding-left:16px;">
+                        <?php foreach ( $r['team_list'] as $tl ) : ?>
+                            <li><?php echo esc_html( $tl ); ?></li>
+                        <?php endforeach; ?>
+                        </ol>
+                    <?php else : ?>
+                        <?php echo esc_html( $r['equipo'] ); ?>
+                    <?php endif; ?>
+                </td>
                 <td><?php echo esc_html( $r['nombre'] ); ?></td>
                 <td style="white-space:nowrap;"><?php echo esc_html( $r['telefono'] ); ?></td>
                 <td><?php echo esc_html( $r['email'] ); ?></td>
@@ -236,11 +257,19 @@ add_action( 'admin_post_fmdb_reg_export', function () {
     $status_labels = array_map( fn( $v ) => $v[0], fmdb_reg_status_labels() );
 
     foreach ( $rows as $r ) {
+        $equipo_csv = $r['reg_type'] === 'team'
+            ? $r['equipo']
+            : implode( ' | ', array_map(
+                fn( $i, $t ) => ( $i + 1 ) . '. ' . $t,
+                array_keys( $r['team_list'] ),
+                $r['team_list']
+            ) );
+
         fputcsv( $out, [
             $r['order_id'],
             $status_labels[ $r['status'] ] ?? $r['status'],
             $r['reg_type'] === 'team' ? 'Capitán' : 'Jugador',
-            $r['equipo'],
+            $equipo_csv,
             $r['nombre'],
             $r['telefono'],
             $r['email'],
