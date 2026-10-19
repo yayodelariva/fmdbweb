@@ -22,88 +22,58 @@ function fmdb_reg_export_rows( int $event_id ): array {
     foreach ( $orders as $order ) {
         $reg_type = $order->get_meta( '_fmdb_reg_type' ) ?: 'team';
 
-        $reg_item  = null;
-        $hosp_item = null;
-
+        $reg_item = null;
         foreach ( $order->get_items() as $item ) {
             if ( ! $reg_item && ( $item->get_meta( 'Equipo' ) || $item->get_meta( 'Hub Teams' ) ) ) {
                 $reg_item = $item;
-            }
-            if ( ! $hosp_item && $item->get_meta( 'Habitación' ) ) {
-                $hosp_item = $item;
+                break;
             }
         }
 
         if ( ! $reg_item ) continue;
 
-        $is_hub             = (bool) $reg_item->get_meta( 'Hub Teams' );
-        $encargado_nombre   = $reg_item->get_meta( 'Encargado' ) ?: $reg_item->get_meta( 'Capitán' ) ?: $reg_item->get_meta( 'Jugador' );
-        $encargado_apellido = $reg_item->get_meta( 'Apellido' );
-        $encargado          = trim( $encargado_nombre . ' ' . $encargado_apellido );
+        $is_hub         = (bool) $reg_item->get_meta( 'Hub Teams' );
+        $nombre_first   = $reg_item->get_meta( 'Encargado' ) ?: $reg_item->get_meta( 'Capitán' ) ?: $reg_item->get_meta( 'Jugador' );
+        $nombre         = trim( $nombre_first . ' ' . $reg_item->get_meta( 'Apellido' ) );
 
-        // Build player list.
-        $jugadores = [];
-        if ( $reg_type === 'team' ) {
-            $jugadores[] = $encargado;
-            $total_slots = (int) $reg_item->get_meta( 'Jugadores' );
-            for ( $i = 2; $i <= $total_slots; $i++ ) {
-                $n = trim( $reg_item->get_meta( 'Jugador ' . $i ) );
-                if ( $n ) $jugadores[] = $n;
-            }
-        } else {
-            $jugadores[] = $encargado;
-        }
+        // For hub registrations pull team names + rama/categoria from the JSON payload.
+        $equipo   = $reg_item->get_meta( 'Equipo' );
+        $rama     = $reg_item->get_meta( 'Rama' );
+        $categoria = $reg_item->get_meta( 'Categoría' );
+        $modalidad = $reg_item->get_meta( 'Modalidad' );
 
-        // For hub registrations pull team names from the JSON payload.
-        $hub_team_names = [];
         if ( $is_hub ) {
+            $hub_names = [];
+            $hub_ramas = [];
+            $hub_cats  = [];
             foreach ( json_decode( $reg_item->get_meta( 'Hub Teams' ), true ) ?? [] as $ht ) {
                 $tn = trim( $ht['name'] ?? '' );
-                if ( $tn ) $hub_team_names[] = $tn;
+                if ( $tn ) $hub_names[] = $tn;
+                if ( ! empty( $ht['rama'] ) )     $hub_ramas[] = $ht['rama'];
+                if ( ! empty( $ht['categoria'] ) ) $hub_cats[]  = $ht['categoria'];
             }
-        }
-
-        // Build hospedaje info.
-        $habitacion = '';
-        $huespedes  = [];
-        if ( $hosp_item ) {
-            $habitacion = $hosp_item->get_meta( 'Habitación' );
-            for ( $i = 1; $i <= 10; $i++ ) {
-                $h = trim( (string) $hosp_item->get_meta( 'Huésped ' . $i ) );
-                if ( $h ) $huespedes[] = $h;
-                else break;
-            }
+            $equipo    = implode( ', ', $hub_names );
+            $rama      = implode( ', ', array_unique( $hub_ramas ) );
+            $categoria = implode( ', ', array_unique( $hub_cats ) );
+            $modalidad = '';
         }
 
         $fee_registro = (float) $reg_item->get_subtotal();
-        $fee_room     = $hosp_item ? (float) $hosp_item->get_subtotal() : 0.0;
-        $fee_venue    = 0.0;
-        foreach ( $order->get_fees() as $fee_item ) {
-            if ( strpos( $fee_item->get_name(), 'Entrada al venue' ) !== false ) {
-                $fee_venue += (float) $fee_item->get_total();
-            }
-        }
 
         $rows[] = [
-            'order_id'      => $order->get_id(),
-            'status'        => $order->get_status(),
-            'reg_type'      => $reg_type,
-            'is_hub'        => $is_hub,
-            'equipo'        => $is_hub ? implode( ', ', $hub_team_names ) : $reg_item->get_meta( 'Equipo' ),
-            'hub_teams'     => $hub_team_names,
-            'encargado'     => $encargado,
-            'telefono'      => $reg_item->get_meta( 'Teléfono' ),
-            'email'         => $order->get_billing_email(),
-            'rama'          => $reg_item->get_meta( 'Rama' ),
-            'categoria'     => $reg_item->get_meta( 'Categoría' ),
-            'modalidad'     => $reg_item->get_meta( 'Modalidad' ),
-            'jugadores'     => $jugadores,
-            'habitacion'    => $habitacion,
-            'huespedes'     => $huespedes,
-            'fee_registro'  => $fee_registro,
-            'fee_venue'     => $fee_venue,
-            'fee_room'      => $fee_room,
-            'fee_total'     => (float) $order->get_total(),
+            'order_id'    => $order->get_id(),
+            'status'      => $order->get_status(),
+            'reg_type'    => $reg_type,
+            'is_hub'      => $is_hub,
+            'equipo'      => $equipo,
+            'nombre'      => $nombre,
+            'telefono'    => $reg_item->get_meta( 'Teléfono' ),
+            'email'       => $order->get_billing_email(),
+            'rama'        => $rama,
+            'categoria'   => $categoria,
+            'modalidad'   => $modalidad,
+            'fee_registro' => $fee_registro,
+            'fee_total'   => (float) $order->get_total(),
         ];
     }
 
@@ -137,11 +107,11 @@ add_action( 'add_meta_boxes', function () {
 /* ─── 4. Metabox render ───────────────────────────────────────────────── */
 
 function fmdb_render_reg_export_metabox( WP_Post $post ): void {
-    $event_id     = $post->ID;
-    $rows         = fmdb_reg_export_rows( $event_id );
+    $event_id      = $post->ID;
+    $rows          = fmdb_reg_export_rows( $event_id );
     $status_labels = fmdb_reg_status_labels();
 
-    $nonce = wp_create_nonce( 'fmdb_reg_export_' . $event_id );
+    $nonce   = wp_create_nonce( 'fmdb_reg_export_' . $event_id );
     $csv_url = add_query_arg( [
         'action'   => 'fmdb_reg_export',
         'event_id' => $event_id,
@@ -173,20 +143,18 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
                 <th>Estado</th>
                 <th>Tipo</th>
                 <th>Equipo</th>
-                <th>Encargado</th>
+                <th>Nombre</th>
                 <th>Teléfono</th>
                 <th>Email</th>
-                <th>Rama / Cat. / Mod.</th>
-                <th>Jugadores</th>
-                <th>Hospedaje</th>
+                <th>Rama</th>
+                <th>Categoría</th>
+                <th>Modalidad</th>
                 <th style="white-space:nowrap;">Registro</th>
-                <th style="white-space:nowrap;">Venue</th>
-                <th style="white-space:nowrap;">Cuarto</th>
                 <th style="white-space:nowrap;">Total</th>
             </tr>
         </thead>
         <tbody>
-        <?php foreach ( $rows as $i => $r ) :
+        <?php foreach ( $rows as $r ) :
             [ $st_label, $st_color ] = $status_labels[ $r['status'] ] ?? [ ucfirst( $r['status'] ), '#555' ];
             $order_url = admin_url( 'post.php?post=' . $r['order_id'] . '&action=edit' );
         ?>
@@ -203,52 +171,19 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
                 </td>
                 <td>
                     <?php if ( $r['reg_type'] === 'team' ) : ?>
-                        <span title="Registró al equipo">Equipo</span>
-                    <?php elseif ( $r['is_hub'] ) : ?>
-                        <span title="Hub: se unió a varios equipos">Hub</span>
+                        <span title="Registró al equipo">Capitán</span>
                     <?php else : ?>
-                        <span title="Se unió al equipo">Individual</span>
+                        <span title="Se unió al equipo">Jugador</span>
                     <?php endif; ?>
                 </td>
-                <td style="font-weight:600;">
-                    <?php if ( $r['is_hub'] && $r['hub_teams'] ) : ?>
-                        <ol style="margin:0;padding-left:16px;">
-                        <?php foreach ( $r['hub_teams'] as $ht ) : ?>
-                            <li><?php echo esc_html( $ht ); ?></li>
-                        <?php endforeach; ?>
-                        </ol>
-                    <?php else : ?>
-                        <?php echo esc_html( $r['equipo'] ); ?>
-                    <?php endif; ?>
-                </td>
-                <td><?php echo esc_html( $r['encargado'] ); ?></td>
+                <td style="font-weight:600;"><?php echo esc_html( $r['equipo'] ); ?></td>
+                <td><?php echo esc_html( $r['nombre'] ); ?></td>
                 <td style="white-space:nowrap;"><?php echo esc_html( $r['telefono'] ); ?></td>
                 <td><?php echo esc_html( $r['email'] ); ?></td>
-                <td style="white-space:nowrap;"><?php echo esc_html( implode( ' / ', array_filter( [ $r['rama'], $r['categoria'], $r['modalidad'] ] ) ) ); ?></td>
-                <td>
-                    <?php if ( $r['jugadores'] ) : ?>
-                        <ol style="margin:0;padding-left:16px;">
-                        <?php foreach ( $r['jugadores'] as $j ) : ?>
-                            <li><?php echo esc_html( $j ); ?></li>
-                        <?php endforeach; ?>
-                        </ol>
-                    <?php else : ?>—<?php endif; ?>
-                </td>
-                <td>
-                    <?php if ( $r['habitacion'] ) : ?>
-                        <strong><?php echo esc_html( $r['habitacion'] ); ?></strong>
-                        <?php if ( $r['huespedes'] ) : ?>
-                            <ol style="margin:4px 0 0;padding-left:16px;">
-                            <?php foreach ( $r['huespedes'] as $h ) : ?>
-                                <li><?php echo esc_html( $h ); ?></li>
-                            <?php endforeach; ?>
-                            </ol>
-                        <?php endif; ?>
-                    <?php else : ?>—<?php endif; ?>
-                </td>
+                <td><?php echo esc_html( $r['rama'] ); ?></td>
+                <td><?php echo esc_html( $r['categoria'] ); ?></td>
+                <td><?php echo esc_html( $r['modalidad'] ); ?></td>
                 <td style="white-space:nowrap;font-variant-numeric:tabular-nums;">$<?php echo number_format( $r['fee_registro'], 2 ); ?></td>
-                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;"><?php echo $r['fee_venue'] > 0 ? '$' . number_format( $r['fee_venue'], 2 ) : '—'; ?></td>
-                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;"><?php echo $r['fee_room'] > 0 ? '$' . number_format( $r['fee_room'], 2 ) : '—'; ?></td>
                 <td style="white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;">$<?php echo number_format( $r['fee_total'], 2 ); ?></td>
             </tr>
         <?php endforeach; ?>
@@ -270,9 +205,9 @@ add_action( 'admin_post_fmdb_reg_export', function () {
         wp_die( 'Acceso no autorizado.', 403 );
     }
 
-    $rows      = fmdb_reg_export_rows( $event_id );
-    $event     = get_the_title( $event_id );
-    $filename  = sanitize_file_name( 'inscripciones-' . $event . '-' . date( 'Y-m-d' ) . '.csv' );
+    $rows     = fmdb_reg_export_rows( $event_id );
+    $event    = get_the_title( $event_id );
+    $filename = sanitize_file_name( 'inscripciones-' . $event . '-' . date( 'Y-m-d' ) . '.csv' );
 
     header( 'Content-Type: text/csv; charset=UTF-8' );
     header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
@@ -288,18 +223,13 @@ add_action( 'admin_post_fmdb_reg_export', function () {
         'Estado',
         'Tipo',
         'Equipo',
-        'Encargado',
+        'Nombre',
         'Teléfono',
         'Email',
         'Rama',
         'Categoría',
         'Modalidad',
-        'Jugadores',
-        'Habitación',
-        'Huéspedes',
         'Registro (MXN)',
-        'Venue (MXN)',
-        'Cuarto (MXN)',
         'Total (MXN)',
     ] );
 
@@ -309,20 +239,15 @@ add_action( 'admin_post_fmdb_reg_export', function () {
         fputcsv( $out, [
             $r['order_id'],
             $status_labels[ $r['status'] ] ?? $r['status'],
-            $r['reg_type'] === 'team' ? 'Equipo' : ( $r['is_hub'] ? 'Hub' : 'Individual' ),
+            $r['reg_type'] === 'team' ? 'Capitán' : 'Jugador',
             $r['equipo'],
-            $r['encargado'],
+            $r['nombre'],
             $r['telefono'],
             $r['email'],
             $r['rama'],
             $r['categoria'],
             $r['modalidad'],
-            implode( ' | ', $r['jugadores'] ),
-            $r['habitacion'],
-            implode( ' | ', $r['huespedes'] ),
             number_format( $r['fee_registro'], 2, '.', '' ),
-            number_format( $r['fee_venue'],    2, '.', '' ),
-            number_format( $r['fee_room'],     2, '.', '' ),
             number_format( $r['fee_total'],    2, '.', '' ),
         ] );
     }
