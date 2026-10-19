@@ -17,20 +17,15 @@ function fmdb_reg_export_rows( int $event_id ): array {
         'order'      => 'ASC',
     ] );
 
-    // Build a modalidad lookup from captain orders for back-filling hub entries
-    // whose stored Hub Teams JSON predates the modalidad field being added.
-    // key = lower(name)|rama|categoria  →  [modalidad, ...]  (usually one value)
-    $modalidad_map = [];
-    foreach ( $orders as $o ) {
-        if ( ( $o->get_meta( '_fmdb_reg_type' ) ?: 'team' ) !== 'team' ) continue;
-        foreach ( $o->get_items() as $it ) {
-            $eq = trim( (string) $it->get_meta( 'Equipo' ) );
-            $m  = (string) $it->get_meta( 'Modalidad' );
-            if ( $eq && $m ) {
-                $k = mb_strtolower( $eq ) . '|' . $it->get_meta( 'Rama' ) . '|' . $it->get_meta( 'Categoría' );
-                $modalidad_map[ $k ][] = $m;
-            }
-            break;
+    // Build a prefix lookup from the canonical team-card data so old hub entries
+    // (JSON without modalidad) resolve to the same single modalidad the team card shows.
+    // key = lower(name)|rama|categoria  →  modalidad string
+    $prefix_lookup = [];
+    foreach ( fmdb_reg_get_event_teams( $event_id ) as $k => $t ) {
+        $parts = explode( '|', $k );
+        if ( count( $parts ) === 4 ) {
+            $prefix = $parts[0] . '|' . $parts[1] . '|' . $parts[2];
+            $prefix_lookup[ $prefix ] ??= $t['modalidad'];
         }
     }
 
@@ -72,12 +67,10 @@ function fmdb_reg_export_rows( int $event_id ): array {
                 $ht_cat  = $ht['categoria'] ?? '';
                 $ht_mod  = $ht['modalidad'] ?? '';
 
-                // Back-fill modalidad from captain orders when the stored JSON lacks it.
+                // Back-fill modalidad from team-card data when the stored JSON lacks it.
                 if ( $ht_mod === '' && $ht_name !== '' ) {
-                    $lk = mb_strtolower( trim( $ht_name ) ) . '|' . $ht_rama . '|' . $ht_cat;
-                    if ( ! empty( $modalidad_map[ $lk ] ) ) {
-                        $ht_mod = implode( '/', array_unique( $modalidad_map[ $lk ] ) );
-                    }
+                    $lk     = mb_strtolower( trim( $ht_name ) ) . '|' . $ht_rama . '|' . $ht_cat;
+                    $ht_mod = $prefix_lookup[ $lk ] ?? '';
                 }
 
                 $parts = array_filter( [ $ht_name, $ht_rama, $ht_mod, $ht_cat ] );
