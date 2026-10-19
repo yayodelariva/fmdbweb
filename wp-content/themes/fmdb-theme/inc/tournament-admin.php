@@ -17,14 +17,13 @@ function fmdb_reg_export_rows( int $event_id ): array {
         'order'      => 'ASC',
     ] );
 
-    // Build a prefix lookup from the canonical team-card data so old hub entries
-    // (JSON without modalidad) resolve to the same single modalidad the team card shows.
-    // fmdb_reg_get_event_teams() returns array_values so keys are integers — build from value fields.
+    // Build an ordered list of modalidades per 3-part prefix so old hub entries
+    // (JSON without modalidad) can be assigned in registration order.
+    // fmdb_reg_get_event_teams() is ordered by ID ASC, so Foam comes before Cloth etc.
     $prefix_lookup = [];
     foreach ( fmdb_reg_get_event_teams( $event_id ) as $t ) {
         if ( ! empty( $t['modalidad'] ) ) {
-            $prefix = fmdb_team_key( $t['name'], $t['rama'], $t['categoria'] );
-            $prefix_lookup[ $prefix ] ??= $t['modalidad'];
+            $prefix_lookup[ fmdb_team_key( $t['name'], $t['rama'], $t['categoria'] ) ][] = $t['modalidad'];
         }
     }
 
@@ -60,15 +59,20 @@ function fmdb_reg_export_rows( int $event_id ): array {
         } elseif ( $is_hub ) {
             $hub_ramas = [];
             $hub_cats  = [];
+            $ht_seen   = []; // tracks assignment index per prefix for ordered back-fill
             foreach ( json_decode( $reg_item->get_meta( 'Hub Teams' ), true ) ?? [] as $ht ) {
                 $ht_name = $ht['name'] ?? '';
                 $ht_rama = $ht['rama'] ?? '';
                 $ht_cat  = $ht['categoria'] ?? '';
                 $ht_mod  = $ht['modalidad'] ?? '';
 
-                // Back-fill modalidad from team-card data when the stored JSON lacks it.
+                // Back-fill modalidad in registration order: first duplicate → first modalidad, etc.
                 if ( $ht_mod === '' && $ht_name !== '' ) {
-                    $ht_mod = $prefix_lookup[ fmdb_team_key( $ht_name, $ht_rama, $ht_cat ) ] ?? '';
+                    $lk       = fmdb_team_key( $ht_name, $ht_rama, $ht_cat );
+                    $mods     = $prefix_lookup[ $lk ] ?? [];
+                    $idx      = $ht_seen[ $lk ] ?? 0;
+                    $ht_mod   = $mods[ $idx ] ?? ( end( $mods ) ?: '' );
+                    $ht_seen[ $lk ] = $idx + 1;
                 }
 
                 $parts = array_filter( [ $ht_name, $ht_rama, $ht_mod, $ht_cat ] );
@@ -76,7 +80,6 @@ function fmdb_reg_export_rows( int $event_id ): array {
                 if ( $ht_rama ) $hub_ramas[] = $ht_rama;
                 if ( $ht_cat )  $hub_cats[]  = $ht_cat;
             }
-            $team_list = array_values( array_unique( $team_list ) );
             $rama      = implode( ', ', array_unique( $hub_ramas ) );
             $categoria = implode( ', ', array_unique( $hub_cats ) );
             $equipo    = implode( ', ', array_column(
