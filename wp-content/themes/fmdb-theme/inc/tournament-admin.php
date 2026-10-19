@@ -76,6 +76,7 @@ function fmdb_reg_export_rows( int $event_id ): array {
                 if ( $ht_rama ) $hub_ramas[] = $ht_rama;
                 if ( $ht_cat )  $hub_cats[]  = $ht_cat;
             }
+            $team_list = array_values( array_unique( $team_list ) );
             $rama      = implode( ', ', array_unique( $hub_ramas ) );
             $categoria = implode( ', ', array_unique( $hub_cats ) );
             $equipo    = implode( ', ', array_column(
