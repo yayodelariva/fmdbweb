@@ -2109,14 +2109,15 @@ function fmdb_ajax_hub_reg_submit(): void {
         $validated = [];
         foreach ( $selected_teams as $st ) {
             if ( ! is_array( $st ) ) continue;
-            $team_name = trim( sanitize_text_field( $st['name']     ?? '' ) );
-            $rama      = sanitize_text_field( $st['rama']      ?? '' );
-            $categoria = sanitize_text_field( $st['categoria'] ?? '' );
+            $team_name = trim( sanitize_text_field( $st['name']      ?? '' ) );
+            $rama      = sanitize_text_field( $st['rama']       ?? '' );
+            $categoria = sanitize_text_field( $st['categoria']  ?? '' );
+            $modalidad = sanitize_text_field( $st['modalidad']  ?? '' );
             if ( ! $team_name || ! $rama || ! $categoria ) continue;
             $team_key = fmdb_team_key( $team_name, $rama, $categoria );
             if ( ! in_array( $team_key, $valid_keys, true ) ) continue;
             if ( in_array( $team_key, $captain_keys, true ) ) continue;
-            $validated[] = [ 'name' => $team_name, 'rama' => $rama, 'categoria' => $categoria ];
+            $validated[] = [ 'name' => $team_name, 'rama' => $rama, 'categoria' => $categoria, 'modalidad' => $modalidad ];
         }
 
         if ( empty( $validated ) ) {

@@ -47,18 +47,16 @@ function fmdb_reg_export_rows( int $event_id ): array {
         if ( $reg_type === 'team' ) {
             $team_list = [ $equipo ];
         } elseif ( $is_hub ) {
-            // Hub JSON has name/rama/categoria but no modalidad (covers all).
             $hub_ramas = [];
             $hub_cats  = [];
             foreach ( json_decode( $reg_item->get_meta( 'Hub Teams' ), true ) ?? [] as $ht ) {
-                $parts = array_filter( [ $ht['name'] ?? '', $ht['rama'] ?? '', $ht['categoria'] ?? '' ] );
+                $parts = array_filter( [ $ht['name'] ?? '', $ht['rama'] ?? '', $ht['modalidad'] ?? '', $ht['categoria'] ?? '' ] );
                 if ( $parts ) $team_list[] = implode( ' ', $parts );
                 if ( ! empty( $ht['rama'] ) )     $hub_ramas[] = $ht['rama'];
                 if ( ! empty( $ht['categoria'] ) ) $hub_cats[]  = $ht['categoria'];
             }
             $rama      = implode( ', ', array_unique( $hub_ramas ) );
             $categoria = implode( ', ', array_unique( $hub_cats ) );
-            $modalidad = '';
             $equipo    = implode( ', ', array_column(
                 array_map( fn( $t ) => [ 'n' => $t ], $team_list ), 'n'
             ) );

@@ -228,7 +228,7 @@ if ( $event_id ) {
                                 <label class="fmdb-torneos__team-check-opt<?php echo $is_dis ? ' fmdb-torneos__team-check-opt--disabled' : ''; ?>">
                                     <input type="checkbox" class="fmdb-team-check"
                                            <?php echo $is_dis ? 'disabled' : ''; ?>
-                                           value="<?php echo esc_attr( wp_json_encode( [ 'name' => $ht['name'], 'rama' => $ht['rama'], 'categoria' => $ht['categoria'] ] ) ); ?>">
+                                           value="<?php echo esc_attr( wp_json_encode( [ 'name' => $ht['name'], 'rama' => $ht['rama'], 'categoria' => $ht['categoria'], 'modalidad' => $ht['modalidad'] ?? '' ] ) ); ?>">
                                     <span class="fmdb-torneos__team-check-body">
                                         <span class="fmdb-torneos__team-check-name"><?php echo esc_html( $ht['name'] ); ?></span>
                                         <span class="fmdb-torneos__team-check-tags">
