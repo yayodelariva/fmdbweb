@@ -1096,6 +1096,21 @@ function fmdb_event_registration_box( int $event_id ): void {
                     Agregar inscripción →
                 </button>
                 <div class="fmdb-reg-section__msg" id="fmdb-reg-msg-team-<?php echo $eid; ?>"></div>
+
+                <div id="fmdb-team-added-<?php echo $eid; ?>" class="fmdb-team-added" hidden>
+                    <p class="fmdb-team-added__label">Inscripciones en tu carrito:</p>
+                    <ul class="fmdb-team-added__list" id="fmdb-team-added-list-<?php echo $eid; ?>"></ul>
+                </div>
+                <div class="fmdb-team-multiactions" id="fmdb-team-multiactions-<?php echo $eid; ?>" hidden>
+                    <button type="button" class="fmdb-btn fmdb-btn--secondary fmdb-reg-section__btn"
+                            id="fmdb-add-another-<?php echo $eid; ?>">
+                        + Registrar otro equipo
+                    </button>
+                    <a href="<?php echo esc_url( wc_get_checkout_url() ); ?>"
+                       class="fmdb-btn fmdb-btn--primary fmdb-reg-section__btn">
+                        Continuar al pago →
+                    </a>
+                </div>
             </form>
             <?php endif; // team_already_registered ?>
 
@@ -1549,9 +1564,44 @@ function fmdb_event_registration_box( int $event_id ): void {
                             .then(function (r) { return r.json(); })
                             .then(function (data) {
                                 if (data.success) {
-                                    btn.textContent = '✓ Agregado';
-                                    btn.classList.add('fmdb-btn--success');
-                                    if (msgEl) { msgEl.textContent = 'Inscripción agregada al carrito.'; msgEl.classList.add('fmdb-reg-section__msg--ok'); }
+                                    // Capture what was added for the cart list display.
+                                    var addedTeam = (form.querySelector('[name="fmdb_team_name"]') || {}).value || '';
+                                    var addedRama = (form.querySelector('[name="fmdb_rama"]')      || {}).value || '';
+                                    var addedCat  = (form.querySelector('[name="fmdb_categoria"]') || {}).value || '';
+                                    var addedMod  = (form.querySelector('[name="fmdb_modalidad"]') || {}).value || '';
+                                    var addedCnt  = parseInt((form.querySelector('[name="fmdb_player_count"]') || {}).value || '1', 10) || 1;
+
+                                    // Append to the added-teams list.
+                                    var addedBox  = document.getElementById('fmdb-team-added-' + eid);
+                                    var addedList = document.getElementById('fmdb-team-added-list-' + eid);
+                                    if (addedBox && addedList) {
+                                        var li = document.createElement('li');
+                                        var parts = [addedTeam, addedRama, addedMod, addedCat].filter(Boolean);
+                                        li.textContent = parts.join(' · ') + ' (' + addedCnt + ' jug.)';
+                                        addedList.appendChild(li);
+                                        addedBox.hidden = false;
+                                    }
+
+                                    // Show "Registrar otro equipo" + "Continuar al pago".
+                                    var actionsEl = document.getElementById('fmdb-team-multiactions-' + eid);
+                                    if (actionsEl) actionsEl.hidden = false;
+
+                                    // Reset division + player count; keep captain fields filled.
+                                    var ramaEl = form.querySelector('[name="fmdb_rama"]');
+                                    var catEl  = form.querySelector('[name="fmdb_categoria"]');
+                                    var modEl  = form.querySelector('[name="fmdb_modalidad"]');
+                                    var cntEl  = form.querySelector('[name="fmdb_player_count"]');
+                                    if (ramaEl) ramaEl.value = '';
+                                    if (catEl)  catEl.value  = '';
+                                    if (modEl)  modEl.value  = '';
+                                    if (cntEl)  { cntEl.value = ''; renderExtraPlayers(0); }
+                                    regAmt = venueAmt = currentPlayerCount = 0;
+                                    updateGrandTotal();
+
+                                    // Re-enable submit for the next team.
+                                    btn.disabled = false;
+                                    btn.textContent = origText;
+                                    if (msgEl) { msgEl.textContent = ''; msgEl.className = 'fmdb-reg-section__msg'; }
                                 } else {
                                     btn.disabled = false;
                                     btn.textContent = origText;
@@ -1570,6 +1620,16 @@ function fmdb_event_registration_box( int $event_id ): void {
                 var indForm  = document.getElementById('fmdb-form-ind-'  + eid);
                 handleRegSubmit(teamForm, 'fmdb-reg-msg-team-' + eid);
                 handleRegSubmit(indForm,  'fmdb-reg-msg-ind-'  + eid);
+
+                // "Registrar otro equipo": focus the Rama select so the user can
+                // pick a new division for their next team registration.
+                var addAnotherBtn = document.getElementById('fmdb-add-another-' + eid);
+                if (addAnotherBtn && teamForm) {
+                    addAnotherBtn.addEventListener('click', function () {
+                        var ramaEl = teamForm.querySelector('[name="fmdb_rama"]');
+                        if (ramaEl) { ramaEl.focus(); ramaEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                    });
+                }
 
                 // ── Hospedaje AJAX ──
                 if (hospBtn) {
@@ -1789,9 +1849,13 @@ function fmdb_ajax_add_registration(): void {
         return;
     }
 
-    // Enforce 1 registration per cart regardless of type (team or individual).
+    // Team registrations may stack (one per division). Non-team stays 1-per-cart;
+    // mixing team + non-team types in the same cart is not supported.
+    $incoming_type = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
+                     ? $_POST['fmdb_reg_type'] : 'team';
     foreach ( WC()->cart->get_cart() as $existing ) {
-        if ( ! empty( $existing['fmdb_event_id'] ) ) {
+        if ( empty( $existing['fmdb_event_id'] ) ) continue;
+        if ( $incoming_type !== 'team' || ( $existing['fmdb_reg_type'] ?? 'team' ) !== 'team' ) {
             wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en el carrito. Finaliza el pago antes de agregar otra.' ] );
             return;
         }
@@ -1833,6 +1897,16 @@ function fmdb_ajax_add_registration(): void {
                     wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
                     return;
                 }
+            }
+        }
+        // Also check the current cart to catch same-team duplicates added in this session.
+        foreach ( WC()->cart->get_cart() as $ci ) {
+            if ( ( $ci['fmdb_reg_type'] ?? '' ) !== 'team' ) continue;
+            if ( mb_strtolower( trim( (string) ( $ci['fmdb_team_name'] ?? '' ) ) ) === $dup_name
+              && ( $ci['fmdb_rama']      ?? '' ) === $dup_rama
+              && ( $ci['fmdb_categoria'] ?? '' ) === $dup_cat ) {
+                wp_send_json_error( [ 'message' => 'Este equipo ya está en tu carrito.' ] );
+                return;
             }
         }
     }
