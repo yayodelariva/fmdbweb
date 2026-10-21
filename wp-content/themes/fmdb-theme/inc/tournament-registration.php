@@ -922,13 +922,22 @@ function fmdb_event_registration_box( int $event_id ): void {
                         }
                     }
                 }
-                if ( ! $captain_val ) $captain_val = esc_attr( $current_user->first_name );
-                if ( ! $captain_apellido_val ) $captain_apellido_val = esc_attr( $current_user->last_name );
+                if ( ! $captain_val ) {
+                    $dn = fmdb_get_display_names( $current_user->ID );
+                    $captain_val = esc_attr( $dn['nombre'] );
+                }
+                if ( ! $captain_apellido_val ) {
+                    $dn = fmdb_get_display_names( $current_user->ID );
+                    $captain_apellido_val = esc_attr( $dn['apellido'] );
+                }
             }
         }
 
-        if ( ! $player_name_val )     $player_name_val     = esc_attr( $current_user->first_name );
-        if ( ! $player_apellido_val ) $player_apellido_val = esc_attr( $current_user->last_name );
+        if ( ! $player_name_val || ! $player_apellido_val ) {
+            $dn = fmdb_get_display_names( $current_user->ID );
+            if ( ! $player_name_val )     $player_name_val     = esc_attr( $dn['nombre'] );
+            if ( ! $player_apellido_val ) $player_apellido_val = esc_attr( $dn['apellido'] );
+        }
     }
 
     // Teams already registered for this event (from WC orders)
@@ -2177,8 +2186,9 @@ function fmdb_ajax_hub_reg_submit(): void {
         $_POST['fmdb_modalidad']        = $validated[0]['modalidad'];
         $_POST['fmdb_reg_type']         = 'team';
         $_POST['fmdb_player_count']     = '1';
-        $_POST['fmdb_captain_name']     = $user->first_name;
-        $_POST['fmdb_captain_apellido'] = $user->last_name;
+        $dn_cap = fmdb_get_display_names( $user->ID );
+        $_POST['fmdb_captain_name']     = $dn_cap['nombre'];
+        $_POST['fmdb_captain_apellido'] = $dn_cap['apellido'];
         $_POST['fmdb_captain_phone']    = $phone;
         $_POST['fmdb_hub_registration'] = '1';
         $_POST['fmdb_captain_teams']    = wp_json_encode( $validated );
@@ -2241,8 +2251,9 @@ function fmdb_ajax_hub_reg_submit(): void {
         $_POST['fmdb_reg_type']         = 'individual';
         $_POST['fmdb_hub_teams']        = wp_json_encode( $validated );
         $_POST['fmdb_ind_team_name']    = '';
-        $_POST['fmdb_player_name']      = $user->first_name;
-        $_POST['fmdb_player_apellido']  = $user->last_name;
+        $dn_ply = fmdb_get_display_names( $user->ID );
+        $_POST['fmdb_player_name']      = $dn_ply['nombre'];
+        $_POST['fmdb_player_apellido']  = $dn_ply['apellido'];
         $_POST['fmdb_player_phone']     = $phone;
         $_POST['fmdb_player_count']     = '1';
         $_POST['fmdb_hub_registration'] = '1';

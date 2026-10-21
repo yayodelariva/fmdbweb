@@ -289,6 +289,22 @@ function fmdb_render_team_card( WP_Post $post, ?string $city = null, array $cats
     <?php
 }
 
+// Returns [nombre, apellido] for a user, using the minor's name when the account is a tutor.
+function fmdb_get_display_names( int $user_id ): array {
+    if ( get_user_meta( $user_id, 'fmdb_tutor', true ) === '1' ) {
+        $menor_nombre   = trim( (string) get_user_meta( $user_id, 'fmdb_menor_nombre',   true ) );
+        $menor_apellido = trim( (string) get_user_meta( $user_id, 'fmdb_menor_apellido', true ) );
+        if ( $menor_nombre !== '' || $menor_apellido !== '' ) {
+            return [ 'nombre' => $menor_nombre, 'apellido' => $menor_apellido ];
+        }
+    }
+    $u = get_userdata( $user_id );
+    return [
+        'nombre'   => $u ? (string) $u->first_name : '',
+        'apellido' => $u ? (string) $u->last_name  : '',
+    ];
+}
+
 // Normalize ACF team_rep field value to an int[]
 function fmdb_normalize_reps( $reps ): array {
     if ( ! is_array( $reps ) ) $reps = $reps ? [ $reps ] : [];

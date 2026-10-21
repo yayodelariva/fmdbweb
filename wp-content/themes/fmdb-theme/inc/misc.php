@@ -63,3 +63,23 @@ add_filter( 'gettext', function ( $translation, $text, $domain ) {
     ];
     return $map[ $text ] ?? $translation;
 }, 10, 3 );
+
+/* ─── Tutor preferences AJAX ─────────────────────────────────────────── */
+
+add_action( 'wp_ajax_fmdb_save_tutor_prefs', function () {
+    check_ajax_referer( 'fmdb_tutor_prefs', 'nonce' );
+    $user_id = get_current_user_id();
+    if ( ! $user_id ) {
+        wp_send_json_error( [ 'message' => 'No autenticado.' ] );
+    }
+
+    $is_tutor = ! empty( $_POST['fmdb_tutor'] ) ? '1' : '0';
+    update_user_meta( $user_id, 'fmdb_tutor', $is_tutor );
+
+    if ( $is_tutor === '1' ) {
+        update_user_meta( $user_id, 'fmdb_menor_nombre',   sanitize_text_field( wp_unslash( $_POST['fmdb_menor_nombre']   ?? '' ) ) );
+        update_user_meta( $user_id, 'fmdb_menor_apellido', sanitize_text_field( wp_unslash( $_POST['fmdb_menor_apellido'] ?? '' ) ) );
+    }
+
+    wp_send_json_success( [ 'message' => 'Preferencias guardadas.' ] );
+} );

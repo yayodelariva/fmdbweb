@@ -207,6 +207,90 @@ get_header();
         </form>
 
         <?php
+        /* ── Preferencias (tutor account) ────────────────────────────── */
+        $is_tutor       = get_user_meta( $user_id, 'fmdb_tutor',           true ) === '1';
+        $menor_nombre   = esc_attr( get_user_meta( $user_id, 'fmdb_menor_nombre',   true ) );
+        $menor_apellido = esc_attr( get_user_meta( $user_id, 'fmdb_menor_apellido', true ) );
+        $tutor_nonce    = wp_create_nonce( 'fmdb_tutor_prefs' );
+        $ajax_url       = esc_url( admin_url( 'admin-ajax.php' ) );
+        ?>
+        <div class="fmdb-perfil__torneos fmdb-perfil__prefs">
+            <button type="button" class="fmdb-perfil__torneos-toggle" id="fmdb-prefs-toggle" aria-expanded="false">
+                <span>Preferencias</span>
+                <svg class="fmdb-perfil__torneos-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="fmdb-perfil__torneo-list fmdb-perfil__prefs-body" hidden>
+
+                <label class="fmdb-perfil__checkbox-label">
+                    <input type="checkbox" id="fmdb-tutor-checkbox" <?php checked( $is_tutor ); ?>>
+                    Esta cuenta pertenece a un padre/madre o tutor
+                </label>
+
+                <div id="fmdb-tutor-form" <?php echo $is_tutor ? '' : 'hidden'; ?>>
+                    <div class="fmdb-perfil__name-row fmdb-perfil__tutor-fields">
+                        <div class="fmdb-registro__field">
+                            <label for="fmdb-menor-nombre">Nombre del menor</label>
+                            <input type="text" id="fmdb-menor-nombre" value="<?php echo $menor_nombre; ?>" placeholder="Nombre">
+                        </div>
+                        <div class="fmdb-registro__field">
+                            <label for="fmdb-menor-apellido">Apellido del menor</label>
+                            <input type="text" id="fmdb-menor-apellido" value="<?php echo $menor_apellido; ?>" placeholder="Apellido">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fmdb-perfil__prefs-footer">
+                    <button type="button" id="fmdb-prefs-save" class="fmdb-btn fmdb-btn--primary">Guardar preferencias</button>
+                    <span id="fmdb-prefs-status" hidden></span>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+        (function () {
+            // Tutor checkbox
+            var checkbox  = document.getElementById('fmdb-tutor-checkbox');
+            var tutorForm = document.getElementById('fmdb-tutor-form');
+            var saveBtn   = document.getElementById('fmdb-prefs-save');
+            var statusMsg = document.getElementById('fmdb-prefs-status');
+            if (!checkbox) return;
+
+            checkbox.addEventListener('change', function () {
+                if (this.checked) { tutorForm.removeAttribute('hidden'); }
+                else              { tutorForm.setAttribute('hidden', ''); }
+            });
+
+            saveBtn.addEventListener('click', function () {
+                var data = new FormData();
+                data.append('action', 'fmdb_save_tutor_prefs');
+                data.append('nonce',  '<?php echo esc_js( $tutor_nonce ); ?>');
+                if (checkbox.checked) {
+                    data.append('fmdb_tutor', '1');
+                    data.append('fmdb_menor_nombre',   document.getElementById('fmdb-menor-nombre').value);
+                    data.append('fmdb_menor_apellido', document.getElementById('fmdb-menor-apellido').value);
+                }
+                saveBtn.disabled = true;
+                fetch('<?php echo $ajax_url; ?>', { method: 'POST', body: data })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        statusMsg.removeAttribute('hidden');
+                        statusMsg.textContent = res.success ? 'Guardado.' : (res.data && res.data.message ? res.data.message : 'Error al guardar.');
+                        statusMsg.className   = res.success ? 'fmdb-perfil__prefs-ok' : 'fmdb-perfil__prefs-err';
+                        setTimeout(function () { statusMsg.setAttribute('hidden', ''); }, 3000);
+                    })
+                    .catch(function () {
+                        statusMsg.removeAttribute('hidden');
+                        statusMsg.textContent = 'Error de red. Intenta de nuevo.';
+                        statusMsg.className   = 'fmdb-perfil__prefs-err';
+                        setTimeout(function () { statusMsg.setAttribute('hidden', ''); }, 3000);
+                    })
+                    .finally(function () { saveBtn.disabled = false; });
+            });
+        })();
+        </script>
+
+        <?php
         /* ── Tournament registrations ─────────────────────────────────── */
         $reg_orders = function_exists( 'wc_get_orders' ) ? wc_get_orders( [
             'customer' => $user_id,
@@ -293,15 +377,15 @@ get_header();
 </main>
 
 <script>
-var _torneosToggle = document.querySelector('.fmdb-perfil__torneos-toggle');
-if (_torneosToggle) {
-    _torneosToggle.addEventListener('click', function () {
-        var list = this.closest('.fmdb-perfil__torneos').querySelector('.fmdb-perfil__torneo-list');
+document.querySelectorAll('.fmdb-perfil__torneos-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var parent = this.closest('.fmdb-perfil__torneos');
+        var list = parent.querySelector('.fmdb-perfil__torneo-list, .fmdb-perfil__prefs-body');
         var open = list.hasAttribute('hidden');
         if (open) { list.removeAttribute('hidden'); } else { list.setAttribute('hidden', ''); }
         this.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
-}
+});
 
 document.getElementById('profile_picture').addEventListener('change', function () {
     var file = this.files[0];

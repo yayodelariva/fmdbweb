@@ -271,6 +271,41 @@ a.fmdb-perfil__torneo-name:hover { color: var(--fmdb-primary, #1a73e8); }
 .fmdb-perfil__torneo-badge--hold    { background: #eff6ff; color: #1d4ed8; }
 .fmdb-perfil__torneo-badge--ok      { background: #f0fdf4; color: #15803d; }
 
+/* ── Preferencias ──────────────────────────────────────────────────── */
+.fmdb-perfil__prefs-body {
+    padding: 16px 0 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.fmdb-perfil__prefs-body[hidden] { display: none !important; }
+.fmdb-perfil__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+}
+.fmdb-perfil__checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.fmdb-perfil__tutor-fields {
+    margin-top: 16px;
+}
+.fmdb-perfil__prefs-footer {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+.fmdb-perfil__prefs-ok  { font-size: 0.85rem; color: #15803d; }
+.fmdb-perfil__prefs-err { font-size: 0.85rem; color: #b91c1c; }
+
 @media (max-width: 520px) {
     .fmdb-perfil__card { padding: 32px 20px; }
     .fmdb-perfil__affiliation-row { flex-direction: column; }

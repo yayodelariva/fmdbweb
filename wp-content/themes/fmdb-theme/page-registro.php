@@ -16,17 +16,22 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_register_nonce
     if ( ! wp_verify_nonce( $_POST['fmdb_register_nonce'], 'fmdb_register' ) ) {
         $errors[] = 'Solicitud inválida. Por favor intenta de nuevo.';
     } else {
-        $first_name   = sanitize_text_field( $_POST['first_name'] ?? '' );
-        $last_name    = sanitize_text_field( $_POST['last_name'] ?? '' );
-        $username_raw = trim( $_POST['username'] ?? '' );
-        $username     = sanitize_user( $username_raw );
-        $email        = sanitize_email( $_POST['email'] ?? '' );
-        $password     = $_POST['password'] ?? '';
-        $password2    = $_POST['password2'] ?? '';
+        $first_name     = sanitize_text_field( $_POST['first_name'] ?? '' );
+        $last_name      = sanitize_text_field( $_POST['last_name'] ?? '' );
+        $username_raw   = trim( $_POST['username'] ?? '' );
+        $username       = sanitize_user( $username_raw );
+        $email          = sanitize_email( $_POST['email'] ?? '' );
+        $password       = $_POST['password'] ?? '';
+        $password2      = $_POST['password2'] ?? '';
+        $is_tutor       = ! empty( $_POST['fmdb_tutor'] );
+        $menor_nombre   = sanitize_text_field( $_POST['fmdb_menor_nombre']   ?? '' );
+        $menor_apellido = sanitize_text_field( $_POST['fmdb_menor_apellido'] ?? '' );
         $role = 'jugador';
 
         if ( ! $first_name ) $errors[] = 'El nombre es obligatorio.';
         if ( ! $last_name )  $errors[] = 'El apellido es obligatorio.';
+        if ( $is_tutor && ! $menor_nombre )   $errors[] = 'El nombre del menor es obligatorio.';
+        if ( $is_tutor && ! $menor_apellido ) $errors[] = 'El apellido del menor es obligatorio.';
         if ( ! $username_raw ) $errors[] = 'El nombre de usuario es obligatorio.';
         if ( $username_raw && ! preg_match( '/^[A-Za-z0-9]+$/', $username_raw ) ) $errors[] = 'El nombre de usuario solo puede contener letras sin acentos y números, sin espacios ni caracteres especiales.';
         if ( ! is_email( $email ) ) $errors[] = 'Ingresa un correo electrónico válido.';
@@ -48,6 +53,11 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['fmdb_register_nonce
                     'last_name'    => $last_name,
                     'display_name' => "$first_name $last_name",
                 ] );
+                if ( $is_tutor ) {
+                    update_user_meta( $user_id, 'fmdb_tutor',           '1' );
+                    update_user_meta( $user_id, 'fmdb_menor_nombre',   $menor_nombre );
+                    update_user_meta( $user_id, 'fmdb_menor_apellido', $menor_apellido );
+                }
                 fmdb_send_verification_email( $user_id );
                 $success = true;
             }
@@ -125,8 +135,57 @@ get_header();
                     </div>
                 </div>
 
+                <label class="fmdb-registro__checkbox-label">
+                    <input type="checkbox" name="fmdb_tutor" id="fmdb-reg-tutor" value="1" <?php checked( $is_tutor ?? false ); ?>>
+                    Esta cuenta es de un padre/madre o tutor
+                </label>
+
+                <div id="fmdb-reg-tutor-fields" <?php echo ! empty( $is_tutor ) ? '' : 'hidden'; ?>>
+                    <div class="fmdb-registro__row">
+                        <div class="fmdb-registro__field">
+                            <label for="fmdb_menor_nombre">Nombre del menor</label>
+                            <input type="text" id="fmdb_menor_nombre" name="fmdb_menor_nombre"
+                                   value="<?php echo esc_attr( $_POST['fmdb_menor_nombre'] ?? '' ); ?>"
+                                   autocomplete="off">
+                        </div>
+                        <div class="fmdb-registro__field">
+                            <label for="fmdb_menor_apellido">Apellido del menor</label>
+                            <input type="text" id="fmdb_menor_apellido" name="fmdb_menor_apellido"
+                                   value="<?php echo esc_attr( $_POST['fmdb_menor_apellido'] ?? '' ); ?>"
+                                   autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
                 <button type="submit" class="fmdb-btn fmdb-btn--primary fmdb-registro__btn">Crear cuenta</button>
             </form>
+
+            <script>
+            (function () {
+                var cb     = document.getElementById('fmdb-reg-tutor');
+                var fields = document.getElementById('fmdb-reg-tutor-fields');
+                if (!cb) return;
+
+                function syncRequired(enabled) {
+                    fields.querySelectorAll('input').forEach(function (inp) {
+                        inp.required = enabled;
+                    });
+                }
+
+                cb.addEventListener('change', function () {
+                    if (this.checked) {
+                        fields.removeAttribute('hidden');
+                        syncRequired(true);
+                    } else {
+                        fields.setAttribute('hidden', '');
+                        syncRequired(false);
+                    }
+                });
+
+                // Set required on page load if checkbox is already ticked (validation error repopulate)
+                if (cb.checked) syncRequired(true);
+            })();
+            </script>
 
         <?php endif; ?>
 
