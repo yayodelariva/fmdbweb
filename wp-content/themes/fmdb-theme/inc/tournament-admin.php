@@ -87,34 +87,49 @@ function fmdb_reg_export_rows( int $event_id ): array {
         } elseif ( $reg_type === 'team' ) {
             $team_list = [ $equipo ];
         } elseif ( $is_hub ) {
-            $hub_ramas = [];
-            $hub_cats  = [];
-            $ht_seen   = []; // tracks assignment index per prefix for ordered back-fill
+            // Hub multi-team individual: one row per team, fee shown only on the first.
+            $ht_seen      = []; // tracks assignment index per prefix for ordered modalidad back-fill
+            $fee_registro = (float) $reg_item->get_subtotal();
+            $fee_total    = (float) $order->get_total();
+            $base = [
+                'order_id'  => $order->get_id(),
+                'status'    => $order->get_status(),
+                'reg_type'  => $reg_type,
+                'is_hub'    => true,
+                'nombre'    => $nombre,
+                'telefono'  => $reg_item->get_meta( 'Teléfono' ),
+                'email'     => $order->get_billing_email(),
+                'team_list' => [],
+            ];
+            $i = 0;
             foreach ( json_decode( $reg_item->get_meta( 'Hub Teams' ), true ) ?? [] as $ht ) {
-                $ht_name = $ht['name'] ?? '';
-                $ht_rama = $ht['rama'] ?? '';
+                $ht_name = trim( $ht['name'] ?? '' );
+                if ( ! $ht_name ) continue;
+                $ht_rama = $ht['rama']      ?? '';
                 $ht_cat  = $ht['categoria'] ?? '';
                 $ht_mod  = $ht['modalidad'] ?? '';
 
-                // Back-fill modalidad in registration order: first duplicate → first modalidad, etc.
-                if ( $ht_mod === '' && $ht_name !== '' ) {
-                    $lk       = fmdb_team_key( $ht_name, $ht_rama, $ht_cat );
-                    $mods     = $prefix_lookup[ $lk ] ?? [];
-                    $idx      = $ht_seen[ $lk ] ?? 0;
-                    $ht_mod   = $mods[ $idx ] ?? ( end( $mods ) ?: '' );
+                // Back-fill modalidad for old hub entries that lack it.
+                if ( $ht_mod === '' ) {
+                    $lk     = fmdb_team_key( $ht_name, $ht_rama, $ht_cat );
+                    $mods   = $prefix_lookup[ $lk ] ?? [];
+                    $idx    = $ht_seen[ $lk ] ?? 0;
+                    $ht_mod = $mods[ $idx ] ?? ( end( $mods ) ?: '' );
                     $ht_seen[ $lk ] = $idx + 1;
                 }
 
-                $parts = array_filter( [ $ht_name, $ht_rama, $ht_mod, $ht_cat ] );
-                if ( $parts ) $team_list[] = implode( ' ', $parts );
-                if ( $ht_rama ) $hub_ramas[] = $ht_rama;
-                if ( $ht_cat )  $hub_cats[]  = $ht_cat;
+                $rows[] = $base + [
+                    'equipo'       => $ht_name,
+                    'rama'         => $ht_rama,
+                    'categoria'    => $ht_cat,
+                    'modalidad'    => $ht_mod,
+                    'fee_registro' => $i === 0 ? $fee_registro : 0.0,
+                    'fee_total'    => $i === 0 ? $fee_total    : 0.0,
+                    'fee_hidden'   => $i > 0,
+                ];
+                $i++;
             }
-            $rama      = implode( ', ', array_unique( $hub_ramas ) );
-            $categoria = implode( ', ', array_unique( $hub_cats ) );
-            $equipo    = implode( ', ', array_column(
-                array_map( fn( $t ) => [ 'n' => $t ], $team_list ), 'n'
-            ) );
+            continue; // rows already pushed above
         } else {
             // Single-team individual join — has full rama/modalidad/categoria.
             $parts     = array_filter( [ $equipo, $rama, $modalidad, $categoria ] );
