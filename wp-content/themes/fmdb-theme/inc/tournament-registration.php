@@ -2460,8 +2460,13 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
 add_filter( 'woocommerce_add_to_cart_validation', function ( $valid, $product_id ) {
     if ( ! $valid ) return $valid;
     if ( ! (int) get_post_meta( $product_id, '_fmdb_reg_event_id', true ) ) return $valid;
+    // Team registrations may stack (multi-team checkout). Block only when the
+    // incoming type is non-team or there is already a non-team item in the cart.
+    $incoming_type = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
+                     ? $_POST['fmdb_reg_type'] : 'team';
     foreach ( WC()->cart->get_cart() as $item ) {
-        if ( ! empty( $item['fmdb_event_id'] ) ) {
+        if ( empty( $item['fmdb_event_id'] ) ) continue;
+        if ( $incoming_type !== 'team' || ( $item['fmdb_reg_type'] ?? 'team' ) !== 'team' ) {
             wc_add_notice( 'Ya tienes una inscripción en el carrito. Completa o vacía el carrito antes de agregar otra.', 'error' );
             return false;
         }
