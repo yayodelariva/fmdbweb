@@ -95,7 +95,7 @@ add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
 
     if ( ! is_user_logged_in() ) {
         $items .= '<li class="fmdb-nav-login">'
-            . '<a href="' . esc_url( wp_login_url( home_url( '/mi-equipo/' ) ) ) . '" class="fmdb-nav-login__link">Iniciar sesión</a>'
+            . '<a href="' . esc_url( wp_login_url( home_url( '/mi-perfil/' ) ) ) . '" class="fmdb-nav-login__link">Iniciar sesión</a>'
             . '</li>';
         return $items . $cart_li;
     }

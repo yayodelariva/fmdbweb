@@ -5,7 +5,7 @@
  */
 
 if ( is_user_logged_in() ) {
-    wp_safe_redirect( home_url( '/mi-equipo/' ) );
+    wp_safe_redirect( home_url( '/mi-perfil/' ) );
     exit;
 }
 
@@ -189,7 +189,7 @@ get_header();
 
         <?php endif; ?>
 
-        <p class="fmdb-registro__login-link">¿Ya tienes cuenta? <a href="<?php echo esc_url( wp_login_url( home_url( '/mi-equipo/' ) ) ); ?>">Iniciar sesión</a></p>
+        <p class="fmdb-registro__login-link">¿Ya tienes cuenta? <a href="<?php echo esc_url( wp_login_url( home_url( '/mi-perfil/' ) ) ); ?>">Iniciar sesión</a></p>
 
     </div>
 </main>

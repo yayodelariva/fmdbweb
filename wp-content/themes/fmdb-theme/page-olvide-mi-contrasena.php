@@ -5,7 +5,7 @@
  */
 
 if ( is_user_logged_in() ) {
-    wp_safe_redirect( home_url( '/mi-equipo/' ) );
+    wp_safe_redirect( home_url( '/mi-perfil/' ) );
     exit;
 }
 
