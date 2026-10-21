@@ -466,6 +466,145 @@
     font-size: 0.85rem;
 }
 
+/* ── Captain multi-team registration ────────────────────────────────── */
+
+/* Reinforce [hidden] — Kadence resets can override the browser default */
+#fmdb-captain-area[hidden],
+#fmdb-team-form-wrap[hidden],
+#fmdb-captain-checkout[hidden],
+#fmdb-hub-submit[hidden] {
+    display: none !important;
+}
+
+#fmdb-captain-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.fmdb-team-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Scoped to avoid conflict with equipos.css .fmdb-team-card */
+#fmdb-captain-area .fmdb-team-card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 16px;
+    background: #fff;
+    border: 1.5px solid var(--fmdb-neutral, #e6e6e0) !important;
+    border-left: 4px solid var(--fmdb-green) !important;
+    border-radius: 10px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+#fmdb-captain-area .fmdb-team-card__info { flex: 1; min-width: 0; }
+#fmdb-captain-area .fmdb-team-card__name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--fmdb-dark-green);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+}
+#fmdb-captain-area .fmdb-team-card__meta {
+    font-size: 0.82rem;
+    color: #666;
+}
+#fmdb-captain-area .fmdb-team-card__actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+#fmdb-captain-area .fmdb-team-card__btn {
+    background: #f5f5f3;
+    border: 1.5px solid var(--fmdb-neutral, #e6e6e0);
+    border-radius: 7px;
+    padding: 7px 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    color: var(--fmdb-dark-green);
+    white-space: nowrap;
+    line-height: 1.4;
+}
+#fmdb-captain-area .fmdb-team-card__btn:hover {
+    background: var(--fmdb-pale-green, #E1F5EE);
+    border-color: var(--fmdb-green);
+}
+#fmdb-captain-area .fmdb-team-card__btn--del {
+    background: #fff;
+    border-color: #e0b0b0;
+    color: #c0392b;
+}
+#fmdb-captain-area .fmdb-team-card__btn--del:hover {
+    background: #fdecea;
+    border-color: #c0392b;
+}
+
+/* Inline add/edit form */
+.fmdb-team-form-card {
+    background: color-mix(in srgb, var(--fmdb-green) 5%, #fff);
+    border: 1px solid color-mix(in srgb, var(--fmdb-green) 30%, transparent);
+    border-radius: 10px;
+    padding: 18px 20px;
+}
+.fmdb-team-form-card__title {
+    margin: 0 0 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--fmdb-dark-green);
+}
+.fmdb-team-form-card__actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+/* Add-another card */
+.fmdb-add-team-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    background: #fff;
+    border: 2px dashed color-mix(in srgb, var(--fmdb-green) 40%, transparent);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--fmdb-green);
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: border-color 0.15s, background 0.15s;
+    text-align: left;
+}
+.fmdb-add-team-card:hover {
+    border-color: var(--fmdb-green);
+    background: color-mix(in srgb, var(--fmdb-green) 5%, #fff);
+    color: var(--fmdb-dark-green);
+}
+.fmdb-add-team-card__plus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: var(--fmdb-green);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────── */
 
 @media (max-width: 560px) {

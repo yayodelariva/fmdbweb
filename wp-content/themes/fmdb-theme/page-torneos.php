@@ -159,48 +159,64 @@ if ( $event_id ) {
                         </div>
                     </div>
 
-                    <!-- Team fields — shown when captain = yes -->
-                    <div id="fmdb-team-fields" class="fmdb-torneos__team-fields" hidden>
-                        <h3 class="fmdb-torneos__section-title">Datos del equipo</h3>
+                    <!-- Captain area — shown when captain = yes -->
+                    <div id="fmdb-captain-area" hidden>
 
-                        <div class="fmdb-registro__field">
-                            <label for="fmdb-team-name">Nombre del equipo <span style="color:#c0392b">*</span></label>
-                            <input type="text" id="fmdb-team-name" name="fmdb_team_name"
-                                   placeholder="Ej. Tiburones de Naucalpan" autocomplete="off">
+                        <!-- Added team cards -->
+                        <div id="fmdb-team-cards" class="fmdb-team-cards"></div>
+
+                        <!-- Inline add/edit form -->
+                        <div id="fmdb-team-form-wrap" class="fmdb-team-form-card" hidden>
+                            <h4 id="fmdb-team-form-title" class="fmdb-team-form-card__title">Nuevo equipo</h4>
+                            <div class="fmdb-registro__field">
+                                <label for="fmdb-tf-name">Nombre del equipo <span aria-hidden="true" style="color:#c0392b">*</span></label>
+                                <input type="text" id="fmdb-tf-name" placeholder="Ej. Tiburones de Naucalpan" autocomplete="off">
+                            </div>
+                            <div class="fmdb-afil__grid fmdb-afil__grid--2" style="gap:14px;margin-top:14px;">
+                                <div class="fmdb-registro__field">
+                                    <label for="fmdb-tf-rama">Rama <span aria-hidden="true" style="color:#c0392b">*</span></label>
+                                    <select id="fmdb-tf-rama">
+                                        <option value="">— Seleccionar —</option>
+                                        <?php foreach ( $display_ramas as $r ) : ?>
+                                            <option value="<?php echo esc_attr( $r ); ?>"><?php echo esc_html( $r ); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="fmdb-registro__field">
+                                    <label for="fmdb-tf-categoria">Categoría <span aria-hidden="true" style="color:#c0392b">*</span></label>
+                                    <select id="fmdb-tf-categoria">
+                                        <option value="">— Seleccionar —</option>
+                                        <?php
+                                        $_all_cat_labels = fmdb_reg_all_categories();
+                                        foreach ( $allowed_cats as $c ) :
+                                            $clabel = $_all_cat_labels[ $c ] ?? $c;
+                                        ?>
+                                            <option value="<?php echo esc_attr( $c ); ?>"><?php echo esc_html( $clabel ); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="fmdb-registro__field">
+                                    <label for="fmdb-tf-modalidad">Modalidad <span aria-hidden="true" style="color:#c0392b">*</span></label>
+                                    <select id="fmdb-tf-modalidad">
+                                        <option value="">— Seleccionar —</option>
+                                        <option value="Cloth">Cloth</option>
+                                        <option value="Foam">Foam</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="fmdb-tf-msg" class="fmdb-reg-section__msg" style="margin-top:10px;"></div>
+                            <div class="fmdb-team-form-card__actions">
+                                <button type="button" id="fmdb-tf-save" class="fmdb-btn fmdb-btn--primary">Guardar equipo</button>
+                                <button type="button" id="fmdb-tf-cancel" class="fmdb-btn fmdb-btn--secondary">Cancelar</button>
+                            </div>
                         </div>
 
-                        <div class="fmdb-afil__grid fmdb-afil__grid--2" style="gap:14px;margin-top:14px;">
-                            <div class="fmdb-registro__field">
-                                <label for="fmdb-rama">Rama <span style="color:#c0392b">*</span></label>
-                                <select id="fmdb-rama" name="fmdb_rama">
-                                    <option value="">— Seleccionar —</option>
-                                    <?php foreach ( $display_ramas as $r ) : ?>
-                                        <option value="<?php echo esc_attr( $r ); ?>"><?php echo esc_html( $r ); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="fmdb-registro__field">
-                                <label for="fmdb-categoria">Categoría <span style="color:#c0392b">*</span></label>
-                                <select id="fmdb-categoria" name="fmdb_categoria">
-                                    <option value="">— Seleccionar —</option>
-                                    <?php
-                                    $_all_cat_labels = fmdb_reg_all_categories();
-                                    foreach ( $allowed_cats as $c ) :
-                                        $clabel = $_all_cat_labels[ $c ] ?? $c;
-                                    ?>
-                                        <option value="<?php echo esc_attr( $c ); ?>"><?php echo esc_html( $clabel ); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="fmdb-registro__field">
-                                <label for="fmdb-modalidad">Modalidad <span style="color:#c0392b">*</span></label>
-                                <select id="fmdb-modalidad" name="fmdb_modalidad">
-                                    <option value="">— Seleccionar —</option>
-                                    <option value="Cloth">Cloth</option>
-                                    <option value="Foam">Foam</option>
-                                </select>
-                            </div>
-                        </div>
+                        <!-- Add-another card (always visible) -->
+                        <button type="button" id="fmdb-add-team-card" class="fmdb-add-team-card">
+                            <span class="fmdb-add-team-card__plus" aria-hidden="true">+</span>
+                            <span>Agregar equipo</span>
+                        </button>
+
                     </div>
 
                     <!-- Team picker — shown when captain = no -->
@@ -245,6 +261,13 @@ if ( $event_id ) {
 
                     <div id="fmdb-hub-msg" class="fmdb-reg-section__msg" style="margin-top:16px;"></div>
 
+                    <!-- Captain checkout (shown when captain = yes) -->
+                    <button type="button" id="fmdb-captain-checkout"
+                            class="fmdb-btn fmdb-btn--primary fmdb-torneos__submit-btn" hidden disabled>
+                        Continuar al pago →
+                    </button>
+
+                    <!-- Player submit (shown when captain = no) -->
                     <button type="button" id="fmdb-hub-submit" class="fmdb-btn fmdb-btn--primary fmdb-torneos__submit-btn" disabled>
                         Continuar al pago →
                     </button>
@@ -252,40 +275,118 @@ if ( $event_id ) {
 
                 <script>
                 (function () {
-                    var form     = document.getElementById('fmdb-hub-form');
-                    var btn      = document.getElementById('fmdb-hub-submit');
-                    var msgEl    = document.getElementById('fmdb-hub-msg');
-                    var fields   = document.getElementById('fmdb-team-fields');
-                    var picker   = document.getElementById('fmdb-team-picker');
-                    var radios   = form.querySelectorAll('input[name="fmdb_is_captain"]');
-                    var ajaxUrl  = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
-                    var nonce    = '<?php echo esc_js( wp_create_nonce( 'fmdb_hub_reg_submit' ) ); ?>';
-                    var hasTeams = <?php echo empty( $hub_teams ) ? 'false' : 'true'; ?>;
+                    var form        = document.getElementById('fmdb-hub-form');
+                    var playerBtn   = document.getElementById('fmdb-hub-submit');
+                    var captainBtn  = document.getElementById('fmdb-captain-checkout');
+                    var msgEl       = document.getElementById('fmdb-hub-msg');
+                    var captainArea = document.getElementById('fmdb-captain-area');
+                    var picker      = document.getElementById('fmdb-team-picker');
+                    var radios      = form.querySelectorAll('input[name="fmdb_is_captain"]');
+                    var ajaxUrl     = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+                    var nonce       = '<?php echo esc_js( wp_create_nonce( 'fmdb_hub_reg_submit' ) ); ?>';
+                    var hasTeams    = <?php echo empty( $hub_teams ) ? 'false' : 'true'; ?>;
 
-                    function updatePickerBtn() {
-                        var checked = picker.querySelectorAll('.fmdb-team-check:checked');
-                        btn.disabled = !hasTeams || checked.length === 0;
+                    var formWrap  = document.getElementById('fmdb-team-form-wrap');
+                    var formTitle = document.getElementById('fmdb-team-form-title');
+                    var tfName    = document.getElementById('fmdb-tf-name');
+                    var tfRama    = document.getElementById('fmdb-tf-rama');
+                    var tfCat     = document.getElementById('fmdb-tf-categoria');
+                    var tfMod     = document.getElementById('fmdb-tf-modalidad');
+                    var tfMsg     = document.getElementById('fmdb-tf-msg');
+                    var tfSave    = document.getElementById('fmdb-tf-save');
+                    var tfCancel  = document.getElementById('fmdb-tf-cancel');
+                    var addCard   = document.getElementById('fmdb-add-team-card');
+                    var cardsEl   = document.getElementById('fmdb-team-cards');
+
+                    var teams     = [];
+                    var editingId = null;
+                    var nextId    = 0;
+
+                    function escHtml(s) {
+                        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
                     }
 
+                    function renderTeams() {
+                        cardsEl.innerHTML = '';
+                        teams.forEach(function (t) {
+                            var meta = [t.rama, t.modalidad, t.categoria].filter(Boolean).join(' · ');
+                            var card = document.createElement('div');
+                            card.className = 'fmdb-team-card';
+                            card.innerHTML =
+                                '<div class="fmdb-team-card__info">' +
+                                    '<div class="fmdb-team-card__name">' + escHtml(t.name) + '</div>' +
+                                    '<div class="fmdb-team-card__meta">' + escHtml(meta) + '</div>' +
+                                '</div>' +
+                                '<div class="fmdb-team-card__actions">' +
+                                    '<button type="button" class="fmdb-team-card__btn fmdb-team-card__btn--edit" data-id="' + t.id + '">Editar</button>' +
+                                    '<button type="button" class="fmdb-team-card__btn fmdb-team-card__btn--del" data-id="' + t.id + '">Eliminar</button>' +
+                                '</div>';
+                            cardsEl.appendChild(card);
+                        });
+                        captainBtn.disabled = teams.length === 0;
+                    }
+
+                    function openForm(team) {
+                        editingId           = team ? team.id : null;
+                        formTitle.textContent = team ? 'Editar equipo' : 'Nuevo equipo';
+                        tfName.value = team ? team.name      : '';
+                        tfRama.value = team ? team.rama      : '';
+                        tfCat.value  = team ? team.categoria : '';
+                        tfMod.value  = team ? team.modalidad : '';
+                        tfMsg.textContent = '';
+                        tfMsg.className   = 'fmdb-reg-section__msg';
+                        formWrap.hidden   = false;
+                        tfName.focus();
+                        formWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+
+                    function closeForm() {
+                        formWrap.hidden = true;
+                        editingId = null;
+                    }
+
+                    function saveTeam() {
+                        var name = tfName.value.trim();
+                        var rama = tfRama.value;
+                        var cat  = tfCat.value;
+                        var mod  = tfMod.value;
+                        if (!name) { tfMsg.textContent = 'Ingresa el nombre del equipo.'; tfMsg.classList.add('fmdb-reg-section__msg--err'); tfName.focus(); return; }
+                        if (!rama) { tfMsg.textContent = 'Selecciona la rama.';            tfMsg.classList.add('fmdb-reg-section__msg--err'); tfRama.focus(); return; }
+                        if (!cat)  { tfMsg.textContent = 'Selecciona la categoría.';       tfMsg.classList.add('fmdb-reg-section__msg--err'); tfCat.focus();  return; }
+                        if (!mod)  { tfMsg.textContent = 'Selecciona la modalidad.';       tfMsg.classList.add('fmdb-reg-section__msg--err'); tfMod.focus();  return; }
+                        var dup = teams.some(function (t) {
+                            if (editingId !== null && t.id === editingId) return false;
+                            return t.name.trim().toLowerCase() === name.toLowerCase() && t.rama === rama && t.categoria === cat;
+                        });
+                        if (dup) { tfMsg.textContent = 'Ya tienes ese equipo en tu lista.'; tfMsg.classList.add('fmdb-reg-section__msg--err'); return; }
+                        if (editingId !== null) {
+                            var idx = teams.findIndex(function (t) { return t.id === editingId; });
+                            if (idx >= 0) teams[idx] = { id: editingId, name: name, rama: rama, categoria: cat, modalidad: mod };
+                        } else {
+                            teams.push({ id: nextId++, name: name, rama: rama, categoria: cat, modalidad: mod });
+                        }
+                        closeForm();
+                        renderTeams();
+                    }
+
+                    // Radio toggle
                     radios.forEach(function (r) {
                         r.addEventListener('change', function () {
                             var isYes = r.value === 'yes';
-                            fields.hidden = !isYes;
-                            picker.hidden = isYes;
-                            fields.querySelectorAll('input, select').forEach(function (el) {
-                                el.required = isYes;
-                            });
-                            if (isYes) {
-                                btn.disabled = false;
-                                btn.textContent = 'Continuar al pago →';
-                            } else {
-                                btn.textContent = 'Terminar registro →';
-                                updatePickerBtn();
-                            }
+                            captainArea.hidden = !isYes;
+                            picker.hidden      = isYes;
+                            captainBtn.hidden  = !isYes;
+                            playerBtn.hidden   = isYes;
+                            if (!isYes) updatePickerBtn();
                             document.getElementById('fmdb-opt-yes').classList.toggle('is-selected', isYes);
                             document.getElementById('fmdb-opt-no').classList.toggle('is-selected', !isYes);
                         });
                     });
+
+                    function updatePickerBtn() {
+                        var checked = picker.querySelectorAll('.fmdb-team-check:checked');
+                        playerBtn.disabled = !hasTeams || checked.length === 0;
+                    }
 
                     picker.addEventListener('change', function (e) {
                         if (e.target.classList.contains('fmdb-team-check')) {
@@ -294,65 +395,44 @@ if ( $event_id ) {
                         }
                     });
 
-                    btn.addEventListener('click', function () {
-                        if (msgEl) { msgEl.textContent = ''; msgEl.className = 'fmdb-reg-section__msg'; }
+                    addCard.addEventListener('click', function () {
+                        if (!formWrap.hidden && editingId === null) { tfName.focus(); return; }
+                        openForm(null);
+                    });
 
-                        var chosen = form.querySelector('input[name="fmdb_is_captain"]:checked');
-                        if (!chosen) {
-                            msgEl.textContent = 'Selecciona una opción para continuar.';
-                            msgEl.classList.add('fmdb-reg-section__msg--err');
-                            return;
+                    tfSave.addEventListener('click', saveTeam);
+                    tfCancel.addEventListener('click', closeForm);
+
+                    cardsEl.addEventListener('click', function (e) {
+                        var editBtn = e.target.closest('.fmdb-team-card__btn--edit');
+                        var delBtn  = e.target.closest('.fmdb-team-card__btn--del');
+                        if (editBtn) {
+                            var id   = parseInt(editBtn.dataset.id, 10);
+                            var team = teams.find(function (t) { return t.id === id; });
+                            if (team) openForm(team);
+                        } else if (delBtn) {
+                            var id = parseInt(delBtn.dataset.id, 10);
+                            teams = teams.filter(function (t) { return t.id !== id; });
+                            if (editingId === id) closeForm();
+                            renderTeams();
                         }
+                    });
+
+                    // Captain checkout — send all teams at once
+                    captainBtn.addEventListener('click', function () {
+                        if (teams.length === 0) return;
+                        if (msgEl) { msgEl.textContent = ''; msgEl.className = 'fmdb-reg-section__msg'; }
+                        captainBtn.disabled = true;
+                        var origText = captainBtn.textContent;
+                        captainBtn.textContent = 'Procesando…';
 
                         var fd = new FormData(form);
+                        fd.set('fmdb_is_captain', 'yes');
                         fd.append('action', 'fmdb_hub_reg_submit');
-                        fd.append('nonce',  nonce);
-
-                        if (chosen.value === 'yes') {
-                            var teamName = form.querySelector('#fmdb-team-name');
-                            var rama     = form.querySelector('#fmdb-rama');
-                            var cat      = form.querySelector('#fmdb-categoria');
-                            var mod      = form.querySelector('#fmdb-modalidad');
-                            if (!teamName.value.trim()) {
-                                teamName.focus();
-                                msgEl.textContent = 'Ingresa el nombre del equipo.';
-                                msgEl.classList.add('fmdb-reg-section__msg--err');
-                                return;
-                            }
-                            if (!rama.value) {
-                                rama.focus();
-                                msgEl.textContent = 'Selecciona la rama.';
-                                msgEl.classList.add('fmdb-reg-section__msg--err');
-                                return;
-                            }
-                            if (!cat.value) {
-                                cat.focus();
-                                msgEl.textContent = 'Selecciona la categoría.';
-                                msgEl.classList.add('fmdb-reg-section__msg--err');
-                                return;
-                            }
-                            if (!mod.value) {
-                                mod.focus();
-                                msgEl.textContent = 'Selecciona la modalidad.';
-                                msgEl.classList.add('fmdb-reg-section__msg--err');
-                                return;
-                            }
-                        } else {
-                            var checked = picker.querySelectorAll('.fmdb-team-check:checked');
-                            if (checked.length === 0) {
-                                msgEl.textContent = 'Selecciona al menos un equipo para continuar.';
-                                msgEl.classList.add('fmdb-reg-section__msg--err');
-                                return;
-                            }
-                            var selectedTeams = Array.from(checked).map(function (c) {
-                                try { return JSON.parse(c.value); } catch(e) { return null; }
-                            }).filter(Boolean);
-                            fd.append('fmdb_selected_teams', JSON.stringify(selectedTeams));
-                        }
-
-                        btn.disabled = true;
-                        var origText = btn.textContent;
-                        btn.textContent = 'Procesando…';
+                        fd.append('nonce', nonce);
+                        fd.append('fmdb_teams', JSON.stringify(teams.map(function (t) {
+                            return { name: t.name, rama: t.rama, categoria: t.categoria, modalidad: t.modalidad };
+                        })));
 
                         fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
                             .then(function (r) { return r.json(); })
@@ -361,17 +441,54 @@ if ( $event_id ) {
                                     window.location.href = res.data.cart_url;
                                 } else {
                                     var msg = (res.data && res.data.message) ? res.data.message : 'Error al procesar. Intenta de nuevo.';
-                                    msgEl.textContent = msg;
-                                    msgEl.classList.add('fmdb-reg-section__msg--err');
-                                    btn.disabled = false;
-                                    btn.textContent = origText;
+                                    if (msgEl) { msgEl.textContent = msg; msgEl.classList.add('fmdb-reg-section__msg--err'); }
+                                    captainBtn.disabled = false;
+                                    captainBtn.textContent = origText;
                                 }
                             })
                             .catch(function () {
-                                msgEl.textContent = 'Error de conexión. Intenta de nuevo.';
-                                msgEl.classList.add('fmdb-reg-section__msg--err');
-                                btn.disabled = false;
-                                btn.textContent = origText;
+                                if (msgEl) { msgEl.textContent = 'Error de conexión. Intenta de nuevo.'; msgEl.classList.add('fmdb-reg-section__msg--err'); }
+                                captainBtn.disabled = false;
+                                captainBtn.textContent = origText;
+                            });
+                    });
+
+                    // Player submit
+                    playerBtn.addEventListener('click', function () {
+                        if (msgEl) { msgEl.textContent = ''; msgEl.className = 'fmdb-reg-section__msg'; }
+                        var checked = picker.querySelectorAll('.fmdb-team-check:checked');
+                        if (checked.length === 0) {
+                            if (msgEl) { msgEl.textContent = 'Selecciona al menos un equipo para continuar.'; msgEl.classList.add('fmdb-reg-section__msg--err'); }
+                            return;
+                        }
+                        var selectedTeams = Array.from(checked).map(function (c) {
+                            try { return JSON.parse(c.value); } catch(e) { return null; }
+                        }).filter(Boolean);
+                        playerBtn.disabled = true;
+                        var origText = playerBtn.textContent;
+                        playerBtn.textContent = 'Procesando…';
+
+                        var fd = new FormData(form);
+                        fd.append('action', 'fmdb_hub_reg_submit');
+                        fd.append('nonce', nonce);
+                        fd.append('fmdb_selected_teams', JSON.stringify(selectedTeams));
+
+                        fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (res) {
+                                if (res.success && res.data && res.data.cart_url) {
+                                    window.location.href = res.data.cart_url;
+                                } else {
+                                    var msg = (res.data && res.data.message) ? res.data.message : 'Error al procesar. Intenta de nuevo.';
+                                    if (msgEl) { msgEl.textContent = msg; msgEl.classList.add('fmdb-reg-section__msg--err'); }
+                                    playerBtn.disabled = false;
+                                    playerBtn.textContent = origText;
+                                }
+                            })
+                            .catch(function () {
+                                if (msgEl) { msgEl.textContent = 'Error de conexión. Intenta de nuevo.'; msgEl.classList.add('fmdb-reg-section__msg--err'); }
+                                playerBtn.disabled = false;
+                                playerBtn.textContent = origText;
                             });
                     });
                 })();

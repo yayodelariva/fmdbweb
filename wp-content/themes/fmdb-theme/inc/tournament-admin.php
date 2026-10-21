@@ -34,7 +34,7 @@ function fmdb_reg_export_rows( int $event_id ): array {
 
         $reg_item = null;
         foreach ( $order->get_items() as $item ) {
-            if ( ! $reg_item && ( $item->get_meta( 'Equipo' ) || $item->get_meta( 'Hub Teams' ) ) ) {
+            if ( ! $reg_item && ( $item->get_meta( 'Equipo' ) || $item->get_meta( 'Hub Teams' ) || $item->get_meta( 'Captain Teams' ) ) ) {
                 $reg_item = $item;
                 break;
             }
@@ -43,6 +43,7 @@ function fmdb_reg_export_rows( int $event_id ): array {
         if ( ! $reg_item ) continue;
 
         $is_hub         = (bool) $reg_item->get_meta( 'Hub Teams' );
+        $is_captain_batch = ! $is_hub && (bool) $reg_item->get_meta( 'Captain Teams' );
         $nombre_first   = $reg_item->get_meta( 'Encargado' ) ?: $reg_item->get_meta( 'Capitán' ) ?: $reg_item->get_meta( 'Jugador' );
         $nombre         = trim( $nombre_first . ' ' . $reg_item->get_meta( 'Apellido' ) );
 
@@ -54,7 +55,36 @@ function fmdb_reg_export_rows( int $event_id ): array {
         // Build a display list of team entries for Jugador rows.
         // Each entry is a formatted string: "Name Rama [Modalidad] Categoria".
         $team_list = [];
-        if ( $reg_type === 'team' ) {
+        if ( $reg_type === 'team' && $is_captain_batch ) {
+            // Captain multi-team batch: one row per team, fee shown only on the first.
+            $ct_data      = json_decode( $reg_item->get_meta( 'Captain Teams' ), true ) ?? [];
+            $fee_registro = (float) $reg_item->get_subtotal();
+            $fee_total    = (float) $order->get_total();
+            $base = [
+                'order_id'  => $order->get_id(),
+                'status'    => $order->get_status(),
+                'reg_type'  => $reg_type,
+                'is_hub'    => false,
+                'nombre'    => $nombre,
+                'telefono'  => $reg_item->get_meta( 'Teléfono' ),
+                'email'     => $order->get_billing_email(),
+                'team_list' => [],
+            ];
+            foreach ( $ct_data as $i => $ct ) {
+                $ct_name = trim( $ct['team_name'] ?? '' );
+                if ( ! $ct_name ) continue;
+                $rows[] = $base + [
+                    'equipo'       => $ct_name,
+                    'rama'         => $ct['rama']      ?? '',
+                    'categoria'    => $ct['categoria'] ?? '',
+                    'modalidad'    => $ct['modalidad'] ?? '',
+                    'fee_registro' => $i === 0 ? $fee_registro : 0.0,
+                    'fee_total'    => $i === 0 ? $fee_total    : 0.0,
+                    'fee_hidden'   => $i > 0,
+                ];
+            }
+            continue; // rows already pushed above
+        } elseif ( $reg_type === 'team' ) {
             $team_list = [ $equipo ];
         } elseif ( $is_hub ) {
             $hub_ramas = [];
@@ -112,7 +142,8 @@ function fmdb_reg_export_rows( int $event_id ): array {
             'categoria'   => $categoria,
             'modalidad'   => $modalidad,
             'fee_registro' => $fee_registro,
-            'fee_total'   => (float) $order->get_total(),
+            'fee_total'    => (float) $order->get_total(),
+            'fee_hidden'   => false,
         ];
     }
 
@@ -216,12 +247,14 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
                     <?php endif; ?>
                 </td>
                 <td style="font-weight:600;">
-                    <?php if ( $r['reg_type'] !== 'team' && count( $r['team_list'] ) > 0 ) : ?>
+                    <?php if ( count( $r['team_list'] ) > 1 ) : ?>
                         <ol style="margin:0;padding-left:16px;">
                         <?php foreach ( $r['team_list'] as $tl ) : ?>
                             <li><?php echo esc_html( $tl ); ?></li>
                         <?php endforeach; ?>
                         </ol>
+                    <?php elseif ( count( $r['team_list'] ) === 1 ) : ?>
+                        <?php echo esc_html( $r['team_list'][0] ); ?>
                     <?php else : ?>
                         <?php echo esc_html( $r['equipo'] ); ?>
                     <?php endif; ?>
@@ -232,8 +265,12 @@ function fmdb_render_reg_export_metabox( WP_Post $post ): void {
                 <td><?php echo esc_html( $r['rama'] ); ?></td>
                 <td><?php echo esc_html( $r['categoria'] ); ?></td>
                 <td><?php echo esc_html( $r['modalidad'] ); ?></td>
-                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;">$<?php echo number_format( $r['fee_registro'], 2 ); ?></td>
-                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;">$<?php echo number_format( $r['fee_total'], 2 ); ?></td>
+                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;">
+                    <?php echo $r['fee_hidden'] ? '—' : '$' . number_format( $r['fee_registro'], 2 ); ?>
+                </td>
+                <td style="white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;">
+                    <?php echo $r['fee_hidden'] ? '—' : '$' . number_format( $r['fee_total'], 2 ); ?>
+                </td>
             </tr>
         <?php endforeach; ?>
         </tbody>

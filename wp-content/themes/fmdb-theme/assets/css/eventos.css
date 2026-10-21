@@ -953,37 +953,6 @@
     .fmdb-reg-section__msg--ok { animation: none; }
 }
 
-/* === Multi-team cart list === */
-.fmdb-team-added {
-    margin-top: 14px;
-    padding: 10px 12px;
-    background: color-mix(in srgb, var(--fmdb-green) 8%, transparent);
-    border-radius: 8px;
-    border: 1px solid color-mix(in srgb, var(--fmdb-green) 25%, transparent);
-}
-.fmdb-team-added__label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--fmdb-text-muted, #666);
-    margin: 0 0 6px;
-}
-.fmdb-team-added__list {
-    margin: 0;
-    padding: 0 0 0 16px;
-    font-size: 0.85rem;
-    color: var(--fmdb-text, #222);
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-.fmdb-team-multiactions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-}
 
 /* === Grand total section === */
 .fmdb-reg-total {

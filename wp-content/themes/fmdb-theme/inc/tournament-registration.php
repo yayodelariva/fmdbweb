@@ -354,6 +354,38 @@ function fmdb_reg_get_event_teams( int $event_id ): array {
             // Hub multi-team individual: defer to pass 2.
             if ( $reg_type !== 'team' && $item->get_meta( 'Hub Teams' ) ) continue;
 
+            // Captain multi-team batch: expand all teams from JSON.
+            $captain_teams_json = $item->get_meta( 'Captain Teams' );
+            if ( $captain_teams_json ) {
+                $captain_full = trim( ( $item->get_meta( 'Encargado' ) ?: $item->get_meta( 'Capitán' ) ) . ' ' . $item->get_meta( 'Apellido' ) );
+                foreach ( json_decode( $captain_teams_json, true ) ?? [] as $ct ) {
+                    $ct_name = trim( $ct['team_name'] ?? '' );
+                    $ct_rama = $ct['rama'] ?? '';
+                    $ct_cat  = $ct['categoria'] ?? '';
+                    $ct_mod  = $ct['modalidad'] ?? '';
+                    if ( ! $ct_name ) continue;
+                    $key = fmdb_team_key( $ct_name, $ct_rama, $ct_cat ) . '|' . $ct_mod;
+                    if ( ! isset( $teams[ $key ] ) ) {
+                        $teams[ $key ] = [
+                            'name'          => $ct_name,
+                            'rama'          => $ct_rama,
+                            'categoria'     => $ct_cat,
+                            'modalidad'     => $ct_mod,
+                            'captain'       => $captain_full,
+                            'extra_players' => [],
+                            'bulk_count'    => 1,
+                            'order_id'      => $order->get_id(),
+                            'status'        => $order->get_status(),
+                            'on_waitlist'   => false,
+                            'confirmed'     => false,
+                            'players'       => [],
+                            'is_hub_reg'    => true,
+                        ];
+                    }
+                }
+                continue;
+            }
+
             $team_name = $item->get_meta( 'Equipo' );
             if ( ! $team_name ) continue;
 
@@ -770,9 +802,20 @@ function fmdb_get_user_captain_team_keys( int $user_id, int $event_id ): array {
     foreach ( $orders as $order ) {
         foreach ( $order->get_items() as $item ) {
             if ( $item->get_meta( 'Tipo' ) !== 'Equipo' ) continue;
-            $name = trim( (string) $item->get_meta( 'Equipo' ) );
-            if ( ! $name ) continue;
-            $keys[] = fmdb_team_key( $name, $item->get_meta( 'Rama' ), $item->get_meta( 'Categoría' ) );
+            $capt_json = $item->get_meta( 'Captain Teams' );
+            if ( $capt_json ) {
+                foreach ( json_decode( $capt_json, true ) ?? [] as $ct ) {
+                    $name = trim( $ct['team_name'] ?? '' );
+                    if ( $name ) {
+                        $keys[] = fmdb_team_key( $name, $ct['rama'] ?? '', $ct['categoria'] ?? '' );
+                    }
+                }
+            } else {
+                $name = trim( (string) $item->get_meta( 'Equipo' ) );
+                if ( $name ) {
+                    $keys[] = fmdb_team_key( $name, $item->get_meta( 'Rama' ), $item->get_meta( 'Categoría' ) );
+                }
+            }
         }
     }
     return $keys;
@@ -1891,9 +1934,19 @@ function fmdb_ajax_add_registration(): void {
         foreach ( $dup_orders as $dup_order ) {
             if ( $dup_order->get_meta( '_fmdb_reg_type' ) !== 'team' ) continue;
             foreach ( $dup_order->get_items() as $dup_item ) {
-                if ( mb_strtolower( trim( (string) $dup_item->get_meta( 'Equipo' ) ) ) === $dup_name
-                  && $dup_item->get_meta( 'Rama' ) === $dup_rama
-                  && $dup_item->get_meta( 'Categoría' ) === $dup_cat ) {
+                $di_capt_json = $dup_item->get_meta( 'Captain Teams' );
+                if ( $di_capt_json ) {
+                    foreach ( json_decode( $di_capt_json, true ) ?? [] as $ct ) {
+                        if ( mb_strtolower( trim( $ct['team_name'] ?? '' ) ) === $dup_name
+                          && ( $ct['rama']      ?? '' ) === $dup_rama
+                          && ( $ct['categoria'] ?? '' ) === $dup_cat ) {
+                            wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
+                            return;
+                        }
+                    }
+                } elseif ( mb_strtolower( trim( (string) $dup_item->get_meta( 'Equipo' ) ) ) === $dup_name
+                        && $dup_item->get_meta( 'Rama' ) === $dup_rama
+                        && $dup_item->get_meta( 'Categoría' ) === $dup_cat ) {
                     wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
                     return;
                 }
@@ -2003,18 +2056,27 @@ function fmdb_ajax_hub_reg_submit(): void {
         return;
     }
 
-    // Enforce one registration per cart at a time.
+    $is_captain = sanitize_key( $_POST['fmdb_is_captain'] ?? '' ) === 'yes';
+
+    // Team registrations may stack (multi-team captain); individual stays 1-per-cart.
     foreach ( WC()->cart->get_cart() as $existing ) {
-        if ( ! empty( $existing['fmdb_event_id'] ) ) {
+        if ( empty( $existing['fmdb_event_id'] ) ) continue;
+        if ( ! $is_captain || ( $existing['fmdb_reg_type'] ?? 'team' ) !== 'team' ) {
             wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en el carrito.' ] );
             return;
         }
     }
 
-    $is_captain = sanitize_key( $_POST['fmdb_is_captain'] ?? '' ) === 'yes';
-
     if ( $is_captain ) {
-        // Captain path: register a new team.
+        // Captain path: accepts a JSON array of teams from the client-side list.
+        $teams_raw = wp_unslash( $_POST['fmdb_teams'] ?? '' );
+        $teams     = $teams_raw ? json_decode( $teams_raw, true ) : [];
+
+        if ( empty( $teams ) || ! is_array( $teams ) ) {
+            wp_send_json_error( [ 'message' => 'Agrega al menos un equipo para continuar.' ] );
+            return;
+        }
+
         if ( fmdb_user_has_event_access( $user_id, $event_id ) ) {
             if ( ! fmdb_user_has_paid_for_event( $user_id, $event_id ) ) {
                 wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en proceso para este torneo.' ] );
@@ -2023,59 +2085,108 @@ function fmdb_ajax_hub_reg_submit(): void {
             $_POST['fmdb_free_rereg'] = '1';
         }
 
-        $team_name = trim( sanitize_text_field( wp_unslash( $_POST['fmdb_team_name'] ?? '' ) ) );
-        $rama      = sanitize_text_field( wp_unslash( $_POST['fmdb_rama']      ?? '' ) );
-        $categoria = sanitize_text_field( wp_unslash( $_POST['fmdb_categoria'] ?? '' ) );
-        $modalidad = sanitize_text_field( wp_unslash( $_POST['fmdb_modalidad'] ?? '' ) );
-
-        if ( ! $team_name ) {
-            wp_send_json_error( [ 'message' => 'Ingresa el nombre del equipo.' ] );
-            return;
-        }
-        if ( ! in_array( $rama, [ 'Varonil', 'Femenil', 'Mixto' ], true ) ) {
-            wp_send_json_error( [ 'message' => 'Selecciona una rama válida.' ] );
-            return;
-        }
-        if ( ! array_key_exists( $categoria, fmdb_reg_all_categories() ) ) {
-            wp_send_json_error( [ 'message' => 'Selecciona una categoría válida.' ] );
-            return;
-        }
-        if ( ! in_array( $modalidad, [ 'Cloth', 'Foam' ], true ) ) {
-            wp_send_json_error( [ 'message' => 'Selecciona una modalidad válida.' ] );
-            return;
-        }
-
-        // Duplicate team check against all active orders for this event.
+        $all_cats   = fmdb_reg_all_categories();
         $dup_orders = wc_get_orders( [
             'meta_key'   => '_fmdb_reg_event_id',
             'meta_value' => $event_id,
             'status'     => fmdb_reg_active_statuses(),
             'limit'      => -1,
         ] );
-        foreach ( $dup_orders as $dup_order ) {
-            foreach ( $dup_order->get_items() as $dup_item ) {
-                if ( mb_strtolower( trim( (string) $dup_item->get_meta( 'Equipo' ) ) ) === mb_strtolower( $team_name )
-                  && $dup_item->get_meta( 'Rama' )      === $rama
-                  && $dup_item->get_meta( 'Categoría' ) === $categoria
-                  && $dup_item->get_meta( 'Modalidad' ) === $modalidad ) {
-                    wp_send_json_error( [ 'message' => 'Este equipo ya está registrado en esa rama, categoría y modalidad.' ] );
+        $user  = get_userdata( $user_id );
+        $phone = (string) get_user_meta( $user_id, 'fmdb_telefono', true );
+
+        // Validate all teams first (fail-fast before touching the cart).
+        $validated = [];
+        foreach ( $teams as $team ) {
+            $team_name = trim( sanitize_text_field( wp_unslash( $team['name']      ?? '' ) ) );
+            $rama      = sanitize_text_field( wp_unslash( $team['rama']       ?? '' ) );
+            $categoria = sanitize_text_field( wp_unslash( $team['categoria']  ?? '' ) );
+            $modalidad = sanitize_text_field( wp_unslash( $team['modalidad']  ?? '' ) );
+
+            if ( ! $team_name ) {
+                wp_send_json_error( [ 'message' => 'Uno de los equipos no tiene nombre.' ] );
+                return;
+            }
+            if ( ! in_array( $rama, [ 'Varonil', 'Femenil', 'Mixto' ], true ) ) {
+                wp_send_json_error( [ 'message' => "Equipo \"{$team_name}\": selecciona una rama válida." ] );
+                return;
+            }
+            if ( ! array_key_exists( $categoria, $all_cats ) ) {
+                wp_send_json_error( [ 'message' => "Equipo \"{$team_name}\": selecciona una categoría válida." ] );
+                return;
+            }
+            if ( ! in_array( $modalidad, [ 'Cloth', 'Foam' ], true ) ) {
+                wp_send_json_error( [ 'message' => "Equipo \"{$team_name}\": selecciona una modalidad válida." ] );
+                return;
+            }
+
+            // Dup check: active orders (handles single-team and captain-batch items).
+            foreach ( $dup_orders as $dup_order ) {
+                foreach ( $dup_order->get_items() as $dup_item ) {
+                    $capt_json = $dup_item->get_meta( 'Captain Teams' );
+                    if ( $capt_json ) {
+                        foreach ( json_decode( $capt_json, true ) ?? [] as $ct ) {
+                            if ( mb_strtolower( trim( $ct['team_name'] ?? '' ) ) === mb_strtolower( $team_name )
+                              && ( $ct['rama']      ?? '' ) === $rama
+                              && ( $ct['categoria'] ?? '' ) === $categoria
+                              && ( $ct['modalidad'] ?? '' ) === $modalidad ) {
+                                wp_send_json_error( [ 'message' => "El equipo \"{$team_name}\" ({$rama} · {$modalidad} · {$categoria}) ya está registrado." ] );
+                                return;
+                            }
+                        }
+                    } else {
+                        if ( mb_strtolower( trim( (string) $dup_item->get_meta( 'Equipo' ) ) ) === mb_strtolower( $team_name )
+                          && $dup_item->get_meta( 'Rama' )      === $rama
+                          && $dup_item->get_meta( 'Categoría' ) === $categoria
+                          && $dup_item->get_meta( 'Modalidad' ) === $modalidad ) {
+                            wp_send_json_error( [ 'message' => "El equipo \"{$team_name}\" ({$rama} · {$modalidad} · {$categoria}) ya está registrado." ] );
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Dup check: current cart.
+            foreach ( WC()->cart->get_cart() as $ci ) {
+                if ( ( $ci['fmdb_reg_type'] ?? '' ) !== 'team' ) continue;
+                if ( mb_strtolower( trim( (string) ( $ci['fmdb_team_name'] ?? '' ) ) ) === mb_strtolower( $team_name )
+                  && ( $ci['fmdb_rama']      ?? '' ) === $rama
+                  && ( $ci['fmdb_categoria'] ?? '' ) === $categoria ) {
+                    wp_send_json_error( [ 'message' => "El equipo \"{$team_name}\" ya está en tu carrito." ] );
                     return;
                 }
             }
+
+            // Dup check: within the submitted list itself.
+            foreach ( $validated as $prev ) {
+                if ( mb_strtolower( $prev['name'] ) === mb_strtolower( $team_name )
+                  && $prev['rama']      === $rama
+                  && $prev['categoria'] === $categoria ) {
+                    wp_send_json_error( [ 'message' => "El equipo \"{$team_name}\" está duplicado en tu lista." ] );
+                    return;
+                }
+            }
+
+            $validated[] = compact( 'team_name', 'rama', 'categoria', 'modalidad' );
         }
 
-        $user = get_userdata( $user_id );
+        // All valid — single cart item carrying all teams at a flat fee.
+        $_POST['fmdb_team_name']        = $validated[0]['team_name'];
+        $_POST['fmdb_rama']             = $validated[0]['rama'];
+        $_POST['fmdb_categoria']        = $validated[0]['categoria'];
+        $_POST['fmdb_modalidad']        = $validated[0]['modalidad'];
         $_POST['fmdb_reg_type']         = 'team';
         $_POST['fmdb_player_count']     = '1';
         $_POST['fmdb_captain_name']     = $user->first_name;
         $_POST['fmdb_captain_apellido'] = $user->last_name;
-        $_POST['fmdb_captain_phone']    = (string) get_user_meta( $user_id, 'fmdb_telefono', true );
+        $_POST['fmdb_captain_phone']    = $phone;
         $_POST['fmdb_hub_registration'] = '1';
+        $_POST['fmdb_captain_teams']    = wp_json_encode( $validated );
 
         $result = WC()->cart->add_to_cart( $prod_id );
         if ( $result === false ) {
             $notices = wc_get_notices( 'error' );
-            $msg     = ! empty( $notices ) ? wp_strip_all_tags( $notices[0]['notice'] ) : 'No se pudo agregar al carrito. Intenta de nuevo.';
+            $msg     = ! empty( $notices ) ? wp_strip_all_tags( $notices[0]['notice'] ) : 'No se pudo agregar los equipos al carrito.';
             wc_clear_notices();
             wp_send_json_error( [ 'message' => $msg ] );
             return;
@@ -2535,6 +2646,12 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
         $cart_item_data['fmdb_captain_apellido'] = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_apellido'] ?? '' ) );
         $cart_item_data['fmdb_captain_phone']   = sanitize_text_field( wp_unslash( $_POST['fmdb_captain_phone'] ?? '' ) );
         $cart_item_data['fmdb_player_count']    = absint( $_POST['fmdb_player_count'] ?? 0 );
+        if ( ! empty( $_POST['fmdb_captain_teams'] ) ) {
+            // Captain multi-team batch: all teams stored as JSON; one cart item, flat fee.
+            $cart_item_data['fmdb_captain_teams'] = wp_json_encode(
+                json_decode( wp_unslash( $_POST['fmdb_captain_teams'] ), true ) ?? []
+            );
+        }
 
         // Capture extra player names (players 2..N).
         $extra_players = [];
@@ -2940,6 +3057,10 @@ add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $ca
         $item->update_meta_data( 'Jugadores', $values['fmdb_player_count'] ?? 0 );
         foreach ( $values['fmdb_extra_players'] ?? [] as $i => $p ) {
             $item->update_meta_data( 'Jugador ' . ( $i + 2 ), trim( $p['nombre'] . ' ' . $p['apellido'] ) );
+        }
+        if ( ! empty( $values['fmdb_captain_teams'] ) ) {
+            // Captain multi-team batch: persist full team list so Inscripciones can expand it.
+            $item->update_meta_data( 'Captain Teams', $values['fmdb_captain_teams'] );
         }
         if ( ! empty( $values['fmdb_team_post_id'] ) ) {
             $item->update_meta_data( '_fmdb_team_post_id', $values['fmdb_team_post_id'] );
