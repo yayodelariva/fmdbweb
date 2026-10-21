@@ -2112,6 +2112,9 @@ function fmdb_ajax_hub_reg_submit(): void {
             $categoria = sanitize_text_field( wp_unslash( $team['categoria']  ?? '' ) );
             $modalidad = sanitize_text_field( wp_unslash( $team['modalidad']  ?? '' ) );
 
+            $nombre   = sanitize_text_field( wp_unslash( $team['nombre']   ?? '' ) );
+            $apellido = sanitize_text_field( wp_unslash( $team['apellido'] ?? '' ) );
+
             if ( ! $team_name ) {
                 wp_send_json_error( [ 'message' => 'Uno de los equipos no tiene nombre.' ] );
                 return;
@@ -2176,7 +2179,7 @@ function fmdb_ajax_hub_reg_submit(): void {
                 }
             }
 
-            $validated[] = compact( 'team_name', 'rama', 'categoria', 'modalidad' );
+            $validated[] = compact( 'nombre', 'apellido', 'team_name', 'rama', 'categoria', 'modalidad' );
         }
 
         // All valid — single cart item carrying all teams at a flat fee.
@@ -2187,8 +2190,8 @@ function fmdb_ajax_hub_reg_submit(): void {
         $_POST['fmdb_reg_type']         = 'team';
         $_POST['fmdb_player_count']     = '1';
         $dn_cap = fmdb_get_display_names( $user->ID );
-        $_POST['fmdb_captain_name']     = $dn_cap['nombre'];
-        $_POST['fmdb_captain_apellido'] = $dn_cap['apellido'];
+        $_POST['fmdb_captain_name']     = sanitize_text_field( $validated[0]['nombre']   ?? $dn_cap['nombre'] );
+        $_POST['fmdb_captain_apellido'] = sanitize_text_field( $validated[0]['apellido'] ?? $dn_cap['apellido'] );
         $_POST['fmdb_captain_phone']    = $phone;
         $_POST['fmdb_hub_registration'] = '1';
         $_POST['fmdb_captain_teams']    = wp_json_encode( $validated );

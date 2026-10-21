@@ -168,6 +168,16 @@ if ( $event_id ) {
                         <!-- Inline add/edit form -->
                         <div id="fmdb-team-form-wrap" class="fmdb-team-form-card" hidden>
                             <h4 id="fmdb-team-form-title" class="fmdb-team-form-card__title">Nuevo equipo</h4>
+                            <div class="fmdb-afil__grid fmdb-afil__grid--2" style="gap:14px;margin-bottom:14px;">
+                                <div class="fmdb-registro__field">
+                                    <label for="fmdb-tf-nombre">Nombre <span aria-hidden="true" style="color:#c0392b">*</span></label>
+                                    <input type="text" id="fmdb-tf-nombre" autocomplete="off">
+                                </div>
+                                <div class="fmdb-registro__field">
+                                    <label for="fmdb-tf-apellido">Apellido <span aria-hidden="true" style="color:#c0392b">*</span></label>
+                                    <input type="text" id="fmdb-tf-apellido" autocomplete="off">
+                                </div>
+                            </div>
                             <div class="fmdb-registro__field">
                                 <label for="fmdb-tf-name">Nombre del equipo <span aria-hidden="true" style="color:#c0392b">*</span></label>
                                 <input type="text" id="fmdb-tf-name" placeholder="Ej. Tiburones de Naucalpan" autocomplete="off">
@@ -285,9 +295,16 @@ if ( $event_id ) {
                     var ajaxUrl     = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
                     var nonce       = '<?php echo esc_js( wp_create_nonce( 'fmdb_hub_reg_submit' ) ); ?>';
                     var hasTeams    = <?php echo empty( $hub_teams ) ? 'false' : 'true'; ?>;
+                    <?php
+                    $dn_js = is_user_logged_in() ? fmdb_get_display_names( get_current_user_id() ) : [ 'nombre' => '', 'apellido' => '' ];
+                    ?>
+                    var defaultNombre   = '<?php echo esc_js( $dn_js['nombre'] ); ?>';
+                    var defaultApellido = '<?php echo esc_js( $dn_js['apellido'] ); ?>';
 
                     var formWrap  = document.getElementById('fmdb-team-form-wrap');
                     var formTitle = document.getElementById('fmdb-team-form-title');
+                    var tfNombre  = document.getElementById('fmdb-tf-nombre');
+                    var tfApellido= document.getElementById('fmdb-tf-apellido');
                     var tfName    = document.getElementById('fmdb-tf-name');
                     var tfRama    = document.getElementById('fmdb-tf-rama');
                     var tfCat     = document.getElementById('fmdb-tf-categoria');
@@ -329,6 +346,8 @@ if ( $event_id ) {
                     function openForm(team) {
                         editingId           = team ? team.id : null;
                         formTitle.textContent = team ? 'Editar equipo' : 'Nuevo equipo';
+                        tfNombre.value   = team ? team.nombre   : defaultNombre;
+                        tfApellido.value = team ? team.apellido : defaultApellido;
                         tfName.value = team ? team.name      : '';
                         tfRama.value = team ? team.rama      : '';
                         tfCat.value  = team ? team.categoria : '';
@@ -346,10 +365,14 @@ if ( $event_id ) {
                     }
 
                     function saveTeam() {
+                        var nombre   = tfNombre.value.trim();
+                        var apellido = tfApellido.value.trim();
                         var name = tfName.value.trim();
                         var rama = tfRama.value;
                         var cat  = tfCat.value;
                         var mod  = tfMod.value;
+                        if (!nombre)   { tfMsg.textContent = 'Ingresa el nombre.';            tfMsg.classList.add('fmdb-reg-section__msg--err'); tfNombre.focus();   return; }
+                        if (!apellido) { tfMsg.textContent = 'Ingresa el apellido.';          tfMsg.classList.add('fmdb-reg-section__msg--err'); tfApellido.focus(); return; }
                         if (!name) { tfMsg.textContent = 'Ingresa el nombre del equipo.'; tfMsg.classList.add('fmdb-reg-section__msg--err'); tfName.focus(); return; }
                         if (!rama) { tfMsg.textContent = 'Selecciona la rama.';            tfMsg.classList.add('fmdb-reg-section__msg--err'); tfRama.focus(); return; }
                         if (!cat)  { tfMsg.textContent = 'Selecciona la categoría.';       tfMsg.classList.add('fmdb-reg-section__msg--err'); tfCat.focus();  return; }
@@ -361,9 +384,9 @@ if ( $event_id ) {
                         if (dup) { tfMsg.textContent = 'Ya tienes ese equipo en tu lista.'; tfMsg.classList.add('fmdb-reg-section__msg--err'); return; }
                         if (editingId !== null) {
                             var idx = teams.findIndex(function (t) { return t.id === editingId; });
-                            if (idx >= 0) teams[idx] = { id: editingId, name: name, rama: rama, categoria: cat, modalidad: mod };
+                            if (idx >= 0) teams[idx] = { id: editingId, nombre: nombre, apellido: apellido, name: name, rama: rama, categoria: cat, modalidad: mod };
                         } else {
-                            teams.push({ id: nextId++, name: name, rama: rama, categoria: cat, modalidad: mod });
+                            teams.push({ id: nextId++, nombre: nombre, apellido: apellido, name: name, rama: rama, categoria: cat, modalidad: mod });
                         }
                         closeForm();
                         renderTeams();
@@ -431,7 +454,7 @@ if ( $event_id ) {
                         fd.append('action', 'fmdb_hub_reg_submit');
                         fd.append('nonce', nonce);
                         fd.append('fmdb_teams', JSON.stringify(teams.map(function (t) {
-                            return { name: t.name, rama: t.rama, categoria: t.categoria, modalidad: t.modalidad };
+                            return { nombre: t.nombre, apellido: t.apellido, name: t.name, rama: t.rama, categoria: t.categoria, modalidad: t.modalidad };
                         })));
 
                         fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
