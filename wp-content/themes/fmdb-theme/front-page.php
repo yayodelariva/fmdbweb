@@ -176,4 +176,24 @@ $latest_posts = get_posts( [ 'posts_per_page' => 3, 'post_status' => 'publish' ]
 
 </main>
 
+<!-- Tutor accounts announcement modal -->
+<div id="fmdb-announce-modal" class="fmdb-announce-modal" role="dialog" aria-modal="true" aria-labelledby="fmdb-announce-title" hidden>
+    <div class="fmdb-announce-modal__backdrop"></div>
+    <div class="fmdb-announce-modal__box">
+        <button type="button" class="fmdb-announce-modal__close" aria-label="Cerrar">&#x2715;</button>
+        <div class="fmdb-announce-modal__icon" aria-hidden="true">👨‍👧</div>
+        <h2 class="fmdb-announce-modal__title" id="fmdb-announce-title">Cuentas de padre/madre o tutor</h2>
+        <p class="fmdb-announce-modal__body">
+            Ahora puedes registrar a un menor usando tu propia cuenta. Al activar esta función, el nombre del menor aparecerá automáticamente en sus inscripciones a torneos.
+        </p>
+        <ol class="fmdb-announce-modal__steps">
+            <li>Ve a <a href="<?php echo esc_url( home_url( '/mi-perfil/' ) ); ?>"><strong>Mi Perfil</strong></a></li>
+            <li>Abre la sección <strong>Preferencias</strong></li>
+            <li>Activa <em>"Esta cuenta pertenece a un padre/madre o tutor"</em></li>
+            <li>Ingresa el <strong>nombre y apellido del menor</strong> y guarda</li>
+        </ol>
+        <button type="button" class="fmdb-btn fmdb-btn--primary fmdb-announce-modal__cta">Entendido</button>
+    </div>
+</div>
+
 <?php get_footer(); ?>

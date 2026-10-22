@@ -300,6 +300,73 @@ a.fmdb-event-item.fmdb-cat--miscelaneo .fmdb-event-date small {
 .fmdb-badge--femenil { background: #b51a6e; color: #fff; }
 .fmdb-badge--mixto   { background: var(--fmdb-green); color: #fff; }
 
+/* --- Tutor announcement modal --- */
+.fmdb-announce-modal[hidden] { display: none !important; }
+.fmdb-announce-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.fmdb-announce-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    cursor: pointer;
+}
+.fmdb-announce-modal__box {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 36px 32px 32px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    text-align: center;
+}
+.fmdb-announce-modal__close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 6px;
+}
+.fmdb-announce-modal__close:hover { color: #333; }
+.fmdb-announce-modal__icon {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+}
+.fmdb-announce-modal__title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: #111;
+}
+.fmdb-announce-modal__body {
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.6;
+    margin: 0 0 18px;
+}
+.fmdb-announce-modal__steps {
+    text-align: left;
+    font-size: 0.88rem;
+    color: #333;
+    line-height: 1.7;
+    margin: 0 0 24px;
+    padding-left: 20px;
+}
+.fmdb-announce-modal__steps a { color: var(--fmdb-primary, #1a7a4a); }
+.fmdb-announce-modal__cta { width: 100%; }
+
 /* --- Responsive --- */
 @media (max-width: 960px) {
     .fmdb-home-map__inner { grid-template-columns: 1fr; gap: 32px; }
