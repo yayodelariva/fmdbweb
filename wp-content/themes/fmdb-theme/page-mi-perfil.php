@@ -77,8 +77,8 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
             $raw_suffix     = strtoupper( preg_replace( '/[^A-Z0-9]/i', '', sanitize_text_field( $_POST['fmdb_affiliation_suffix'] ?? '' ) ) );
             $affiliation_id = $raw_suffix !== '' ? 'FMDB-' . $raw_suffix : '';
 
-            if ( $affiliation_id === '' ) {
-                $notices[] = [ 'type' => 'error', 'msg' => 'Ingresa tu ID de afiliación antes de solicitar verificación.' ];
+            if ( $affiliation_id === '' || strlen( $raw_suffix ) !== 5 ) {
+                $notices[] = [ 'type' => 'error', 'msg' => 'El ID de afiliación debe tener exactamente 5 caracteres.' ];
             } elseif ( fmdb_request_affiliation_verification( $user_id, $affiliation_id ) ) {
                 $notices[] = [ 'type' => 'success', 'msg' => 'Enviamos tu ID a un administrador para revisión. Te avisaremos cuando esté verificado.' ];
             } else {
@@ -161,7 +161,7 @@ get_header();
             </div>
         </form>
 
-        <form class="fmdb-perfil__form fmdb-perfil__form--affiliation" method="post" onsubmit="return confirm('¿Solicitar verificación de tu ID de afiliación?');">
+        <form class="fmdb-perfil__form fmdb-perfil__form--affiliation" method="post">
             <?php wp_nonce_field( 'fmdb_affiliation', 'fmdb_affiliation_nonce' ); ?>
 
             <div class="fmdb-registro__field fmdb-perfil__affiliation">
@@ -175,9 +175,11 @@ get_header();
                         <input type="text" id="fmdb_affiliation_id" name="fmdb_affiliation_suffix"
                                value="<?php echo esc_attr( $affiliation_suffix ); ?>"
                                maxlength="5"
-                               pattern="[A-Za-z0-9]{1,5}"
+                               minlength="5"
+                               pattern="[A-Za-z0-9]{5}"
                                placeholder="12345"
                                autocomplete="off"
+                               required
                                <?php echo $affil_state === 'verified' ? 'readonly' : 'oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')"'; ?>>
                     </div>
                     <?php if ( $affil_state !== 'verified' ) : ?>
