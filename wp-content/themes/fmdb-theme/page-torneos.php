@@ -170,12 +170,12 @@ if ( $event_id ) {
                             <h4 id="fmdb-team-form-title" class="fmdb-team-form-card__title">Nuevo equipo</h4>
                             <div class="fmdb-afil__grid fmdb-afil__grid--2" style="gap:14px;margin-bottom:14px;">
                                 <div class="fmdb-registro__field">
-                                    <label for="fmdb-tf-nombre">Nombre <span aria-hidden="true" style="color:#c0392b">*</span></label>
-                                    <input type="text" id="fmdb-tf-nombre" autocomplete="off">
+                                    <label for="fmdb-tf-nombre">Nombre</label>
+                                    <input type="text" id="fmdb-tf-nombre" autocomplete="off" readonly class="fmdb-input--readonly">
                                 </div>
                                 <div class="fmdb-registro__field">
-                                    <label for="fmdb-tf-apellido">Apellido <span aria-hidden="true" style="color:#c0392b">*</span></label>
-                                    <input type="text" id="fmdb-tf-apellido" autocomplete="off">
+                                    <label for="fmdb-tf-apellido">Apellido</label>
+                                    <input type="text" id="fmdb-tf-apellido" autocomplete="off" readonly class="fmdb-input--readonly">
                                 </div>
                             </div>
                             <div class="fmdb-registro__field">
@@ -371,8 +371,6 @@ if ( $event_id ) {
                         var rama = tfRama.value;
                         var cat  = tfCat.value;
                         var mod  = tfMod.value;
-                        if (!nombre)   { tfMsg.textContent = 'Ingresa el nombre.';            tfMsg.classList.add('fmdb-reg-section__msg--err'); tfNombre.focus();   return; }
-                        if (!apellido) { tfMsg.textContent = 'Ingresa el apellido.';          tfMsg.classList.add('fmdb-reg-section__msg--err'); tfApellido.focus(); return; }
                         if (!name) { tfMsg.textContent = 'Ingresa el nombre del equipo.'; tfMsg.classList.add('fmdb-reg-section__msg--err'); tfName.focus(); return; }
                         if (!rama) { tfMsg.textContent = 'Selecciona la rama.';            tfMsg.classList.add('fmdb-reg-section__msg--err'); tfRama.focus(); return; }
                         if (!cat)  { tfMsg.textContent = 'Selecciona la categoría.';       tfMsg.classList.add('fmdb-reg-section__msg--err'); tfCat.focus();  return; }

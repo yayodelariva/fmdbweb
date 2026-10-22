@@ -627,3 +627,10 @@
         grid-template-columns: 1fr !important;
     }
 }
+
+.fmdb-input--readonly {
+    background: var(--fmdb-surface-alt, #f3f4f6) !important;
+    color: var(--fmdb-text-muted, #6b7280) !important;
+    cursor: not-allowed !important;
+    border-color: transparent !important;
+}
