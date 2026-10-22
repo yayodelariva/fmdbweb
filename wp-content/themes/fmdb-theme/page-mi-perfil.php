@@ -180,7 +180,6 @@ get_header();
                                placeholder="12345"
                                autocomplete="off"
                                required
-                               title="Por favor ingrese los 5 dígitos"
                                oninvalid="this.setCustomValidity('Por favor ingrese los 5 dígitos')"
                                <?php echo $affil_state === 'verified' ? 'readonly' : 'oninput="this.setCustomValidity(\'\'); this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')"'; ?>>
                     </div>
