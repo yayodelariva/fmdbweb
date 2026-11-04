@@ -358,13 +358,13 @@ while ( have_posts() ) : the_post();
                         <p style="font-size:0.82rem;color:#666;margin:0;">⏳ Tu registro está siendo procesado. Una vez que tu pago haya sido reflejado tendrás acceso al directorio de equipos.</p>
                     <?php elseif ( $_has_access ) : ?>
                         <span class="fmdb-reg-box__inscrito-badge">✓ Ya estás inscrito</span>
-                        <a href="#fmdb-teams-<?php echo $id; ?>"
-                           class="fmdb-btn fmdb-btn--secondary fmdb-reg-box__btn" style="margin-top:10px;">
-                            Ver equipos registrados ↓
-                        </a>
                         <a href="<?php echo esc_url( add_query_arg( 'evento', $id, home_url( '/torneos/' ) ) ); ?>"
                            class="fmdb-btn fmdb-btn--primary fmdb-reg-box__btn" style="margin-top:10px;">
                             Regístrate de nuevo (gratis) →
+                        </a>
+                        <a href="#fmdb-teams-<?php echo $id; ?>"
+                           class="fmdb-btn fmdb-btn--secondary fmdb-reg-box__btn" style="margin-top:10px;">
+                            Ver equipos registrados ↓
                         </a>
                     <?php else : ?>
                         <p style="font-size:0.82rem;color:#666;margin:0 0 12px;">Inscríbete para acceder al directorio de equipos.</p>
