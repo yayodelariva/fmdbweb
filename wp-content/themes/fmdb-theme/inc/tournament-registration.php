@@ -1930,8 +1930,11 @@ function fmdb_ajax_add_registration(): void {
         $dup_cat  = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
         $dup_mod  = sanitize_text_field( $_POST['fmdb_modalidad'] ?? '' );
         $dup_key  = fmdb_team_key( $dup_name, $dup_rama, $dup_cat ) . '|' . $dup_mod;
-        $reg_teams = fmdb_reg_get_event_teams( $event_id );
-        if ( isset( $reg_teams[ $dup_key ] ) ) {
+        $reg_index = [];
+        foreach ( fmdb_reg_get_event_teams( $event_id ) as $rt ) {
+            $reg_index[ fmdb_team_key( $rt['name'], $rt['rama'], $rt['categoria'] ) . '|' . $rt['modalidad'] ] = true;
+        }
+        if ( isset( $reg_index[ $dup_key ] ) ) {
             wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
             return;
         }
@@ -2056,8 +2059,11 @@ function fmdb_ajax_hub_reg_submit(): void {
         }
 
         $all_cats  = fmdb_reg_all_categories();
-        $reg_teams = fmdb_reg_get_event_teams( $event_id );
-        $user      = get_userdata( $user_id );
+        $reg_index = [];
+        foreach ( fmdb_reg_get_event_teams( $event_id ) as $rt ) {
+            $reg_index[ fmdb_team_key( $rt['name'], $rt['rama'], $rt['categoria'] ) . '|' . $rt['modalidad'] ] = true;
+        }
+        $user = get_userdata( $user_id );
         $phone = (string) get_user_meta( $user_id, 'fmdb_telefono', true );
 
         // Validate all teams first (fail-fast before touching the cart).
@@ -2090,7 +2096,7 @@ function fmdb_ajax_hub_reg_submit(): void {
 
             // Dup check: registered orders.
             $team_key = fmdb_team_key( $team_name, $rama, $categoria ) . '|' . $modalidad;
-            if ( isset( $reg_teams[ $team_key ] ) ) {
+            if ( isset( $reg_index[ $team_key ] ) ) {
                 wp_send_json_error( [ 'message' => "El equipo \"{$team_name}\" ({$rama} · {$modalidad} · {$categoria}) ya está registrado." ] );
                 return;
             }
