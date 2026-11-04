@@ -377,7 +377,7 @@ if ( $event_id ) {
                         if (!mod)  { tfMsg.textContent = 'Selecciona la modalidad.';       tfMsg.classList.add('fmdb-reg-section__msg--err'); tfMod.focus();  return; }
                         var dup = teams.some(function (t) {
                             if (editingId !== null && t.id === editingId) return false;
-                            return t.name.trim().toLowerCase() === name.toLowerCase() && t.rama === rama && t.categoria === cat;
+                            return t.name.trim().toLowerCase() === name.toLowerCase() && t.rama === rama && t.categoria === cat && t.modalidad === mod;
                         });
                         if (dup) { tfMsg.textContent = 'Ya tienes ese equipo en tu lista.'; tfMsg.classList.add('fmdb-reg-section__msg--err'); return; }
                         if (editingId !== null) {
