@@ -1921,13 +1921,14 @@ function fmdb_ajax_add_registration(): void {
         }
     }
 
-    // Duplicate team check — block if same name + rama already exists in any active order.
+    // Duplicate team check — block if same name + rama + categoria + modalidad exists in any active order.
     $reg_type = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
                 ? $_POST['fmdb_reg_type'] : 'team';
     if ( $event_id && $reg_type === 'team' && ! empty( $_POST['fmdb_team_name'] ) ) {
-        $dup_name   = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
-        $dup_rama   = sanitize_text_field( $_POST['fmdb_rama'] ?? '' );
-        $dup_cat    = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
+        $dup_name = mb_strtolower( trim( sanitize_text_field( $_POST['fmdb_team_name'] ) ) );
+        $dup_rama = sanitize_text_field( $_POST['fmdb_rama']      ?? '' );
+        $dup_cat  = sanitize_text_field( $_POST['fmdb_categoria'] ?? '' );
+        $dup_mod  = sanitize_text_field( $_POST['fmdb_modalidad'] ?? '' );
         $dup_orders = wc_get_orders( [
             'meta_key'   => '_fmdb_reg_event_id',
             'meta_value' => $event_id,
@@ -1942,14 +1943,16 @@ function fmdb_ajax_add_registration(): void {
                     foreach ( json_decode( $di_capt_json, true ) ?? [] as $ct ) {
                         if ( mb_strtolower( trim( $ct['team_name'] ?? '' ) ) === $dup_name
                           && ( $ct['rama']      ?? '' ) === $dup_rama
-                          && ( $ct['categoria'] ?? '' ) === $dup_cat ) {
+                          && ( $ct['categoria'] ?? '' ) === $dup_cat
+                          && ( $ct['modalidad'] ?? '' ) === $dup_mod ) {
                             wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
                             return;
                         }
                     }
                 } elseif ( mb_strtolower( trim( (string) $dup_item->get_meta( 'Equipo' ) ) ) === $dup_name
-                        && $dup_item->get_meta( 'Rama' ) === $dup_rama
-                        && $dup_item->get_meta( 'Categoría' ) === $dup_cat ) {
+                        && $dup_item->get_meta( 'Rama' )      === $dup_rama
+                        && $dup_item->get_meta( 'Categoría' ) === $dup_cat
+                        && $dup_item->get_meta( 'Modalidad' ) === $dup_mod ) {
                     wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
                     return;
                 }
@@ -1960,7 +1963,8 @@ function fmdb_ajax_add_registration(): void {
             if ( ( $ci['fmdb_reg_type'] ?? '' ) !== 'team' ) continue;
             if ( mb_strtolower( trim( (string) ( $ci['fmdb_team_name'] ?? '' ) ) ) === $dup_name
               && ( $ci['fmdb_rama']      ?? '' ) === $dup_rama
-              && ( $ci['fmdb_categoria'] ?? '' ) === $dup_cat ) {
+              && ( $ci['fmdb_categoria'] ?? '' ) === $dup_cat
+              && ( $ci['fmdb_modalidad'] ?? '' ) === $dup_mod ) {
                 wp_send_json_error( [ 'message' => 'Este equipo ya está en tu carrito.' ] );
                 return;
             }
@@ -2154,7 +2158,8 @@ function fmdb_ajax_hub_reg_submit(): void {
                 if ( ( $ci['fmdb_reg_type'] ?? '' ) !== 'team' ) continue;
                 if ( mb_strtolower( trim( (string) ( $ci['fmdb_team_name'] ?? '' ) ) ) === mb_strtolower( $team_name )
                   && ( $ci['fmdb_rama']      ?? '' ) === $rama
-                  && ( $ci['fmdb_categoria'] ?? '' ) === $categoria ) {
+                  && ( $ci['fmdb_categoria'] ?? '' ) === $categoria
+                  && ( $ci['fmdb_modalidad'] ?? '' ) === $modalidad ) {
                     wp_send_json_error( [ 'message' => "El equipo \"{$team_name}\" ya está en tu carrito." ] );
                     return;
                 }
@@ -2164,7 +2169,8 @@ function fmdb_ajax_hub_reg_submit(): void {
             foreach ( $validated as $prev ) {
                 if ( mb_strtolower( $prev['name'] ) === mb_strtolower( $team_name )
                   && $prev['rama']      === $rama
-                  && $prev['categoria'] === $categoria ) {
+                  && $prev['categoria'] === $categoria
+                  && $prev['modalidad'] === $modalidad ) {
                     wp_send_json_error( [ 'message' => "El equipo \"{$team_name}\" está duplicado en tu lista." ] );
                     return;
                 }
