@@ -1901,16 +1901,10 @@ function fmdb_ajax_add_registration(): void {
         return;
     }
 
-    // Team registrations may stack (one per division). Non-team stays 1-per-cart;
-    // mixing team + non-team types in the same cart is not supported.
-    $incoming_type = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
-                     ? $_POST['fmdb_reg_type'] : 'team';
     foreach ( WC()->cart->get_cart() as $existing ) {
         if ( empty( $existing['fmdb_event_id'] ) ) continue;
-        if ( $incoming_type !== 'team' || ( $existing['fmdb_reg_type'] ?? 'team' ) !== 'team' ) {
-            wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en el carrito. Finaliza el pago antes de agregar otra.' ] );
-            return;
-        }
+        wp_send_json_error( [ 'message' => 'Ya tienes una inscripción pendiente en el carrito. Finaliza el pago o vacía el carrito antes de agregar otra.' ] );
+        return;
     }
 
     $event_id = (int) get_post_meta( $prod_id, '_fmdb_reg_event_id', true );
@@ -2067,13 +2061,10 @@ function fmdb_ajax_hub_reg_submit(): void {
 
     $is_captain = sanitize_key( $_POST['fmdb_is_captain'] ?? '' ) === 'yes';
 
-    // Team registrations may stack (multi-team captain); individual stays 1-per-cart.
     foreach ( WC()->cart->get_cart() as $existing ) {
         if ( empty( $existing['fmdb_event_id'] ) ) continue;
-        if ( ! $is_captain || ( $existing['fmdb_reg_type'] ?? 'team' ) !== 'team' ) {
-            wp_send_json_error( [ 'message' => 'Ya tienes una inscripción en el carrito.' ] );
-            return;
-        }
+        wp_send_json_error( [ 'message' => 'Ya tienes una inscripción pendiente en el carrito. Finaliza el pago o vacía el carrito antes de agregar otra.' ] );
+        return;
     }
 
     if ( $is_captain ) {
@@ -2585,16 +2576,10 @@ function fmdb_event_registered_teams_section( int $event_id ): void {
 add_filter( 'woocommerce_add_to_cart_validation', function ( $valid, $product_id ) {
     if ( ! $valid ) return $valid;
     if ( ! (int) get_post_meta( $product_id, '_fmdb_reg_event_id', true ) ) return $valid;
-    // Team registrations may stack (multi-team checkout). Block only when the
-    // incoming type is non-team or there is already a non-team item in the cart.
-    $incoming_type = in_array( $_POST['fmdb_reg_type'] ?? '', [ 'team', 'individual' ], true )
-                     ? $_POST['fmdb_reg_type'] : 'team';
     foreach ( WC()->cart->get_cart() as $item ) {
         if ( empty( $item['fmdb_event_id'] ) ) continue;
-        if ( $incoming_type !== 'team' || ( $item['fmdb_reg_type'] ?? 'team' ) !== 'team' ) {
-            wc_add_notice( 'Ya tienes una inscripción en el carrito. Completa o vacía el carrito antes de agregar otra.', 'error' );
-            return false;
-        }
+        wc_add_notice( 'Ya tienes una inscripción pendiente en el carrito. Finaliza el pago o vacía el carrito antes de agregar otra.', 'error' );
+        return false;
     }
     return $valid;
 }, 10, 2 );
