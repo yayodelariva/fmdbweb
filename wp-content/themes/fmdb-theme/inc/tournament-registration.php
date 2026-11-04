@@ -1932,7 +1932,10 @@ function fmdb_ajax_add_registration(): void {
         $dup_key  = fmdb_team_key( $dup_name, $dup_rama, $dup_cat ) . '|' . $dup_mod;
         $reg_index = [];
         foreach ( fmdb_reg_get_event_teams( $event_id ) as $rt ) {
-            $reg_index[ fmdb_team_key( $rt['name'], $rt['rama'], $rt['categoria'] ) . '|' . $rt['modalidad'] ] = true;
+            // Normalize legacy literal unicode escapes (e.g. "Mu00e1ster" → "Máster") caused
+            // by stripslashes stripping backslashes from json_encode output on this server.
+            $norm_cat = preg_replace_callback( '/u([0-9a-fA-F]{4})/', fn( $m ) => mb_chr( hexdec( $m[1] ) ), $rt['categoria'] );
+            $reg_index[ fmdb_team_key( $rt['name'], $rt['rama'], $norm_cat ) . '|' . $rt['modalidad'] ] = true;
         }
         if ( isset( $reg_index[ $dup_key ] ) ) {
             wp_send_json_error( [ 'message' => 'Este equipo ya ha sido registrado.' ] );
@@ -2061,7 +2064,8 @@ function fmdb_ajax_hub_reg_submit(): void {
         $all_cats  = fmdb_reg_all_categories();
         $reg_index = [];
         foreach ( fmdb_reg_get_event_teams( $event_id ) as $rt ) {
-            $reg_index[ fmdb_team_key( $rt['name'], $rt['rama'], $rt['categoria'] ) . '|' . $rt['modalidad'] ] = true;
+            $norm_cat = preg_replace_callback( '/u([0-9a-fA-F]{4})/', fn( $m ) => mb_chr( hexdec( $m[1] ) ), $rt['categoria'] );
+            $reg_index[ fmdb_team_key( $rt['name'], $rt['rama'], $norm_cat ) . '|' . $rt['modalidad'] ] = true;
         }
         $user = get_userdata( $user_id );
         $phone = (string) get_user_meta( $user_id, 'fmdb_telefono', true );
@@ -2127,7 +2131,7 @@ function fmdb_ajax_hub_reg_submit(): void {
         $_POST['fmdb_captain_apellido'] = sanitize_text_field( $validated[0]['apellido'] ?? $dn_cap['apellido'] );
         $_POST['fmdb_captain_phone']    = $phone;
         $_POST['fmdb_hub_registration'] = '1';
-        $_POST['fmdb_captain_teams']    = wp_json_encode( $validated );
+        $_POST['fmdb_captain_teams']    = wp_json_encode( $validated, JSON_UNESCAPED_UNICODE );
 
         $result = WC()->cart->add_to_cart( $prod_id );
         if ( $result === false ) {
@@ -2185,7 +2189,7 @@ function fmdb_ajax_hub_reg_submit(): void {
 
         // One add_to_cart call — fee is flat regardless of team count.
         $_POST['fmdb_reg_type']         = 'individual';
-        $_POST['fmdb_hub_teams']        = wp_json_encode( $validated );
+        $_POST['fmdb_hub_teams']        = wp_json_encode( $validated, JSON_UNESCAPED_UNICODE );
         $_POST['fmdb_ind_team_name']    = '';
         $dn_ply = fmdb_get_display_names( $user->ID );
         $_POST['fmdb_player_name']      = $dn_ply['nombre'];
@@ -2577,7 +2581,8 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
         if ( ! empty( $_POST['fmdb_hub_teams'] ) ) {
             // Multi-team hub registration: store all teams as JSON; one cart item, flat fee.
             $cart_item_data['fmdb_hub_teams'] = wp_json_encode(
-                json_decode( wp_unslash( $_POST['fmdb_hub_teams'] ), true ) ?? []
+                json_decode( wp_unslash( $_POST['fmdb_hub_teams'] ), true ) ?? [],
+                JSON_UNESCAPED_UNICODE
             );
         }
     } else {
@@ -2590,7 +2595,8 @@ add_filter( 'woocommerce_add_cart_item_data', function ( $cart_item_data, $produ
         if ( ! empty( $_POST['fmdb_captain_teams'] ) ) {
             // Captain multi-team batch: all teams stored as JSON; one cart item, flat fee.
             $cart_item_data['fmdb_captain_teams'] = wp_json_encode(
-                json_decode( wp_unslash( $_POST['fmdb_captain_teams'] ), true ) ?? []
+                json_decode( wp_unslash( $_POST['fmdb_captain_teams'] ), true ) ?? [],
+                JSON_UNESCAPED_UNICODE
             );
         }
 
