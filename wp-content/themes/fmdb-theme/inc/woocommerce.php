@@ -351,7 +351,7 @@ function fmdb_ajax_afiliacion_submit(): void {
         wp_send_json_error( [ 'message' => 'No se pudo agregar el producto al carrito. Intenta de nuevo.' ] );
     }
 
-    wp_send_json_success( [ 'checkout_url' => wc_get_cart_url() ] );
+    wp_send_json_success( [ 'checkout_url' => wc_get_checkout_url() ] );
 }
 
 // Block adding a second affiliation product or purchasing if already verified.
@@ -605,6 +605,52 @@ add_filter( 'woocommerce_email_order_meta_fields', function ( $fields, $sent_to_
     }
     return $fields;
 }, 10, 3 );
+
+// After affiliation product payment: set status to 'pending', save payment metadata.
+// Fires on card (woocommerce_payment_complete), OXXO / bank (order_status_processing),
+// and manual admin completion (order_status_completed). Guard prevents double-fire.
+add_action( 'woocommerce_payment_complete',        'fmdb_afiliacion_on_payment_complete' );
+add_action( 'woocommerce_order_status_processing', 'fmdb_afiliacion_on_payment_complete' );
+add_action( 'woocommerce_order_status_completed',  'fmdb_afiliacion_on_payment_complete' );
+function fmdb_afiliacion_on_payment_complete( int $order_id ): void {
+    $order = wc_get_order( $order_id );
+    if ( ! $order ) return;
+
+    if ( $order->get_meta( '_fmdb_afiliacion_processed' ) ) return;
+
+    $user_id = (int) $order->get_customer_id();
+    if ( ! $user_id ) return;
+
+    $afil_ids  = fmdb_affiliation_product_ids();
+    $tier_name = '';
+    $found     = false;
+
+    foreach ( $order->get_items() as $item ) {
+        if ( in_array( (int) $item->get_product_id(), $afil_ids, true ) ) {
+            $found     = true;
+            $tier_name = $item->get_name();
+            break;
+        }
+    }
+
+    if ( ! $found ) return;
+
+    // Don't downgrade a verified membership.
+    if ( fmdb_affiliation_status( $user_id ) !== 'verified' ) {
+        update_user_meta( $user_id, 'fmdb_affiliation_status', 'pending' );
+    }
+
+    if ( $tier_name ) {
+        update_user_meta( $user_id, 'fmdb_tipo_afiliacion', $tier_name );
+    }
+    update_user_meta( $user_id, 'fmdb_folio_pago',        (string) $order->get_order_number() );
+    update_user_meta( $user_id, 'fmdb_precio_afiliacion', (string) $order->get_total() );
+    update_user_meta( $user_id, 'fmdb_vigencia',          date( 'Y-m-d', strtotime( '+1 year' ) ) );
+    update_user_meta( $user_id, 'fmdb_fecha_creacion',    date( 'Y-m-d' ) );
+
+    $order->update_meta_data( '_fmdb_afiliacion_processed', '1' );
+    $order->save();
+}
 
 // Force Stripe.js (and OXXO voucher) to render in Spanish (Latin America).
 add_filter( 'wc_stripe_params', function( $params ) {

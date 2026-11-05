@@ -336,6 +336,18 @@
 }
 .fmdb-afil__already-detail-value { font-size: 0.9rem; color: #1a1a1a; font-family: monospace; }
 
+/* Pending state icon override */
+.fmdb-afil__already-icon--pending {
+	background: #fff8e1;
+	color: #856404;
+	border-color: #ffc107;
+}
+.fmdb-afil__already--pending .fmdb-afil__already-heading { color: #856404; }
+.fmdb-afil__already--pending .fmdb-afil__already-details {
+	background: #fffdf0;
+	border-color: #ffe082;
+}
+
 /* Button hover */
 .fmdb-afil .fmdb-btn--primary:hover { background: #CEF9D7; color: #085041; border-color: #fff; }
 

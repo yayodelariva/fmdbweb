@@ -131,6 +131,41 @@ get_header();
 				<a href="<?php echo esc_url( home_url( '/mi-perfil/' ) ); ?>" class="fmdb-btn fmdb-btn--outline">Ver mi perfil</a>
 			</div>
 
+		<?php elseif ( $affil_status === 'pending' ) :
+			$tipo_afiliacion = get_user_meta( $user_id, 'fmdb_tipo_afiliacion', true );
+			$folio_pago      = get_user_meta( $user_id, 'fmdb_folio_pago', true );
+			$vigencia        = get_user_meta( $user_id, 'fmdb_vigencia', true );
+		?>
+
+			<div class="fmdb-afil__already fmdb-afil__already--pending">
+				<div class="fmdb-afil__already-icon fmdb-afil__already-icon--pending">&#8987;</div>
+				<h2 class="fmdb-afil__already-heading">Solicitud en revisión</h2>
+				<p class="fmdb-afil__already-text">Tu solicitud de afiliación está siendo revisada por un administrador. Te notificaremos por correo cuando esté lista.</p>
+				<?php if ( $tipo_afiliacion || $folio_pago || $vigencia ) : ?>
+					<div class="fmdb-afil__already-details">
+						<?php if ( $tipo_afiliacion ) : ?>
+							<div class="fmdb-afil__already-detail-item">
+								<span class="fmdb-afil__already-detail-label">Tipo</span>
+								<span class="fmdb-afil__already-detail-value"><?php echo esc_html( $tipo_afiliacion ); ?></span>
+							</div>
+						<?php endif; ?>
+						<?php if ( $folio_pago ) : ?>
+							<div class="fmdb-afil__already-detail-item">
+								<span class="fmdb-afil__already-detail-label">Folio de pago</span>
+								<span class="fmdb-afil__already-detail-value"><?php echo esc_html( $folio_pago ); ?></span>
+							</div>
+						<?php endif; ?>
+						<?php if ( $vigencia ) : ?>
+							<div class="fmdb-afil__already-detail-item">
+								<span class="fmdb-afil__already-detail-label">Vigencia</span>
+								<span class="fmdb-afil__already-detail-value"><?php echo esc_html( $vigencia ); ?></span>
+							</div>
+						<?php endif; ?>
+					</div>
+				<?php endif; ?>
+				<a href="<?php echo esc_url( home_url( '/mi-perfil/' ) ); ?>" class="fmdb-btn fmdb-btn--outline">Ver mi perfil</a>
+			</div>
+
 		<?php else : ?>
 
 			<?php foreach ( $notices as $n ) : ?>
