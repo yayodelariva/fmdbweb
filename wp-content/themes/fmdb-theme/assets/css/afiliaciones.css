@@ -413,6 +413,17 @@
 	outline-offset: -4px;
 }
 
+/* Inline helper link beside a field label */
+.fmdb-afil__field-link {
+	font-size: 0.72rem;
+	font-weight: 400;
+	color: var(--fmdb-green);
+	text-decoration: underline;
+	margin-left: 6px;
+	white-space: nowrap;
+}
+.fmdb-afil__field-link:hover { color: var(--fmdb-dark-green); }
+
 /* Stacked second label inside passport section */
 .fmdb-afil__passport-label {
 	display: block;

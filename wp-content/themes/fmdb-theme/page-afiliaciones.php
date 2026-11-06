@@ -274,7 +274,7 @@ get_header();
 						<!-- Identity: CURP (Mexican) or Country+Passport (Foreign) — same grid cell -->
 						<div class="fmdb-registro__field">
 							<div id="fmdb-curp-section" <?php echo $v['fmdb_es_extranjero'] === '1' ? 'hidden' : ''; ?>>
-								<label for="fmdb_curp">CURP <span class="fmdb-afil__req">*</span></label>
+								<label for="fmdb_curp">CURP <span class="fmdb-afil__req">*</span> <a href="https://www.gob.mx/curp/" target="_blank" rel="noopener" class="fmdb-afil__field-link">Consulta tu CURP</a></label>
 								<input type="text" id="fmdb_curp" name="fmdb_curp"
 									value="<?php echo $v['fmdb_curp']; ?>"
 									maxlength="18" minlength="18" placeholder="ABCD000101HXYZXY09"
