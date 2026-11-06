@@ -294,8 +294,15 @@ function fmdb_ajax_afiliacion_submit(): void {
     if ( empty( trim( $_POST['fmdb_apellido_materno'] ?? '' ) ) ) {
         wp_send_json_error( [ 'message' => 'El apellido materno es obligatorio.' ] );
     }
-    if ( empty( trim( $_POST['fmdb_curp'] ?? '' ) ) ) {
+    $curp_raw = strtoupper( trim( $_POST['fmdb_curp'] ?? '' ) );
+    if ( $curp_raw === '' ) {
         wp_send_json_error( [ 'message' => 'El CURP es obligatorio.' ] );
+    }
+    $curp_re = '/^[A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM]'
+             . '(?:AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR'
+             . '|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[BCDFGHJKLMNPQRSTVWXYZ]{3}[0-9A-Z]\d$/';
+    if ( ! preg_match( $curp_re, $curp_raw ) ) {
+        wp_send_json_error( [ 'message' => 'El CURP no tiene un formato válido. Verifica fecha, código de estado y consonantes.' ] );
     }
 
     $chosen_tier = sanitize_key( $_POST['fmdb_afiliacion_tier'] ?? '' );

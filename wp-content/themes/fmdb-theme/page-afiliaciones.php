@@ -255,8 +255,10 @@ get_header();
 							<label for="fmdb_curp">CURP <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="fmdb_curp" name="fmdb_curp"
 								value="<?php echo $v['fmdb_curp']; ?>"
-								maxlength="18" placeholder="ABCD000101HXYZXY09"
-								oninput="this.value=this.value.toUpperCase()" required>
+								maxlength="18" minlength="18" placeholder="ABCD000101HXYZXY09"
+								oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,''); fmdbCURPLiveCheck(this);"
+								onblur="fmdbCURPLiveCheck(this);"
+								required>
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
@@ -433,6 +435,21 @@ get_header();
 </main>
 
 <script>
+// CURP structure validator (format only — RENAPO registry lookup requires a paid API).
+// Validates: 18 chars, letter/vowel/consonant positions, date range, sex code (H/M),
+// Mexican state code, consonant block, homoclave, verification digit.
+function fmdbValidateCURP(curp) {
+	if (!curp || curp.length !== 18) return 'El CURP debe tener exactamente 18 caracteres.';
+	var re = /^[A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[BCDFGHJKLMNPQRSTVWXYZ]{3}[0-9A-Z]\d$/;
+	if (!re.test(curp)) return 'El CURP no tiene un formato válido. Revisa fecha, código de estado y consonantes.';
+	return null;
+}
+function fmdbCURPLiveCheck(input) {
+	var err = fmdbValidateCURP(input.value);
+	input.setCustomValidity(err || '');
+	if (err && input.value.length === 18) input.reportValidity();
+}
+
 (function () {
 	var TOTAL = 5;
 	var current = 1;
@@ -484,6 +501,20 @@ get_header();
 			}
 		});
 		if (first) { first.focus(); first.reportValidity(); }
+
+		// CURP format check on step 1
+		if (n === 1) {
+			var curpInput = form.querySelector('#fmdb_curp');
+			if (curpInput && curpInput.value) {
+				var curpErr = fmdbValidateCURP(curpInput.value);
+				if (curpErr) {
+					curpInput.setCustomValidity(curpErr);
+					curpInput.focus();
+					curpInput.reportValidity();
+					ok = false;
+				}
+			}
+		}
 
 		if (n === TOTAL && !form.querySelector('input[name="fmdb_afiliacion_tier"]:checked')) {
 			var firstCard = form.querySelector('.fmdb-afil__tier-card');
