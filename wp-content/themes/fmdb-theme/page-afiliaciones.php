@@ -185,19 +185,6 @@ get_header();
 			if ( ! $has_success ) :
 			?>
 
-			<!-- Nationality selector — always visible above the steps -->
-			<div class="fmdb-afil__nat-row">
-				<span class="fmdb-afil__nat-label">Nacionalidad</span>
-				<div class="fmdb-afil__nat-seg">
-					<input type="radio" id="nat_mx" name="fmdb_nat_ui" value="mexican"
-						<?php echo $v['fmdb_es_extranjero'] !== '1' ? 'checked' : ''; ?>>
-					<label for="nat_mx">Mexicana</label>
-					<input type="radio" id="nat_fx" name="fmdb_nat_ui" value="foreign"
-						<?php echo $v['fmdb_es_extranjero'] === '1' ? 'checked' : ''; ?>>
-					<label for="nat_fx">Extranjera</label>
-				</div>
-			</div>
-
 			<!-- Step indicator -->
 			<div class="fmdb-afil__steps-nav" aria-label="Progreso del formulario">
 				<?php
@@ -227,6 +214,18 @@ get_header();
 				<!-- ─── Step 1: Datos personales ─────────────────────────────── -->
 				<div class="fmdb-afil__step is-active" data-step="1">
 					<h2 class="fmdb-afil__step-title">Datos personales</h2>
+
+					<div class="fmdb-afil__nat-row">
+						<span class="fmdb-afil__nat-label">Nacionalidad</span>
+						<div class="fmdb-afil__nat-seg">
+							<input type="radio" id="nat_mx" name="fmdb_nat_ui" value="mexican"
+								<?php echo $v['fmdb_es_extranjero'] !== '1' ? 'checked' : ''; ?>>
+							<label for="nat_mx">Mexicana</label>
+							<input type="radio" id="nat_fx" name="fmdb_nat_ui" value="foreign"
+								<?php echo $v['fmdb_es_extranjero'] === '1' ? 'checked' : ''; ?>>
+							<label for="nat_fx">Extranjera</label>
+						</div>
+					</div>
 
 					<div class="fmdb-afil__grid fmdb-afil__grid--2">
 						<div class="fmdb-registro__field">

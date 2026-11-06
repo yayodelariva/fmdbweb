@@ -368,7 +368,7 @@
 	display: flex;
 	align-items: center;
 	gap: 14px;
-	padding: 24px 40px 4px;
+	padding: 0 0 20px;
 	flex-wrap: wrap;
 }
 .fmdb-afil__nat-label {
@@ -427,7 +427,7 @@
 	.fmdb-afil { padding: 0 0 40px; }
 	.fmdb-afil__card { border-radius: 0 0 16px 16px; }
 	.fmdb-afil__header { padding: 28px 20px 24px; }
-	.fmdb-afil__nat-row { padding: 16px 20px 4px; }
+	.fmdb-afil__nat-row { padding: 0 0 16px; }
 	.fmdb-afil__steps-nav { padding: 24px 20px 0; }
 	.fmdb-afil__form { padding: 0 20px; }
 	.fmdb-afil__already { padding: 24px 20px 32px; }
