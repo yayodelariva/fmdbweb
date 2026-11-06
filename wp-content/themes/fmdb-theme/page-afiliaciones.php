@@ -57,7 +57,8 @@ $tiers = [
 // Form submission is handled via wp_ajax_fmdb_afiliacion_submit in inc/woocommerce.php.
 
 // Pre-fill values from existing user meta.
-$g = fn( string $k ) => esc_attr( (string) get_user_meta( $user_id, $k, true ) );
+$g        = fn( string $k ) => esc_attr( (string) get_user_meta( $user_id, $k, true ) );
+$is_tutor = get_user_meta( $user_id, 'fmdb_tutor', true ) === '1';
 $v = [
 	'first_name'                 => esc_attr( (string) $user->first_name ),
 	'last_name'                  => esc_attr( (string) $user->last_name ),
@@ -67,7 +68,7 @@ $v = [
 	'fmdb_curp'                  => $g( 'fmdb_curp' ),
 	'fmdb_telefono'              => $g( 'fmdb_telefono' ),
 	'fmdb_tipo_sangre'           => $g( 'fmdb_tipo_sangre' ),
-	'fmdb_email_tutor'           => $g( 'fmdb_email_tutor' ),
+	'fmdb_email_tutor'           => $g( 'fmdb_email_tutor' ) ?: ( $is_tutor ? esc_attr( $user->user_email ) : '' ),
 	'fmdb_direccion'             => $g( 'fmdb_direccion' ),
 	'fmdb_ciudad'                => $g( 'fmdb_ciudad' ),
 	'fmdb_estado'                => $g( 'fmdb_estado' ),
@@ -324,7 +325,9 @@ get_header();
 						<div class="fmdb-registro__field fmdb-afil__grid--span2">
 							<label for="fmdb_email_tutor">
 								Correo del tutor
-								<span class="fmdb-afil__field-note">(solo si eres menor de edad)</span>
+								<?php if ( ! $is_tutor ) : ?>
+									<span class="fmdb-afil__field-note">(solo si eres menor de edad)</span>
+								<?php endif; ?>
 							</label>
 							<input type="email" id="fmdb_email_tutor" name="fmdb_email_tutor"
 								value="<?php echo $v['fmdb_email_tutor']; ?>"
