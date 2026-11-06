@@ -501,53 +501,29 @@ get_header();
 var CURP_ALPHA = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"; // 37 chars, includes Ñ
 
 function fmdbValidateCURP(curp) {
-	if (!curp || curp.length !== 18) return 'El CURP debe tener exactamente 18 caracteres.';
+	var inv = 'El CURP no es válido.';
+	if (!curp || curp.length !== 18) return inv;
+	if (!/^[A-ZÑ][AEIOUX][A-Z]{2}/.test(curp)) return inv;
 
-	// Name letters (pos 1-4)
-	if (!/^[A-ZÑ][AEIOUX][A-Z]{2}/.test(curp))
-		return 'Las primeras 4 posiciones no son válidas (inicial, vocal interna, apellidos).';
-
-	// Birthdate YYMMDD (pos 5-10) — validate as a real calendar date
+	// Real calendar date (pos 5-10)
 	var yy = parseInt(curp.slice(4, 6), 10);
 	var mm = parseInt(curp.slice(6, 8), 10);
 	var dd = parseInt(curp.slice(8, 10), 10);
-	var centuryChar = curp[16];
-	var century = /\d/.test(centuryChar) ? 1900 : 2000;
-	var fullYear = century + yy;
-	var dateObj = new Date(fullYear, mm - 1, dd);
-	if (dateObj.getFullYear() !== fullYear || dateObj.getMonth() !== mm - 1 || dateObj.getDate() !== dd)
-		return 'La fecha de nacimiento en el CURP no es válida (verifica día, mes y año).';
+	var century = /\d/.test(curp[16]) ? 1900 : 2000;
+	var d = new Date(century + yy, mm - 1, dd);
+	if (d.getFullYear() !== century + yy || d.getMonth() !== mm - 1 || d.getDate() !== dd) return inv;
 
-	// Sex: H (male), M (female) or X (non-binary — RENAPO 2023)
-	if (!/^[HMX]$/.test(curp[10]))
-		return 'El código de sexo (pos. 11) debe ser H, M o X.';
+	if (!/^[HMX]$/.test(curp[10])) return inv;
+	if (!/^(AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)$/.test(curp.slice(11, 13))) return inv;
+	if (!/^[B-DF-HJ-NP-TV-ZÑ]{3}$/.test(curp.slice(13, 16))) return inv;
+	if (!/^[A-Z0-9]$/.test(curp[16])) return inv;
+	if (!/^\d$/.test(curp[17])) return inv;
 
-	// State code (pos 12-13)
-	if (!/^(AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)$/.test(curp.slice(11, 13)))
-		return 'El código de estado "' + curp.slice(11, 13) + '" no es válido.';
-
-	// Inner consonants (pos 14-16) — allows Ñ
-	if (!/^[B-DF-HJ-NP-TV-ZÑ]{3}$/.test(curp.slice(13, 16)))
-		return 'Las posiciones 14-16 deben ser consonantes internas (puede incluir Ñ).';
-
-	// Century character (pos 17): digit = born 1900s, letter = 2000s
-	if (!/^[A-Z0-9]$/.test(curp[16]))
-		return 'La posición 17 debe ser una letra o un dígito.';
-
-	// Check digit (pos 18) must be numeric
-	if (!/^\d$/.test(curp[17]))
-		return 'La posición 18 (dígito verificador) debe ser numérica.';
-
-	// Verify check digit using RENAPO weighted-sum algorithm
-	for (var i = 0; i < 17; i++) {
-		if (CURP_ALPHA.indexOf(curp[i]) === -1)
-			return 'El CURP contiene un carácter no permitido en posición ' + (i + 1) + '.';
-	}
+	// Check digit (RENAPO weighted-sum)
+	for (var i = 0; i < 17; i++) { if (CURP_ALPHA.indexOf(curp[i]) === -1) return inv; }
 	var sum = 0;
 	for (var i = 0; i < 17; i++) sum += CURP_ALPHA.indexOf(curp[i]) * (18 - i);
-	var expected = (10 - (sum % 10)) % 10;
-	if (parseInt(curp[17], 10) !== expected)
-		return 'Dígito verificador incorrecto (debería ser ' + expected + ', no ' + curp[17] + ').';
+	if (parseInt(curp[17], 10) !== (10 - sum % 10) % 10) return inv;
 
 	return null;
 }
