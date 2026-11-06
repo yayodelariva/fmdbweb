@@ -60,8 +60,8 @@ $tiers = [
 $g        = fn( string $k ) => esc_attr( (string) get_user_meta( $user_id, $k, true ) );
 $is_tutor = get_user_meta( $user_id, 'fmdb_tutor', true ) === '1';
 $v = [
-	'first_name'                 => esc_attr( (string) $user->first_name ),
-	'last_name'                  => esc_attr( (string) $user->last_name ),
+	'first_name'                 => $is_tutor ? ( $g( 'fmdb_menor_nombre' )   ?: esc_attr( (string) $user->first_name ) ) : esc_attr( (string) $user->first_name ),
+	'last_name'                  => $is_tutor ? ( $g( 'fmdb_menor_apellido' ) ?: esc_attr( (string) $user->last_name  ) ) : esc_attr( (string) $user->last_name  ),
 	'fmdb_apellido_materno'      => $g( 'fmdb_apellido_materno' ),
 	'fmdb_fecha_nacimiento'      => $g( 'fmdb_fecha_nacimiento' ),
 	'fmdb_genero'                => $g( 'fmdb_genero' ),
