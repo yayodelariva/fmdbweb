@@ -233,19 +233,22 @@ get_header();
 							<label for="first_name">Nombre <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="first_name" name="first_name"
 								value="<?php echo $v['first_name']; ?>"
-								required autocomplete="given-name">
+								required minlength="2" autocomplete="given-name"
+								oninput="fmdbFilterName(this)" onblur="fmdbCapitalizeName(this)">
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="last_name">Apellido paterno <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="last_name" name="last_name"
 								value="<?php echo $v['last_name']; ?>"
-								required autocomplete="family-name">
+								required minlength="2" autocomplete="family-name"
+								oninput="fmdbFilterName(this)" onblur="fmdbCapitalizeName(this)">
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_apellido_materno">Apellido materno <span class="fmdb-afil__req" id="fmdb-apellido-mat-req">*</span></label>
 							<input type="text" id="fmdb_apellido_materno" name="fmdb_apellido_materno"
 								value="<?php echo $v['fmdb_apellido_materno']; ?>"
-								autocomplete="additional-name" required>
+								autocomplete="additional-name" required minlength="2"
+								oninput="fmdbFilterName(this)" onblur="fmdbCapitalizeName(this)">
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_fecha_nacimiento">Fecha de nacimiento <span class="fmdb-afil__req">*</span></label>
@@ -352,7 +355,8 @@ get_header();
 							<label for="fmdb_ciudad">Ciudad <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="fmdb_ciudad" name="fmdb_ciudad"
 								value="<?php echo $v['fmdb_ciudad']; ?>"
-								required autocomplete="address-level2">
+								required minlength="2" autocomplete="address-level2"
+								oninput="fmdbFilterName(this)" onblur="fmdbCapitalizeName(this)">
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_codigo_postal">Código postal <span class="fmdb-afil__req">*</span></label>
@@ -497,6 +501,17 @@ get_header();
 </main>
 
 <script>
+// Name field helpers: strip non-letter chars live; title-case on blur.
+var FMDB_NAME_RE = /[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑàèìòùÀÈÌÒÙäëïöÄËÏÖ\s\-']/g;
+function fmdbFilterName(input) {
+	var v = input.value.replace(FMDB_NAME_RE, '');
+	if (input.value !== v) input.value = v;
+}
+function fmdbCapitalizeName(input) {
+	input.value = input.value.toLowerCase()
+		.replace(/(^|[\s\-'])([a-zà-ÿ])/g, function(_, sep, ch) { return sep + ch.toUpperCase(); });
+}
+
 // CURP validator: structure + real date + check digit (RENAPO weighted-sum algorithm).
 var CURP_ALPHA = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"; // 37 chars, includes Ñ
 
