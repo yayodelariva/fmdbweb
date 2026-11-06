@@ -89,6 +89,26 @@ function fmdb_affiliation_status( int $user_id ): string {
     return (string) get_user_meta( $user_id, 'fmdb_affiliation_status', true );
 }
 
+// Returns true when a verified affiliation's vigencia year has passed Dec 31.
+function fmdb_affiliation_is_expired( int $user_id ): bool {
+    if ( fmdb_affiliation_status( $user_id ) !== 'verified' ) return false;
+    $vigencia = (string) get_user_meta( $user_id, 'fmdb_vigencia', true );
+    if ( empty( $vigencia ) ) return false;
+    $exp_year = (int) date( 'Y', strtotime( $vigencia ) );
+    if ( $exp_year < 2000 ) return false;
+    return time() > mktime( 23, 59, 59, 12, 31, $exp_year );
+}
+
+// Generates the next sequential FMDB affiliation ID (FMDB-10000, FMDB-10001, …).
+// Old-system IDs used zero-padded 5-digit numbers (FMDB-00001), so starting at
+// 10000 avoids any collision while keeping the same prefix format.
+function fmdb_generate_affiliation_id(): string {
+    $counter = (int) get_option( 'fmdb_affiliation_id_counter', 9999 );
+    $counter++;
+    update_option( 'fmdb_affiliation_id_counter', $counter, false );
+    return 'FMDB-' . $counter;
+}
+
 function fmdb_affiliation_status_label( string $status ): array {
     switch ( $status ) {
         case 'verified': return [ 'verified', 'Verificado' ];

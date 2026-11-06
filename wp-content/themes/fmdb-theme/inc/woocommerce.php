@@ -278,8 +278,10 @@ function fmdb_ajax_afiliacion_submit(): void {
     $user_id = get_current_user_id();
     $user    = get_userdata( $user_id );
 
-    // Block already-verified members from purchasing again.
-    if ( function_exists( 'fmdb_affiliation_status' ) && fmdb_affiliation_status( $user_id ) === 'verified' ) {
+    // Block active verified members; allow expired ones to renew.
+    if ( function_exists( 'fmdb_affiliation_status' )
+        && fmdb_affiliation_status( $user_id ) === 'verified'
+        && ! fmdb_affiliation_is_expired( $user_id ) ) {
         wp_send_json_error( [ 'message' => 'Ya tienes una afiliación activa y verificada.' ] );
     }
 
@@ -407,7 +409,8 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
     if ( ! in_array( (int) $product_id, $afil_ids, true ) ) return $passed;
 
     if ( is_user_logged_in() && function_exists( 'fmdb_affiliation_status' )
-        && fmdb_affiliation_status( get_current_user_id() ) === 'verified' ) {
+        && fmdb_affiliation_status( get_current_user_id() ) === 'verified'
+        && ! fmdb_affiliation_is_expired( get_current_user_id() ) ) {
         wc_add_notice( 'Ya tienes una afiliación activa y verificada.', 'error' );
         return false;
     }
@@ -682,9 +685,15 @@ function fmdb_afiliacion_on_payment_complete( int $order_id ): void {
 
     if ( ! $found ) return;
 
-    // Don't downgrade a verified membership.
-    if ( fmdb_affiliation_status( $user_id ) !== 'verified' ) {
+    // Active verified memberships are not changed; expired ones restart the review cycle.
+    if ( fmdb_affiliation_status( $user_id ) !== 'verified'
+        || fmdb_affiliation_is_expired( $user_id ) ) {
         update_user_meta( $user_id, 'fmdb_affiliation_status', 'pending' );
+    }
+
+    // Assign ID on first affiliation; renewals keep the existing one.
+    if ( empty( get_user_meta( $user_id, 'fmdb_affiliation_id', true ) ) ) {
+        update_user_meta( $user_id, 'fmdb_affiliation_id', fmdb_generate_affiliation_id() );
     }
 
     if ( $tier_name ) {
@@ -692,7 +701,7 @@ function fmdb_afiliacion_on_payment_complete( int $order_id ): void {
     }
     update_user_meta( $user_id, 'fmdb_folio_pago',        (string) $order->get_order_number() );
     update_user_meta( $user_id, 'fmdb_precio_afiliacion', (string) $order->get_total() );
-    update_user_meta( $user_id, 'fmdb_vigencia',          date( 'Y-m-d', strtotime( '+1 year' ) ) );
+    update_user_meta( $user_id, 'fmdb_vigencia',          date( 'Y-12-31' ) );
     update_user_meta( $user_id, 'fmdb_fecha_creacion',    date( 'Y-m-d' ) );
 
     $order->update_meta_data( '_fmdb_afiliacion_processed', '1' );

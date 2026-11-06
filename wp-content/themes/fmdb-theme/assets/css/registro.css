@@ -62,6 +62,11 @@
     border-left: 4px solid #c0392b;
     color: #7b1f1f;
 }
+.fmdb-registro__notice--warning {
+    background: #fffbf0;
+    border-left: 4px solid #d4a017;
+    color: #6b4c00;
+}
 
 /* Form */
 .fmdb-registro__form { display: flex; flex-direction: column; gap: 16px; }

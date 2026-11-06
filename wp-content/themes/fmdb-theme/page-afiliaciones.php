@@ -24,6 +24,7 @@ $user_id      = get_current_user_id();
 $user         = wp_get_current_user();
 $affil_status = fmdb_affiliation_status( $user_id );
 $is_verified  = $affil_status === 'verified';
+$is_expired   = fmdb_affiliation_is_expired( $user_id );
 
 $notices = [];
 
@@ -110,7 +111,7 @@ get_header();
 			<p class="fmdb-afil__subtitle">Completa tu información para afiliarte a la Federación Mexicana de Dodgeball</p>
 		</div>
 
-		<?php if ( $is_verified ) :
+		<?php if ( $is_verified && ! $is_expired ) :
 			$affiliation_id  = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
 			$tipo_afiliacion = get_user_meta( $user_id, 'fmdb_tipo_afiliacion', true );
 			$vigencia        = get_user_meta( $user_id, 'fmdb_vigencia', true );
@@ -181,6 +182,23 @@ get_header();
 			</div>
 
 		<?php else : ?>
+
+			<?php if ( $is_expired ) :
+				$_exp_afil_id  = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
+				$_exp_vigencia = get_user_meta( $user_id, 'fmdb_vigencia', true );
+				$_exp_year     = $_exp_vigencia ? date( 'Y', strtotime( $_exp_vigencia ) ) : '';
+			?>
+				<div class="fmdb-registro__notice fmdb-registro__notice--warning">
+					<p>
+						<?php if ( $_exp_year ) : ?>
+							Tu afiliación <?php echo $_exp_afil_id ? '<strong>' . esc_html( $_exp_afil_id ) . '</strong> ' : ''; ?>venció el 31 de diciembre de <?php echo esc_html( $_exp_year ); ?>.
+						<?php else : ?>
+							Tu afiliación ha vencido.
+						<?php endif; ?>
+						Renuévala ahora — tus datos están pre-llenados<?php echo $_exp_afil_id ? ' y conservarás el mismo ID' : ''; ?>.
+					</p>
+				</div>
+			<?php endif; ?>
 
 			<?php foreach ( $notices as $n ) : ?>
 				<div class="fmdb-registro__notice fmdb-registro__notice--<?php echo esc_attr( $n['type'] ); ?>">
