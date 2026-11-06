@@ -690,10 +690,10 @@ function fmdb_afiliacion_on_payment_complete( int $order_id ): void {
 
     if ( ! $found ) return;
 
-    // Auto-verify on confirmed payment; never downgrade an already-active membership.
+    // Queue for manual review; never downgrade an already-active membership.
     if ( fmdb_affiliation_status( $user_id ) !== 'verified'
         || fmdb_affiliation_is_expired( $user_id ) ) {
-        update_user_meta( $user_id, 'fmdb_affiliation_status', 'verified' );
+        update_user_meta( $user_id, 'fmdb_affiliation_status', 'pending' );
     }
 
     // Assign ID on first affiliation; renewals keep the existing one.
