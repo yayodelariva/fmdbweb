@@ -662,12 +662,11 @@ add_filter( 'woocommerce_email_order_meta_fields', function ( $fields, $sent_to_
     return $fields;
 }, 10, 3 );
 
-// After affiliation product payment: set status to 'pending', save payment metadata.
-// Fires on card (woocommerce_payment_complete), OXXO / bank (order_status_processing),
-// and manual admin completion (order_status_completed). Guard prevents double-fire.
+// After affiliation product payment: auto-verify and save payment metadata.
+// Fires on card (woocommerce_payment_complete) and OXXO / bank (order_status_processing).
+// Guard on _fmdb_afiliacion_processed prevents double-fire.
 add_action( 'woocommerce_payment_complete',        'fmdb_afiliacion_on_payment_complete' );
 add_action( 'woocommerce_order_status_processing', 'fmdb_afiliacion_on_payment_complete' );
-add_action( 'woocommerce_order_status_completed',  'fmdb_afiliacion_on_payment_complete' );
 function fmdb_afiliacion_on_payment_complete( int $order_id ): void {
     $order = wc_get_order( $order_id );
     if ( ! $order ) return;
@@ -691,10 +690,10 @@ function fmdb_afiliacion_on_payment_complete( int $order_id ): void {
 
     if ( ! $found ) return;
 
-    // Active verified memberships are not changed; expired/new/rejected restart the cycle.
-    $pre_status = fmdb_affiliation_status( $user_id );
-    if ( $pre_status !== 'verified' ) {
-        update_user_meta( $user_id, 'fmdb_affiliation_status', 'pending' );
+    // Auto-verify on confirmed payment; never downgrade an already-active membership.
+    if ( fmdb_affiliation_status( $user_id ) !== 'verified'
+        || fmdb_affiliation_is_expired( $user_id ) ) {
+        update_user_meta( $user_id, 'fmdb_affiliation_status', 'verified' );
     }
 
     // Assign ID on first affiliation; renewals keep the existing one.
