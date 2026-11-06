@@ -799,6 +799,20 @@ function fmdbPassportLiveCheck() {
 		if (current < TOTAL && validateStep(current)) showStep(current + 1);
 	});
 
+	// ── Immediate field validity feedback ─────────────────────────────
+	function fmdbMarkField(el) {
+		if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'SELECT')) return;
+		if (el.type === 'hidden' || el.type === 'radio' || el.type === 'checkbox') return;
+		var valid = el.checkValidity();
+		var empty = el.value.trim() === '';
+		el.classList.toggle('is-invalid', !valid);
+		el.classList.toggle('is-valid',   valid && !empty);
+	}
+	form.addEventListener('input',  function (e) { fmdbMarkField(e.target); });
+	form.addEventListener('change', function (e) { fmdbMarkField(e.target); });
+	form.addEventListener('blur',   function (e) { fmdbMarkField(e.target); }, true);
+	// ─────────────────────────────────────────────────────────────────
+
 	showStep(1);
 }());
 </script>

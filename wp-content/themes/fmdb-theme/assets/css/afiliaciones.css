@@ -158,6 +158,18 @@
 	outline: none;
 	box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
 }
+/* ── Field validity feedback ───────────────────────────────────── */
+.fmdb-registro__field input.is-valid,
+.fmdb-registro__field select.is-valid {
+	border-color: var(--fmdb-green);
+	box-shadow: 0 0 0 3px rgba(29,158,117,0.1);
+}
+.fmdb-registro__field input.is-invalid,
+.fmdb-registro__field select.is-invalid {
+	border-color: #e74c3c;
+	box-shadow: 0 0 0 3px rgba(231,76,60,0.1);
+}
+
 /* Read-only email field */
 .fmdb-registro__field input[disabled] {
 	background: #f5f5f5;
