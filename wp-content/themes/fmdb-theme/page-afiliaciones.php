@@ -393,7 +393,9 @@ get_header();
 							<label for="fmdb_emergencia_nombre">Nombre completo <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="fmdb_emergencia_nombre" name="fmdb_emergencia_nombre"
 								value="<?php echo $v['fmdb_emergencia_nombre']; ?>"
-								required>
+								required
+								oninput="fmdbFilterName(this); fmdbValidateFullName(this);"
+								onblur="fmdbCapitalizeName(this); fmdbValidateFullName(this);">
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_emergencia_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
@@ -416,7 +418,9 @@ get_header();
 							<label for="fmdb_emergencia_parentesco">Parentesco <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="fmdb_emergencia_parentesco" name="fmdb_emergencia_parentesco"
 								value="<?php echo $v['fmdb_emergencia_parentesco']; ?>"
-								required placeholder="Madre, padre, cónyuge…">
+								required minlength="2" placeholder="Madre, padre, cónyuge…"
+								oninput="fmdbFilterName(this)"
+								onblur="fmdbCapitalizeName(this)">
 						</div>
 					</div>
 				</div>
@@ -517,6 +521,12 @@ function fmdbFilterName(input) {
 function fmdbCapitalizeName(input) {
 	input.value = input.value.toLowerCase()
 		.replace(/(^|[\s\-'])([a-zà-ÿ])/g, function(_, sep, ch) { return sep + ch.toUpperCase(); });
+}
+
+// Full-name field: requires at least 2 words each with at least 2 characters.
+function fmdbValidateFullName(input) {
+	var words = input.value.trim().split(/\s+/).filter(function(w) { return w.length >= 2; });
+	input.setCustomValidity(words.length >= 2 ? '' : 'Ingresa nombre y apellidos');
 }
 
 // CURP validator: structure + real date + check digit (RENAPO weighted-sum algorithm).
