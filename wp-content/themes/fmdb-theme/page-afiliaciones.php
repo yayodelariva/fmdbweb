@@ -92,6 +92,13 @@ $v = [
 $states          = fmdb_mexican_states();
 $fmdb_countries  = fmdb_countries_data();
 
+// Alphabetical by country name (for phone dial dropdowns).
+$fmdb_countries_alpha = $fmdb_countries;
+usort( $fmdb_countries_alpha, fn( $a, $b ) => strcmp( mb_strtolower( $a[2], 'UTF-8' ), mb_strtolower( $b[2], 'UTF-8' ) ) );
+
+// Same but Mexico removed (for passport country selector).
+$fmdb_countries_passport = array_values( array_filter( $fmdb_countries_alpha, fn( $c ) => $c[0] !== 'MX' ) );
+
 get_header();
 ?>
 
@@ -289,7 +296,7 @@ get_header();
 								<label for="fmdb_pais_origen">País de origen <span class="fmdb-afil__req">*</span></label>
 								<select id="fmdb_pais_origen" name="fmdb_pais_origen">
 									<option value="">Selecciona…</option>
-									<?php foreach ( $fmdb_countries as [ $iso, $dial, $name_es ] ) : ?>
+									<?php foreach ( $fmdb_countries_passport as [ $iso, $dial, $name_es ] ) : ?>
 										<option value="<?php echo esc_attr( $iso ); ?>"
 											<?php selected( $v['fmdb_pais_origen'], $iso ); ?>>
 											<?php echo esc_html( $name_es ); ?>
@@ -308,7 +315,7 @@ get_header();
 							<label for="fmdb_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
 							<div class="fmdb-phone-wrap">
 								<select id="fmdb_telefono_codigo_pais" name="fmdb_telefono_codigo_pais" class="fmdb-phone-dial">
-									<?php foreach ( $fmdb_countries as [ $iso, $dial, $name_es ] ) : ?>
+									<?php foreach ( $fmdb_countries_alpha as [ $iso, $dial, $name_es ] ) : ?>
 										<option value="<?php echo esc_attr( $dial ); ?>"
 											<?php selected( $v['fmdb_telefono_codigo_pais'], $dial ); ?>>
 											<?php echo esc_html( $dial . ' ' . $name_es ); ?>
@@ -392,7 +399,7 @@ get_header();
 							<label for="fmdb_emergencia_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
 							<div class="fmdb-phone-wrap">
 								<select id="fmdb_emergencia_codigo_pais" name="fmdb_emergencia_codigo_pais" class="fmdb-phone-dial">
-									<?php foreach ( $fmdb_countries as [ $iso, $dial, $name_es ] ) : ?>
+									<?php foreach ( $fmdb_countries_alpha as [ $iso, $dial, $name_es ] ) : ?>
 										<option value="<?php echo esc_attr( $dial ); ?>"
 											<?php selected( $v['fmdb_emergencia_codigo_pais'], $dial ); ?>>
 											<?php echo esc_html( $dial . ' ' . $name_es ); ?>
