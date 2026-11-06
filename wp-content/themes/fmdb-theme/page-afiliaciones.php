@@ -22,9 +22,10 @@ if ( ! is_user_logged_in() ) {
 
 $user_id      = get_current_user_id();
 $user         = wp_get_current_user();
+fmdb_maybe_expire_affiliation( $user_id );
 $affil_status = fmdb_affiliation_status( $user_id );
 $is_verified  = $affil_status === 'verified';
-$is_expired   = fmdb_affiliation_is_expired( $user_id );
+$is_expired   = $affil_status === 'expired';
 
 $notices = [];
 
@@ -184,20 +185,43 @@ get_header();
 		<?php else : ?>
 
 			<?php if ( $is_expired ) :
-				$_exp_afil_id  = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
-				$_exp_vigencia = get_user_meta( $user_id, 'fmdb_vigencia', true );
-				$_exp_year     = $_exp_vigencia ? date( 'Y', strtotime( $_exp_vigencia ) ) : '';
+				$_exp_afil_id      = get_user_meta( $user_id, 'fmdb_affiliation_id', true );
+				$_exp_tipo         = get_user_meta( $user_id, 'fmdb_tipo_afiliacion', true );
+				$_exp_vigencia_raw = get_user_meta( $user_id, 'fmdb_vigencia', true );
+				$_exp_year         = $_exp_vigencia_raw ? date( 'Y', strtotime( $_exp_vigencia_raw ) ) : '';
 			?>
-				<div class="fmdb-registro__notice fmdb-registro__notice--warning">
-					<p>
-						<?php if ( $_exp_year ) : ?>
-							Tu afiliación <?php echo $_exp_afil_id ? '<strong>' . esc_html( $_exp_afil_id ) . '</strong> ' : ''; ?>venció el 31 de diciembre de <?php echo esc_html( $_exp_year ); ?>.
-						<?php else : ?>
-							Tu afiliación ha vencido.
-						<?php endif; ?>
-						Renuévala ahora — tus datos están pre-llenados<?php echo $_exp_afil_id ? ' y conservarás el mismo ID' : ''; ?>.
+				<div class="fmdb-afil__already fmdb-afil__already--expired">
+					<div class="fmdb-afil__already-icon fmdb-afil__already-icon--expired">&#128197;</div>
+					<h2 class="fmdb-afil__already-heading">Afiliación expirada</h2>
+					<p class="fmdb-afil__already-text">
+						Tu afiliación venció el 31 de diciembre<?php echo $_exp_year ? ' de ' . esc_html( $_exp_year ) : ''; ?>.
+						Renuévala ahora — tu información está pre-llenada<?php echo $_exp_afil_id ? ' y conservarás el mismo ID' : ''; ?>.
 					</p>
+					<?php if ( $_exp_afil_id || $_exp_tipo ) : ?>
+						<div class="fmdb-afil__already-details">
+							<?php if ( $_exp_afil_id ) : ?>
+								<div class="fmdb-afil__already-detail-item">
+									<span class="fmdb-afil__already-detail-label">ID de afiliación</span>
+									<span class="fmdb-afil__already-detail-value"><?php echo esc_html( $_exp_afil_id ); ?></span>
+								</div>
+							<?php endif; ?>
+							<?php if ( $_exp_tipo ) : ?>
+								<div class="fmdb-afil__already-detail-item">
+									<span class="fmdb-afil__already-detail-label">Tipo anterior</span>
+									<span class="fmdb-afil__already-detail-value"><?php echo esc_html( $_exp_tipo ); ?></span>
+								</div>
+							<?php endif; ?>
+							<?php if ( $_exp_year ) : ?>
+								<div class="fmdb-afil__already-detail-item">
+									<span class="fmdb-afil__already-detail-label">Expiró</span>
+									<span class="fmdb-afil__already-detail-value">31 dic <?php echo esc_html( $_exp_year ); ?></span>
+								</div>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
 				</div>
+
+				<p class="fmdb-afil__renewal-lead">Confirma o actualiza tu información y selecciona el tipo de afiliación para renovar.</p>
 			<?php endif; ?>
 
 			<?php foreach ( $notices as $n ) : ?>

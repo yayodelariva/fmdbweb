@@ -360,6 +360,28 @@
 	border-color: #ffe082;
 }
 
+/* Expired state */
+.fmdb-afil__already--expired {
+	border-top: 4px solid #d4a017;
+}
+.fmdb-afil__already-icon--expired {
+	background: #fff8e1;
+	color: #d4a017;
+	border-color: #ffc107;
+	font-size: 1.5rem;
+}
+.fmdb-afil__already--expired .fmdb-afil__already-heading { color: #7a4f00; }
+.fmdb-afil__already--expired .fmdb-afil__already-details {
+	background: #fffdf0;
+	border-color: #ffe082;
+}
+.fmdb-afil__renewal-lead {
+	font-size: 0.9rem;
+	color: #666;
+	margin: 0 0 20px;
+	padding: 0 2px;
+}
+
 /* ── Phone with dial-code select ──────────────────────────────── */
 .fmdb-phone-wrap {
 	display: flex;

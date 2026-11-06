@@ -278,11 +278,15 @@ function fmdb_ajax_afiliacion_submit(): void {
     $user_id = get_current_user_id();
     $user    = get_userdata( $user_id );
 
+    fmdb_maybe_expire_affiliation( $user_id );
+
     // Block active verified members; allow expired ones to renew.
-    if ( function_exists( 'fmdb_affiliation_status' )
-        && fmdb_affiliation_status( $user_id ) === 'verified'
-        && ! fmdb_affiliation_is_expired( $user_id ) ) {
+    $cur_status = fmdb_affiliation_status( $user_id );
+    if ( $cur_status === 'verified' ) {
         wp_send_json_error( [ 'message' => 'Ya tienes una afiliación activa y verificada.' ] );
+    }
+    if ( $cur_status === 'pending' ) {
+        wp_send_json_error( [ 'message' => 'Tu solicitud ya está en revisión.' ] );
     }
 
     $tiers = [
@@ -408,11 +412,13 @@ add_filter( 'woocommerce_add_to_cart_validation', function ( $passed, $product_i
     $afil_ids = fmdb_affiliation_product_ids();
     if ( ! in_array( (int) $product_id, $afil_ids, true ) ) return $passed;
 
-    if ( is_user_logged_in() && function_exists( 'fmdb_affiliation_status' )
-        && fmdb_affiliation_status( get_current_user_id() ) === 'verified'
-        && ! fmdb_affiliation_is_expired( get_current_user_id() ) ) {
-        wc_add_notice( 'Ya tienes una afiliación activa y verificada.', 'error' );
-        return false;
+    if ( is_user_logged_in() && function_exists( 'fmdb_affiliation_status' ) ) {
+        $uid = get_current_user_id();
+        fmdb_maybe_expire_affiliation( $uid );
+        if ( fmdb_affiliation_status( $uid ) === 'verified' ) {
+            wc_add_notice( 'Ya tienes una afiliación activa y verificada.', 'error' );
+            return false;
+        }
     }
 
     foreach ( WC()->cart->get_cart() as $item ) {
@@ -685,9 +691,9 @@ function fmdb_afiliacion_on_payment_complete( int $order_id ): void {
 
     if ( ! $found ) return;
 
-    // Active verified memberships are not changed; expired ones restart the review cycle.
-    if ( fmdb_affiliation_status( $user_id ) !== 'verified'
-        || fmdb_affiliation_is_expired( $user_id ) ) {
+    // Active verified memberships are not changed; expired/new/rejected restart the cycle.
+    $pre_status = fmdb_affiliation_status( $user_id );
+    if ( $pre_status !== 'verified' ) {
         update_user_meta( $user_id, 'fmdb_affiliation_status', 'pending' );
     }
 

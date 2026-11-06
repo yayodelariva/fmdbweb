@@ -89,14 +89,26 @@ function fmdb_affiliation_status( int $user_id ): string {
     return (string) get_user_meta( $user_id, 'fmdb_affiliation_status', true );
 }
 
-// Returns true when a verified affiliation's vigencia year has passed Dec 31.
+// Returns true when an affiliation has expired — either already written as 'expired'
+// or still showing 'verified' but past Dec 31 of its vigencia year (pre-transition).
 function fmdb_affiliation_is_expired( int $user_id ): bool {
-    if ( fmdb_affiliation_status( $user_id ) !== 'verified' ) return false;
+    $status = fmdb_affiliation_status( $user_id );
+    if ( $status === 'expired' ) return true;
+    if ( $status !== 'verified' ) return false;
     $vigencia = (string) get_user_meta( $user_id, 'fmdb_vigencia', true );
     if ( empty( $vigencia ) ) return false;
     $exp_year = (int) date( 'Y', strtotime( $vigencia ) );
     if ( $exp_year < 2000 ) return false;
     return time() > mktime( 23, 59, 59, 12, 31, $exp_year );
+}
+
+// Lazily transitions a verified affiliation to 'expired' once its vigencia year
+// has passed. Call once per request at every entry point (page load, AJAX).
+function fmdb_maybe_expire_affiliation( int $user_id ): void {
+    if ( fmdb_affiliation_status( $user_id ) === 'verified'
+        && fmdb_affiliation_is_expired( $user_id ) ) {
+        update_user_meta( $user_id, 'fmdb_affiliation_status', 'expired' );
+    }
 }
 
 // Generates the next sequential FMDB affiliation ID (FMDB-10000, FMDB-10001, …).
@@ -114,6 +126,7 @@ function fmdb_affiliation_status_label( string $status ): array {
         case 'verified': return [ 'verified', 'Verificado' ];
         case 'pending':  return [ 'pending',  'En revisión' ];
         case 'rejected': return [ 'rejected', 'Rechazado' ];
+        case 'expired':  return [ 'expired',  'Expirado' ];
         default:         return [ 'none',     'Sin verificar' ];
     }
 }
