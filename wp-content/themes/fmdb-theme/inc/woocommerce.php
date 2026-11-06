@@ -711,6 +711,78 @@ function fmdb_afiliacion_on_payment_complete( int $order_id ): void {
 
     $order->update_meta_data( '_fmdb_afiliacion_processed', '1' );
     $order->save();
+
+    // Confirmation email to member.
+    $afil_id  = (string) get_user_meta( $user_id, 'fmdb_affiliation_id', true );
+    $afil_vig = (string) get_user_meta( $user_id, 'fmdb_vigencia', true );
+    $to       = $order->get_billing_email() ?: $user->user_email;
+    $nombre   = trim( $user->first_name . ' ' . $user->last_name ) ?: $user->display_name;
+    $site     = get_bloginfo( 'name' );
+    $green    = '#0f6b48';
+
+    $subject = "Tu afiliación $site está confirmada — $afil_id";
+
+    $body = '<!DOCTYPE html><html lang="es"><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;max-width:560px;">
+
+      <!-- Header -->
+      <tr><td style="background:' . $green . ';padding:28px 32px;">
+        <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:0.5px;">' . esc_html( $site ) . '</p>
+      </td></tr>
+
+      <!-- Body -->
+      <tr><td style="padding:32px;">
+        <p style="margin:0 0 8px;font-size:15px;color:#333;">Hola ' . esc_html( $nombre ) . ',</p>
+        <p style="margin:0 0 24px;font-size:22px;font-weight:700;color:' . $green . ';">Tu afiliación ya está activa.</p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"
+               style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:28px;">
+          <tr>
+            <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#888;font-weight:600;">Tipo</p>
+              <p style="margin:4px 0 0;font-size:16px;font-weight:700;color:#111;">' . esc_html( $tier_name ) . '</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#888;font-weight:600;">ID de afiliación</p>
+              <p style="margin:4px 0 0;font-size:20px;font-weight:800;color:' . $green . ';font-family:monospace;">' . esc_html( $afil_id ) . '</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 20px;">
+              <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#888;font-weight:600;">Vigencia</p>
+              <p style="margin:4px 0 0;font-size:15px;color:#333;">Hasta el 31 de diciembre de ' . esc_html( date( 'Y', strtotime( $afil_vig ) ) ) . '</p>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:0 0 24px;font-size:14px;color:#666;line-height:1.6;">
+          Guarda este correo — tu ID de afiliación te identifica en torneos y eventos oficiales de la ' . esc_html( $site ) . '.
+        </p>
+
+        <a href="' . esc_url( home_url( '/mi-perfil/' ) ) . '"
+           style="display:inline-block;background:' . $green . ';color:#ffffff;text-decoration:none;
+                  font-size:14px;font-weight:700;padding:12px 24px;border-radius:6px;">
+          Ver mi perfil
+        </a>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="padding:20px 32px;border-top:1px solid #e5e7eb;">
+        <p style="margin:0;font-size:12px;color:#aaa;">
+          Este correo fue generado automáticamente por ' . esc_html( $site ) . '. Por favor no respondas a este mensaje.
+        </p>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body></html>';
+
+    wp_mail( $to, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
 
 // Force Stripe.js (and OXXO voucher) to render in Spanish (Latin America).
