@@ -228,7 +228,7 @@ get_header();
 								required autocomplete="family-name">
 						</div>
 						<div class="fmdb-registro__field">
-							<label for="fmdb_apellido_materno">Apellido materno <span class="fmdb-afil__req">*</span></label>
+							<label for="fmdb_apellido_materno">Apellido materno <span class="fmdb-afil__req" id="fmdb-apellido-mat-req">*</span></label>
 							<input type="text" id="fmdb_apellido_materno" name="fmdb_apellido_materno"
 								value="<?php echo $v['fmdb_apellido_materno']; ?>"
 								autocomplete="additional-name" required>
@@ -572,13 +572,15 @@ function fmdbPassportLiveCheck() {
 	var btnSubmit = document.getElementById('fmdb-afil-submit');
 
 	// ── Foreigner toggle ──────────────────────────────────────────────────
-	var foreignerChk  = document.getElementById('fmdb_es_extranjero');
-	var curpInput     = document.getElementById('fmdb_curp');
-	var paisWrap      = document.getElementById('fmdb-pais-wrap');
-	var pasaporteWrap = document.getElementById('fmdb-pasaporte-wrap');
-	var paisSel       = document.getElementById('fmdb_pais_origen');
-	var pasInput      = document.getElementById('fmdb_pasaporte');
-	var dialSel       = document.getElementById('fmdb_telefono_codigo_pais');
+	var foreignerChk     = document.getElementById('fmdb_es_extranjero');
+	var curpInput        = document.getElementById('fmdb_curp');
+	var paisWrap         = document.getElementById('fmdb-pais-wrap');
+	var pasaporteWrap    = document.getElementById('fmdb-pasaporte-wrap');
+	var paisSel          = document.getElementById('fmdb_pais_origen');
+	var pasInput         = document.getElementById('fmdb_pasaporte');
+	var dialSel          = document.getElementById('fmdb_telefono_codigo_pais');
+	var apellidoMatInput = document.getElementById('fmdb_apellido_materno');
+	var apellidoMatReq   = document.getElementById('fmdb-apellido-mat-req');
 
 	function fmdbToggleForeigner(isForeigner) {
 		if (curpInput) {
@@ -594,6 +596,9 @@ function fmdbPassportLiveCheck() {
 			pasInput.required = isForeigner;
 			pasInput.setCustomValidity('');
 		}
+		// Apellido materno is optional for foreigners
+		if (apellidoMatInput) apellidoMatInput.required = !isForeigner;
+		if (apellidoMatReq)   apellidoMatReq.hidden      = isForeigner;
 	}
 
 	if (foreignerChk) {

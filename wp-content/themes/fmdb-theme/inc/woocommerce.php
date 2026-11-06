@@ -291,10 +291,10 @@ function fmdb_ajax_afiliacion_submit(): void {
     ];
 
     // Validate required fields.
-    if ( empty( trim( $_POST['fmdb_apellido_materno'] ?? '' ) ) ) {
+    $es_extranjero = ! empty( $_POST['fmdb_es_extranjero'] );
+    if ( ! $es_extranjero && empty( trim( $_POST['fmdb_apellido_materno'] ?? '' ) ) ) {
         wp_send_json_error( [ 'message' => 'El apellido materno es obligatorio.' ] );
     }
-    $es_extranjero = ! empty( $_POST['fmdb_es_extranjero'] );
     if ( ! $es_extranjero ) {
         $curp_raw = strtoupper( trim( $_POST['fmdb_curp'] ?? '' ) );
         if ( $curp_raw === '' ) {
