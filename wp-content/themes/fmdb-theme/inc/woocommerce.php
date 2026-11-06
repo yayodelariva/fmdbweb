@@ -294,15 +294,30 @@ function fmdb_ajax_afiliacion_submit(): void {
     if ( empty( trim( $_POST['fmdb_apellido_materno'] ?? '' ) ) ) {
         wp_send_json_error( [ 'message' => 'El apellido materno es obligatorio.' ] );
     }
-    $curp_raw = strtoupper( trim( $_POST['fmdb_curp'] ?? '' ) );
-    if ( $curp_raw === '' ) {
-        wp_send_json_error( [ 'message' => 'El CURP es obligatorio.' ] );
-    }
-    $curp_re = '/^[A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM]'
-             . '(?:AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR'
-             . '|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[BCDFGHJKLMNPQRSTVWXYZ]{3}[0-9A-Z]\d$/';
-    if ( ! preg_match( $curp_re, $curp_raw ) ) {
-        wp_send_json_error( [ 'message' => 'El CURP no tiene un formato válido. Verifica fecha, código de estado y consonantes.' ] );
+    $es_extranjero = ! empty( $_POST['fmdb_es_extranjero'] );
+    if ( ! $es_extranjero ) {
+        $curp_raw = strtoupper( trim( $_POST['fmdb_curp'] ?? '' ) );
+        if ( $curp_raw === '' ) {
+            wp_send_json_error( [ 'message' => 'El CURP es obligatorio.' ] );
+        }
+        $curp_re = '/^[A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM]'
+                 . '(?:AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR'
+                 . '|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[BCDFGHJKLMNPQRSTVWXYZ]{3}[0-9A-Z]\d$/';
+        if ( ! preg_match( $curp_re, $curp_raw ) ) {
+            wp_send_json_error( [ 'message' => 'El CURP no tiene un formato válido. Verifica fecha, código de estado y consonantes.' ] );
+        }
+    } else {
+        $pais_origen = sanitize_key( $_POST['fmdb_pais_origen'] ?? '' );
+        $pasaporte   = strtoupper( preg_replace( '/[^A-Z0-9]/i', '', trim( $_POST['fmdb_pasaporte'] ?? '' ) ) );
+        if ( ! $pais_origen ) {
+            wp_send_json_error( [ 'message' => 'Selecciona tu país de origen.' ] );
+        }
+        if ( $pasaporte === '' ) {
+            wp_send_json_error( [ 'message' => 'El número de pasaporte es obligatorio.' ] );
+        }
+        if ( strlen( $pasaporte ) < 4 || strlen( $pasaporte ) > 20 ) {
+            wp_send_json_error( [ 'message' => 'El número de pasaporte no es válido (4-20 caracteres).' ] );
+        }
     }
 
     $chosen_tier = sanitize_key( $_POST['fmdb_afiliacion_tier'] ?? '' );
@@ -328,6 +343,8 @@ function fmdb_ajax_afiliacion_submit(): void {
         'fmdb_emergencia_nombre', 'fmdb_emergencia_telefono', 'fmdb_emergencia_parentesco',
         'fmdb_club', 'fmdb_representa_estado', 'fmdb_posicion',
         'fmdb_categoria', 'fmdb_modalidad', 'fmdb_asociacion_estado',
+        'fmdb_es_extranjero', 'fmdb_pais_origen', 'fmdb_pasaporte',
+        'fmdb_telefono_codigo_pais', 'fmdb_emergencia_codigo_pais',
     ];
     foreach ( $meta_keys as $key ) {
         if ( isset( $_POST[ $key ] ) ) {

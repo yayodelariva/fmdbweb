@@ -80,10 +80,16 @@ $v = [
 	'fmdb_posicion'              => $g( 'fmdb_posicion' ),
 	'fmdb_categoria'             => $g( 'fmdb_categoria' ),
 	'fmdb_modalidad'             => $g( 'fmdb_modalidad' ),
-	'fmdb_asociacion_estado'     => $g( 'fmdb_asociacion_estado' ),
+	'fmdb_asociacion_estado'       => $g( 'fmdb_asociacion_estado' ),
+	'fmdb_es_extranjero'           => (string) get_user_meta( $user_id, 'fmdb_es_extranjero', true ),
+	'fmdb_pais_origen'             => $g( 'fmdb_pais_origen' ),
+	'fmdb_pasaporte'               => $g( 'fmdb_pasaporte' ),
+	'fmdb_telefono_codigo_pais'    => esc_attr( (string) ( get_user_meta( $user_id, 'fmdb_telefono_codigo_pais',   true ) ?: '+52' ) ),
+	'fmdb_emergencia_codigo_pais'  => esc_attr( (string) ( get_user_meta( $user_id, 'fmdb_emergencia_codigo_pais', true ) ?: '+52' ) ),
 ];
 
-$states = fmdb_mexican_states();
+$states          = fmdb_mexican_states();
+$fmdb_countries  = fmdb_countries_data();
 
 get_header();
 ?>
@@ -251,7 +257,7 @@ get_header();
 								<?php endforeach; ?>
 							</select>
 						</div>
-						<div class="fmdb-registro__field">
+						<div class="fmdb-registro__field" id="fmdb-curp-wrap">
 							<label for="fmdb_curp">CURP <span class="fmdb-afil__req">*</span></label>
 							<input type="text" id="fmdb_curp" name="fmdb_curp"
 								value="<?php echo $v['fmdb_curp']; ?>"
@@ -262,11 +268,51 @@ get_header();
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
-							<input type="tel" id="fmdb_telefono" name="fmdb_telefono"
-								value="<?php echo $v['fmdb_telefono']; ?>"
-								required autocomplete="tel"
-								pattern="[0-9]+" inputmode="numeric"
-								oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+							<div class="fmdb-phone-wrap">
+								<select id="fmdb_telefono_codigo_pais" name="fmdb_telefono_codigo_pais" class="fmdb-phone-dial">
+									<?php foreach ( $fmdb_countries as [ $iso, $dial, $name_es ] ) : ?>
+										<option value="<?php echo esc_attr( $dial ); ?>"
+											<?php selected( $v['fmdb_telefono_codigo_pais'], $dial ); ?>>
+											<?php echo esc_html( $dial . ' ' . $name_es ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<input type="tel" id="fmdb_telefono" name="fmdb_telefono"
+									value="<?php echo $v['fmdb_telefono']; ?>"
+									required autocomplete="tel" inputmode="numeric"
+									oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+							</div>
+						</div>
+						<!-- Foreigner toggle — full width -->
+						<div class="fmdb-registro__field fmdb-afil__grid--span2 fmdb-afil__foreigner-row">
+							<label class="fmdb-afil__foreigner-label">
+								<input type="checkbox" id="fmdb_es_extranjero" name="fmdb_es_extranjero" value="1"
+									<?php checked( $v['fmdb_es_extranjero'], '1' ); ?>>
+								No tengo CURP — soy extranjero o no resido en México
+							</label>
+						</div>
+						<!-- Passport fields — shown when foreigner checkbox is on -->
+						<div class="fmdb-registro__field" id="fmdb-pais-wrap"
+							<?php echo $v['fmdb_es_extranjero'] !== '1' ? 'hidden' : ''; ?>>
+							<label for="fmdb_pais_origen">País de origen <span class="fmdb-afil__req">*</span></label>
+							<select id="fmdb_pais_origen" name="fmdb_pais_origen">
+								<option value="">Selecciona…</option>
+								<?php foreach ( $fmdb_countries as [ $iso, $dial, $name_es ] ) : ?>
+									<option value="<?php echo esc_attr( $iso ); ?>"
+										<?php selected( $v['fmdb_pais_origen'], $iso ); ?>>
+										<?php echo esc_html( $name_es ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+						<div class="fmdb-registro__field" id="fmdb-pasaporte-wrap"
+							<?php echo $v['fmdb_es_extranjero'] !== '1' ? 'hidden' : ''; ?>>
+							<label for="fmdb_pasaporte">Núm. de pasaporte <span class="fmdb-afil__req">*</span></label>
+							<input type="text" id="fmdb_pasaporte" name="fmdb_pasaporte"
+								value="<?php echo $v['fmdb_pasaporte']; ?>"
+								maxlength="20" placeholder="AB123456"
+								oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,''); fmdbPassportLiveCheck();">
+							<small id="fmdb-pasaporte-hint" class="fmdb-afil__field-note"></small>
 						</div>
 						<div class="fmdb-registro__field fmdb-afil__grid--span2">
 							<label>Correo electrónico</label>
@@ -334,10 +380,20 @@ get_header();
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_emergencia_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
-							<input type="tel" id="fmdb_emergencia_telefono" name="fmdb_emergencia_telefono"
-								value="<?php echo $v['fmdb_emergencia_telefono']; ?>"
-								required pattern="[0-9]+" inputmode="numeric"
-								oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+							<div class="fmdb-phone-wrap">
+								<select id="fmdb_emergencia_codigo_pais" name="fmdb_emergencia_codigo_pais" class="fmdb-phone-dial">
+									<?php foreach ( $fmdb_countries as [ $iso, $dial, $name_es ] ) : ?>
+										<option value="<?php echo esc_attr( $dial ); ?>"
+											<?php selected( $v['fmdb_emergencia_codigo_pais'], $dial ); ?>>
+											<?php echo esc_html( $dial . ' ' . $name_es ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<input type="tel" id="fmdb_emergencia_telefono" name="fmdb_emergencia_telefono"
+									value="<?php echo $v['fmdb_emergencia_telefono']; ?>"
+									required inputmode="numeric"
+									oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+							</div>
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_emergencia_parentesco">Parentesco <span class="fmdb-afil__req">*</span></label>
@@ -436,8 +492,6 @@ get_header();
 
 <script>
 // CURP structure validator (format only — RENAPO registry lookup requires a paid API).
-// Validates: 18 chars, letter/vowel/consonant positions, date range, sex code (H/M),
-// Mexican state code, consonant block, homoclave, verification digit.
 function fmdbValidateCURP(curp) {
 	if (!curp || curp.length !== 18) return 'El CURP debe tener exactamente 18 caracteres.';
 	var re = /^[A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[BCDFGHJKLMNPQRSTVWXYZ]{3}[0-9A-Z]\d$/;
@@ -450,6 +504,63 @@ function fmdbCURPLiveCheck(input) {
 	if (err && input.value.length === 18) input.reportValidity();
 }
 
+// Passport format patterns by ISO 3166-1 alpha-2 country code.
+var FMDB_PASSPORT_FORMATS = {
+	'AR':{re:/^[A-Z]{3}[0-9]{6}$/,ex:'ABC123456'},
+	'BO':{re:/^[0-9]{6,8}$/,ex:'12345678'},
+	'BR':{re:/^[A-Z]{2}[0-9]{6}$/,ex:'AB123456'},
+	'CA':{re:/^[A-Z]{2}[0-9]{6}$/,ex:'AB123456'},
+	'CL':{re:/^[A-Z][0-9]{7,9}$/,ex:'A12345678'},
+	'CO':{re:/^[A-Z]{2}[0-9]{6}$/,ex:'AB123456'},
+	'CR':{re:/^[A-Z][0-9]{7}$/,ex:'A1234567'},
+	'CU':{re:/^[A-Z][0-9]{7}$/,ex:'K1234567'},
+	'DE':{re:/^[A-Z0-9]{9}$/,ex:'C01X00T47'},
+	'DO':{re:/^[A-Z]{2}[0-9]{6}$/,ex:'AB123456'},
+	'EC':{re:/^[A-Z][0-9]{7,8}$/,ex:'A12345678'},
+	'ES':{re:/^[A-Z0-9]{9}$/,ex:'XYZ123456'},
+	'FR':{re:/^[0-9]{2}[A-Z]{2}[0-9]{5}$/,ex:'12AB12345'},
+	'GB':{re:/^[0-9]{9}$/,ex:'123456789'},
+	'GT':{re:/^[A-Z][0-9]{7}$/,ex:'A1234567'},
+	'HN':{re:/^[A-Z][0-9]{7}$/,ex:'A1234567'},
+	'IT':{re:/^[A-Z]{2}[0-9]{7}$/,ex:'AB1234567'},
+	'JP':{re:/^[A-Z]{2}[0-9]{7}$/,ex:'AB1234567'},
+	'MX':{re:/^[A-Z][0-9]{8}$/,ex:'G12345678'},
+	'NI':{re:/^[A-Z][0-9]{7}$/,ex:'A1234567'},
+	'PA':{re:/^[A-Z0-9]{9}$/,ex:'A12345678'},
+	'PE':{re:/^[A-Z0-9]{8,9}$/,ex:'AB123456'},
+	'PY':{re:/^[A-Z]{2}[0-9]{6}$/,ex:'AB123456'},
+	'SV':{re:/^[A-Z][0-9]{7}$/,ex:'A1234567'},
+	'US':{re:/^[A-Z0-9]{9}$/,ex:'A12345678'},
+	'UY':{re:/^[A-Z]{2}[0-9]{6}$/,ex:'AB123456'},
+	'VE':{re:/^[A-Z][0-9]{7,8}$/,ex:'A12345678'}
+};
+// Map ISO code → dial code (for auto-syncing the phone selector).
+var FMDB_DIAL_CODES = {
+	'AR':'+54','BO':'+591','BR':'+55','CA':'+1','CL':'+56','CO':'+57',
+	'CR':'+506','CU':'+53','DE':'+49','DO':'+1','EC':'+593','ES':'+34',
+	'FR':'+33','GB':'+44','GT':'+502','HN':'+504','IT':'+39','JP':'+81',
+	'MX':'+52','NI':'+505','PA':'+507','PE':'+51','PY':'+595','SV':'+503',
+	'US':'+1','UY':'+598','VE':'+58'
+};
+
+function fmdbValidatePassport(country, passport) {
+	if (!passport) return 'El número de pasaporte es obligatorio.';
+	var fmt = FMDB_PASSPORT_FORMATS[country];
+	if (fmt) {
+		if (!fmt.re.test(passport)) return 'Formato para este país: ' + fmt.ex;
+	} else {
+		if (!/^[A-Z0-9]{4,20}$/.test(passport)) return 'Ingresa entre 4 y 20 caracteres alfanuméricos.';
+	}
+	return null;
+}
+function fmdbPassportLiveCheck() {
+	var passInput = document.getElementById('fmdb_pasaporte');
+	var paisSel   = document.getElementById('fmdb_pais_origen');
+	if (!passInput) return;
+	var err = fmdbValidatePassport(paisSel ? paisSel.value : '', passInput.value);
+	passInput.setCustomValidity(err || '');
+}
+
 (function () {
 	var TOTAL = 5;
 	var current = 1;
@@ -459,6 +570,46 @@ function fmdbCURPLiveCheck(input) {
 	var btnPrev   = document.getElementById('fmdb-afil-prev');
 	var btnNext   = document.getElementById('fmdb-afil-next');
 	var btnSubmit = document.getElementById('fmdb-afil-submit');
+
+	// ── Foreigner toggle ──────────────────────────────────────────────────
+	var foreignerChk  = document.getElementById('fmdb_es_extranjero');
+	var curpInput     = document.getElementById('fmdb_curp');
+	var paisWrap      = document.getElementById('fmdb-pais-wrap');
+	var pasaporteWrap = document.getElementById('fmdb-pasaporte-wrap');
+	var paisSel       = document.getElementById('fmdb_pais_origen');
+	var pasInput      = document.getElementById('fmdb_pasaporte');
+	var dialSel       = document.getElementById('fmdb_telefono_codigo_pais');
+
+	function fmdbToggleForeigner(isForeigner) {
+		if (curpInput) {
+			curpInput.required = !isForeigner;
+			curpInput.disabled = isForeigner;
+			curpInput.setCustomValidity('');
+			if (isForeigner) curpInput.value = '';
+		}
+		if (paisWrap)      paisWrap.hidden      = !isForeigner;
+		if (pasaporteWrap) pasaporteWrap.hidden  = !isForeigner;
+		if (paisSel)       paisSel.required      = isForeigner;
+		if (pasInput) {
+			pasInput.required = isForeigner;
+			pasInput.setCustomValidity('');
+		}
+	}
+
+	if (foreignerChk) {
+		foreignerChk.addEventListener('change', function () { fmdbToggleForeigner(this.checked); });
+		fmdbToggleForeigner(foreignerChk.checked);
+	}
+
+	// Auto-update passport placeholder + phone dial code when origin country changes
+	if (paisSel) {
+		paisSel.addEventListener('change', function () {
+			var fmt = FMDB_PASSPORT_FORMATS[this.value];
+			if (pasInput) pasInput.placeholder = fmt ? fmt.ex : 'AB123456';
+			if (dialSel && FMDB_DIAL_CODES[this.value]) dialSel.value = FMDB_DIAL_CODES[this.value];
+		});
+	}
+	// ─────────────────────────────────────────────────────────────────────
 
 	function getStep(n) { return form.querySelector('[data-step="' + n + '"]'); }
 	function getDot(n)  { return document.querySelector('[data-step-dot="' + n + '"]'); }
@@ -502,16 +653,30 @@ function fmdbCURPLiveCheck(input) {
 		});
 		if (first) { first.focus(); first.reportValidity(); }
 
-		// CURP format check on step 1
 		if (n === 1) {
-			var curpInput = form.querySelector('#fmdb_curp');
-			if (curpInput && curpInput.value) {
-				var curpErr = fmdbValidateCURP(curpInput.value);
-				if (curpErr) {
-					curpInput.setCustomValidity(curpErr);
-					curpInput.focus();
-					curpInput.reportValidity();
-					ok = false;
+			var isForeigner = foreignerChk && foreignerChk.checked;
+			if (!isForeigner) {
+				// CURP format check
+				if (curpInput && curpInput.value) {
+					var curpErr = fmdbValidateCURP(curpInput.value);
+					if (curpErr) {
+						curpInput.setCustomValidity(curpErr);
+						curpInput.focus();
+						curpInput.reportValidity();
+						ok = false;
+					}
+				}
+			} else {
+				// Passport format check
+				if (pasInput && pasInput.value) {
+					var country = paisSel ? paisSel.value : '';
+					var passErr = fmdbValidatePassport(country, pasInput.value);
+					if (passErr) {
+						pasInput.setCustomValidity(passErr);
+						pasInput.focus();
+						pasInput.reportValidity();
+						ok = false;
+					}
 				}
 			}
 		}

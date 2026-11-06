@@ -348,6 +348,40 @@
 	border-color: #ffe082;
 }
 
+/* ── Phone with dial-code select ──────────────────────────────── */
+.fmdb-phone-wrap {
+	display: flex;
+	gap: 8px;
+	align-items: stretch;
+}
+.fmdb-phone-wrap .fmdb-phone-dial {
+	flex: 0 0 155px;
+	width: 155px !important; /* override .fmdb-registro__field select { width:100% } */
+}
+.fmdb-phone-wrap input[type="tel"] {
+	flex: 1;
+	min-width: 0;
+}
+
+/* ── Foreigner toggle row ──────────────────────────────────────── */
+.fmdb-afil__foreigner-row { margin-top: -4px; }
+.fmdb-afil__foreigner-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.85rem;
+	color: #555;
+	cursor: pointer;
+	user-select: none;
+}
+.fmdb-afil__foreigner-label input[type="checkbox"] {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	accent-color: var(--fmdb-green);
+	cursor: pointer;
+}
+
 /* Button hover */
 .fmdb-afil .fmdb-btn--primary:hover { background: #CEF9D7; color: #085041; border-color: #fff; }
 
@@ -364,4 +398,5 @@
 	.fmdb-afil__tier-grid { grid-template-columns: 1fr; }
 	.fmdb-afil__step-dot-label { display: none; }
 	.fmdb-afil__step-dot-line { margin-top: 17px; }
+	.fmdb-phone-wrap .fmdb-phone-dial { flex: 0 0 120px; width: 120px !important; }
 }
