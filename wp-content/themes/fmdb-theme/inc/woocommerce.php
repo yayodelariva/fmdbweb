@@ -296,15 +296,38 @@ function fmdb_ajax_afiliacion_submit(): void {
         wp_send_json_error( [ 'message' => 'El apellido materno es obligatorio.' ] );
     }
     if ( ! $es_extranjero ) {
-        $curp_raw = strtoupper( trim( $_POST['fmdb_curp'] ?? '' ) );
+        $curp_raw = mb_strtoupper( trim( $_POST['fmdb_curp'] ?? '' ), 'UTF-8' );
         if ( $curp_raw === '' ) {
             wp_send_json_error( [ 'message' => 'El CURP es obligatorio.' ] );
         }
-        $curp_re = '/^[A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM]'
+        // Structure: sex accepts X (non-binary, RENAPO 2023); inner consonants allow Ñ
+        $curp_re = '/^[A-ZÑ][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HMX]'
                  . '(?:AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR'
-                 . '|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[BCDFGHJKLMNPQRSTVWXYZ]{3}[0-9A-Z]\d$/';
+                 . '|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[BCDFGHJKLMNÑPQRSTVWXYZ]{3}[0-9A-Z]\d$/u';
         if ( ! preg_match( $curp_re, $curp_raw ) ) {
             wp_send_json_error( [ 'message' => 'El CURP no tiene un formato válido. Verifica fecha, código de estado y consonantes.' ] );
+        }
+        // Real calendar date validation (catches Feb 29 on non-leap years, etc.)
+        $curp_chars   = mb_str_split( $curp_raw, 1, 'UTF-8' );
+        $century_char = $curp_chars[16];
+        $century      = ctype_digit( $century_char ) ? 1900 : 2000;
+        $full_year    = $century + (int) ( $curp_chars[4] . $curp_chars[5] );
+        $curp_mm      = (int) ( $curp_chars[6] . $curp_chars[7] );
+        $curp_dd      = (int) ( $curp_chars[8] . $curp_chars[9] );
+        if ( ! checkdate( $curp_mm, $curp_dd, $full_year ) ) {
+            wp_send_json_error( [ 'message' => 'La fecha de nacimiento en el CURP no es válida.' ] );
+        }
+        // Check digit verification (RENAPO weighted-sum algorithm)
+        $curp_alpha  = '0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
+        $alpha_chars = mb_str_split( $curp_alpha, 1, 'UTF-8' );
+        $alpha_map   = array_flip( $alpha_chars );
+        $sum         = 0;
+        for ( $i = 0; $i < 17; $i++ ) {
+            $sum += ( $alpha_map[ $curp_chars[ $i ] ] ?? 0 ) * ( 18 - $i );
+        }
+        $expected_digit = ( 10 - $sum % 10 ) % 10;
+        if ( (int) $curp_chars[17] !== $expected_digit ) {
+            wp_send_json_error( [ 'message' => 'El dígito verificador del CURP no es correcto. Revisa que lo hayas escrito bien.' ] );
         }
     } else {
         $pais_origen = sanitize_key( $_POST['fmdb_pais_origen'] ?? '' );

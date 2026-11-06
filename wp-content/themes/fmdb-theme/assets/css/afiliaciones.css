@@ -363,23 +363,60 @@
 	min-width: 0;
 }
 
-/* ── Foreigner toggle row ──────────────────────────────────────── */
-.fmdb-afil__foreigner-row { margin-top: -4px; }
-.fmdb-afil__foreigner-label {
-	display: inline-flex;
+/* ── Nationality segmented selector ───────────────────────────── */
+.fmdb-afil__nat-row {
+	display: flex;
 	align-items: center;
-	gap: 8px;
-	font-size: 0.85rem;
-	color: #555;
-	cursor: pointer;
-	user-select: none;
+	gap: 14px;
+	padding: 24px 40px 4px;
+	flex-wrap: wrap;
 }
-.fmdb-afil__foreigner-label input[type="checkbox"] {
-	width: 16px;
-	height: 16px;
-	flex-shrink: 0;
-	accent-color: var(--fmdb-green);
+.fmdb-afil__nat-label {
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var(--fmdb-dark-green);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+.fmdb-afil__nat-seg {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	border: 2px solid var(--fmdb-green);
+	border-radius: 8px;
+	overflow: hidden;
+}
+.fmdb-afil__nat-seg input[type="radio"] {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+	width: 0;
+	height: 0;
+}
+.fmdb-afil__nat-seg label {
+	text-align: center;
+	padding: 9px 22px;
+	font-weight: 700;
+	font-size: 0.88rem;
 	cursor: pointer;
+	color: var(--fmdb-green);
+	background: #fff;
+	transition: background 0.18s, color 0.18s;
+	user-select: none;
+	margin: 0;
+}
+.fmdb-afil__nat-seg input[type="radio"]:checked + label {
+	background: var(--fmdb-green);
+	color: #fff;
+}
+.fmdb-afil__nat-seg input[type="radio"]:focus-visible + label {
+	outline: 2px solid var(--fmdb-dark-green);
+	outline-offset: -4px;
+}
+
+/* Stacked second label inside passport section */
+.fmdb-afil__passport-label {
+	display: block;
+	margin-top: 12px;
 }
 
 /* Button hover */
@@ -390,6 +427,7 @@
 	.fmdb-afil { padding: 0 0 40px; }
 	.fmdb-afil__card { border-radius: 0 0 16px 16px; }
 	.fmdb-afil__header { padding: 28px 20px 24px; }
+	.fmdb-afil__nat-row { padding: 16px 20px 4px; }
 	.fmdb-afil__steps-nav { padding: 24px 20px 0; }
 	.fmdb-afil__form { padding: 0 20px; }
 	.fmdb-afil__already { padding: 24px 20px 32px; }

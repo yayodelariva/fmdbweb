@@ -185,6 +185,19 @@ get_header();
 			if ( ! $has_success ) :
 			?>
 
+			<!-- Nationality selector — always visible above the steps -->
+			<div class="fmdb-afil__nat-row">
+				<span class="fmdb-afil__nat-label">Nacionalidad</span>
+				<div class="fmdb-afil__nat-seg">
+					<input type="radio" id="nat_mx" name="fmdb_nat_ui" value="mexican"
+						<?php echo $v['fmdb_es_extranjero'] !== '1' ? 'checked' : ''; ?>>
+					<label for="nat_mx">Mexicana</label>
+					<input type="radio" id="nat_fx" name="fmdb_nat_ui" value="foreign"
+						<?php echo $v['fmdb_es_extranjero'] === '1' ? 'checked' : ''; ?>>
+					<label for="nat_fx">Extranjera</label>
+				</div>
+			</div>
+
 			<!-- Step indicator -->
 			<div class="fmdb-afil__steps-nav" aria-label="Progreso del formulario">
 				<?php
@@ -209,6 +222,7 @@ get_header();
 
 			<form class="fmdb-afil__form" method="post" id="fmdb-afil-form" novalidate>
 				<?php wp_nonce_field( 'fmdb_afiliacion_form', 'fmdb_afiliacion_nonce' ); ?>
+				<input type="hidden" id="fmdb_es_extranjero" name="fmdb_es_extranjero" value="<?php echo esc_attr( $v['fmdb_es_extranjero'] ); ?>">
 
 				<!-- ─── Step 1: Datos personales ─────────────────────────────── -->
 				<div class="fmdb-afil__step is-active" data-step="1">
@@ -257,14 +271,35 @@ get_header();
 								<?php endforeach; ?>
 							</select>
 						</div>
-						<div class="fmdb-registro__field" id="fmdb-curp-wrap">
-							<label for="fmdb_curp">CURP <span class="fmdb-afil__req">*</span></label>
-							<input type="text" id="fmdb_curp" name="fmdb_curp"
-								value="<?php echo $v['fmdb_curp']; ?>"
-								maxlength="18" minlength="18" placeholder="ABCD000101HXYZXY09"
-								oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,''); fmdbCURPLiveCheck(this);"
-								onblur="fmdbCURPLiveCheck(this);"
-								required>
+						<!-- Identity: CURP (Mexican) or Country+Passport (Foreign) — same grid cell -->
+						<div class="fmdb-registro__field">
+							<div id="fmdb-curp-section" <?php echo $v['fmdb_es_extranjero'] === '1' ? 'hidden' : ''; ?>>
+								<label for="fmdb_curp">CURP <span class="fmdb-afil__req">*</span></label>
+								<input type="text" id="fmdb_curp" name="fmdb_curp"
+									value="<?php echo $v['fmdb_curp']; ?>"
+									maxlength="18" minlength="18" placeholder="ABCD000101HXYZXY09"
+									oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9Ñ]/g,''); fmdbCURPLiveCheck(this);"
+									onblur="fmdbCURPLiveCheck(this);"
+									required>
+							</div>
+							<div id="fmdb-passport-section" <?php echo $v['fmdb_es_extranjero'] !== '1' ? 'hidden' : ''; ?>>
+								<label for="fmdb_pais_origen">País de origen <span class="fmdb-afil__req">*</span></label>
+								<select id="fmdb_pais_origen" name="fmdb_pais_origen">
+									<option value="">Selecciona…</option>
+									<?php foreach ( $fmdb_countries as [ $iso, $dial, $name_es ] ) : ?>
+										<option value="<?php echo esc_attr( $iso ); ?>"
+											<?php selected( $v['fmdb_pais_origen'], $iso ); ?>>
+											<?php echo esc_html( $name_es ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<label for="fmdb_pasaporte" class="fmdb-afil__passport-label">Núm. de pasaporte <span class="fmdb-afil__req">*</span></label>
+								<input type="text" id="fmdb_pasaporte" name="fmdb_pasaporte"
+									value="<?php echo $v['fmdb_pasaporte']; ?>"
+									maxlength="20" placeholder="AB123456"
+									oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,''); fmdbPassportLiveCheck();">
+								<small id="fmdb-pasaporte-hint" class="fmdb-afil__field-note"></small>
+							</div>
 						</div>
 						<div class="fmdb-registro__field">
 							<label for="fmdb_telefono">Teléfono <span class="fmdb-afil__req">*</span></label>
@@ -282,37 +317,6 @@ get_header();
 									required autocomplete="tel" inputmode="numeric"
 									oninput="this.value=this.value.replace(/[^0-9]/g,'')">
 							</div>
-						</div>
-						<!-- Foreigner toggle — full width -->
-						<div class="fmdb-registro__field fmdb-afil__grid--span2 fmdb-afil__foreigner-row">
-							<label class="fmdb-afil__foreigner-label">
-								<input type="checkbox" id="fmdb_es_extranjero" name="fmdb_es_extranjero" value="1"
-									<?php checked( $v['fmdb_es_extranjero'], '1' ); ?>>
-								No tengo CURP — soy extranjero o no resido en México
-							</label>
-						</div>
-						<!-- Passport fields — shown when foreigner checkbox is on -->
-						<div class="fmdb-registro__field" id="fmdb-pais-wrap"
-							<?php echo $v['fmdb_es_extranjero'] !== '1' ? 'hidden' : ''; ?>>
-							<label for="fmdb_pais_origen">País de origen <span class="fmdb-afil__req">*</span></label>
-							<select id="fmdb_pais_origen" name="fmdb_pais_origen">
-								<option value="">Selecciona…</option>
-								<?php foreach ( $fmdb_countries as [ $iso, $dial, $name_es ] ) : ?>
-									<option value="<?php echo esc_attr( $iso ); ?>"
-										<?php selected( $v['fmdb_pais_origen'], $iso ); ?>>
-										<?php echo esc_html( $name_es ); ?>
-									</option>
-								<?php endforeach; ?>
-							</select>
-						</div>
-						<div class="fmdb-registro__field" id="fmdb-pasaporte-wrap"
-							<?php echo $v['fmdb_es_extranjero'] !== '1' ? 'hidden' : ''; ?>>
-							<label for="fmdb_pasaporte">Núm. de pasaporte <span class="fmdb-afil__req">*</span></label>
-							<input type="text" id="fmdb_pasaporte" name="fmdb_pasaporte"
-								value="<?php echo $v['fmdb_pasaporte']; ?>"
-								maxlength="20" placeholder="AB123456"
-								oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,''); fmdbPassportLiveCheck();">
-							<small id="fmdb-pasaporte-hint" class="fmdb-afil__field-note"></small>
 						</div>
 						<div class="fmdb-registro__field fmdb-afil__grid--span2">
 							<label>Correo electrónico</label>
@@ -491,11 +495,58 @@ get_header();
 </main>
 
 <script>
-// CURP structure validator (format only — RENAPO registry lookup requires a paid API).
+// CURP validator: structure + real date + check digit (RENAPO weighted-sum algorithm).
+var CURP_ALPHA = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"; // 37 chars, includes Ñ
+
 function fmdbValidateCURP(curp) {
 	if (!curp || curp.length !== 18) return 'El CURP debe tener exactamente 18 caracteres.';
-	var re = /^[A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[BCDFGHJKLMNPQRSTVWXYZ]{3}[0-9A-Z]\d$/;
-	if (!re.test(curp)) return 'El CURP no tiene un formato válido. Revisa fecha, código de estado y consonantes.';
+
+	// Name letters (pos 1-4)
+	if (!/^[A-ZÑ][AEIOUX][A-Z]{2}/.test(curp))
+		return 'Las primeras 4 posiciones no son válidas (inicial, vocal interna, apellidos).';
+
+	// Birthdate YYMMDD (pos 5-10) — validate as a real calendar date
+	var yy = parseInt(curp.slice(4, 6), 10);
+	var mm = parseInt(curp.slice(6, 8), 10);
+	var dd = parseInt(curp.slice(8, 10), 10);
+	var centuryChar = curp[16];
+	var century = /\d/.test(centuryChar) ? 1900 : 2000;
+	var fullYear = century + yy;
+	var dateObj = new Date(fullYear, mm - 1, dd);
+	if (dateObj.getFullYear() !== fullYear || dateObj.getMonth() !== mm - 1 || dateObj.getDate() !== dd)
+		return 'La fecha de nacimiento en el CURP no es válida (verifica día, mes y año).';
+
+	// Sex: H (male), M (female) or X (non-binary — RENAPO 2023)
+	if (!/^[HMX]$/.test(curp[10]))
+		return 'El código de sexo (pos. 11) debe ser H, M o X.';
+
+	// State code (pos 12-13)
+	if (!/^(AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)$/.test(curp.slice(11, 13)))
+		return 'El código de estado "' + curp.slice(11, 13) + '" no es válido.';
+
+	// Inner consonants (pos 14-16) — allows Ñ
+	if (!/^[B-DF-HJ-NP-TV-ZÑ]{3}$/.test(curp.slice(13, 16)))
+		return 'Las posiciones 14-16 deben ser consonantes internas (puede incluir Ñ).';
+
+	// Century character (pos 17): digit = born 1900s, letter = 2000s
+	if (!/^[A-Z0-9]$/.test(curp[16]))
+		return 'La posición 17 debe ser una letra o un dígito.';
+
+	// Check digit (pos 18) must be numeric
+	if (!/^\d$/.test(curp[17]))
+		return 'La posición 18 (dígito verificador) debe ser numérica.';
+
+	// Verify check digit using RENAPO weighted-sum algorithm
+	for (var i = 0; i < 17; i++) {
+		if (CURP_ALPHA.indexOf(curp[i]) === -1)
+			return 'El CURP contiene un carácter no permitido en posición ' + (i + 1) + '.';
+	}
+	var sum = 0;
+	for (var i = 0; i < 17; i++) sum += CURP_ALPHA.indexOf(curp[i]) * (18 - i);
+	var expected = (10 - (sum % 10)) % 10;
+	if (parseInt(curp[17], 10) !== expected)
+		return 'Dígito verificador incorrecto (debería ser ' + expected + ', no ' + curp[17] + ').';
+
 	return null;
 }
 function fmdbCURPLiveCheck(input) {
@@ -571,40 +622,45 @@ function fmdbPassportLiveCheck() {
 	var btnNext   = document.getElementById('fmdb-afil-next');
 	var btnSubmit = document.getElementById('fmdb-afil-submit');
 
-	// ── Foreigner toggle ──────────────────────────────────────────────────
-	var foreignerChk     = document.getElementById('fmdb_es_extranjero');
+	// ── Nationality selector (outside form) → hidden input sync ──────────
+	var natHidden        = document.getElementById('fmdb_es_extranjero');
+	var curpSection      = document.getElementById('fmdb-curp-section');
+	var passportSection  = document.getElementById('fmdb-passport-section');
 	var curpInput        = document.getElementById('fmdb_curp');
-	var paisWrap         = document.getElementById('fmdb-pais-wrap');
-	var pasaporteWrap    = document.getElementById('fmdb-pasaporte-wrap');
 	var paisSel          = document.getElementById('fmdb_pais_origen');
 	var pasInput         = document.getElementById('fmdb_pasaporte');
 	var dialSel          = document.getElementById('fmdb_telefono_codigo_pais');
 	var apellidoMatInput = document.getElementById('fmdb_apellido_materno');
 	var apellidoMatReq   = document.getElementById('fmdb-apellido-mat-req');
 
+	function isForeignerSelected() {
+		var fx = document.getElementById('nat_fx');
+		return fx ? fx.checked : false;
+	}
+
 	function fmdbToggleForeigner(isForeigner) {
+		if (natHidden) natHidden.value = isForeigner ? '1' : '';
+		if (curpSection)    curpSection.hidden    = isForeigner;
+		if (passportSection) passportSection.hidden = !isForeigner;
 		if (curpInput) {
 			curpInput.required = !isForeigner;
 			curpInput.disabled = isForeigner;
 			curpInput.setCustomValidity('');
 			if (isForeigner) curpInput.value = '';
 		}
-		if (paisWrap)      paisWrap.hidden      = !isForeigner;
-		if (pasaporteWrap) pasaporteWrap.hidden  = !isForeigner;
-		if (paisSel)       paisSel.required      = isForeigner;
+		if (paisSel)  paisSel.required  = isForeigner;
 		if (pasInput) {
 			pasInput.required = isForeigner;
 			pasInput.setCustomValidity('');
 		}
-		// Apellido materno is optional for foreigners
 		if (apellidoMatInput) apellidoMatInput.required = !isForeigner;
 		if (apellidoMatReq)   apellidoMatReq.hidden      = isForeigner;
 	}
 
-	if (foreignerChk) {
-		foreignerChk.addEventListener('change', function () { fmdbToggleForeigner(this.checked); });
-		fmdbToggleForeigner(foreignerChk.checked);
-	}
+	document.querySelectorAll('input[name="fmdb_nat_ui"]').forEach(function (r) {
+		r.addEventListener('change', function () { fmdbToggleForeigner(isForeignerSelected()); });
+	});
+	fmdbToggleForeigner(isForeignerSelected());
 
 	// Auto-update passport placeholder + phone dial code when origin country changes
 	if (paisSel) {
@@ -659,7 +715,7 @@ function fmdbPassportLiveCheck() {
 		if (first) { first.focus(); first.reportValidity(); }
 
 		if (n === 1) {
-			var isForeigner = foreignerChk && foreignerChk.checked;
+			var isForeigner = isForeignerSelected();
 			if (!isForeigner) {
 				// CURP format check
 				if (curpInput && curpInput.value) {
