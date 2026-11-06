@@ -191,6 +191,7 @@ function fmdb_render_affiliation_profile_fields( $user ) {
                     <option value=""         <?php selected( $status, '' );         ?>>Sin verificar</option>
                     <option value="pending"  <?php selected( $status, 'pending' );  ?>>En revisión</option>
                     <option value="verified" <?php selected( $status, 'verified' ); ?>>Verificado</option>
+                    <option value="expired"  <?php selected( $status, 'expired' );  ?>>Expirado</option>
                     <option value="rejected" <?php selected( $status, 'rejected' ); ?>>Rechazado</option>
                 </select>
                 <p class="description">Cambiar el estado aquí omite el flujo de aprobación por correo.</p>
@@ -219,13 +220,27 @@ function fmdb_render_affiliation_data_fields( WP_User $user ): void {
     <h2>Datos personales</h2>
     <table class="form-table" role="presentation">
         <?php
-        $text_row( 'Apellido materno',   'fmdb_apellido_materno' );
-        $text_row( 'Fecha de nacimiento','fmdb_fecha_nacimiento' );
-        $text_row( 'Género',             'fmdb_genero' );
-        $text_row( 'CURP',               'fmdb_curp' );
-        $text_row( 'Teléfono',           'fmdb_telefono' );
-        $text_row( 'Tipo de sangre',     'fmdb_tipo_sangre' );
-        $text_row( 'Email de tutor',     'fmdb_email_tutor' );
+        $text_row( 'Apellido materno',    'fmdb_apellido_materno' );
+        $text_row( 'Fecha de nacimiento', 'fmdb_fecha_nacimiento' );
+        $text_row( 'Género',              'fmdb_genero' );
+        ?>
+        <tr>
+            <th><label for="fmdb_es_extranjero">Nacionalidad</label></th>
+            <td>
+                <select name="fmdb_es_extranjero" id="fmdb_es_extranjero">
+                    <option value=""  <?php selected( get_user_meta( $user->ID, 'fmdb_es_extranjero', true ), '' );  ?>>Mexicana</option>
+                    <option value="1" <?php selected( get_user_meta( $user->ID, 'fmdb_es_extranjero', true ), '1' ); ?>>Extranjera</option>
+                </select>
+            </td>
+        </tr>
+        <?php
+        $text_row( 'CURP',            'fmdb_curp' );
+        $text_row( 'País de origen',  'fmdb_pais_origen' );
+        $text_row( 'Núm. pasaporte',  'fmdb_pasaporte' );
+        $text_row( 'Cód. tel.',       'fmdb_telefono_codigo_pais' );
+        $text_row( 'Teléfono',        'fmdb_telefono' );
+        $text_row( 'Tipo de sangre',  'fmdb_tipo_sangre' );
+        $text_row( 'Email de tutor',  'fmdb_email_tutor' );
         ?>
     </table>
 
@@ -243,6 +258,7 @@ function fmdb_render_affiliation_data_fields( WP_User $user ): void {
     <table class="form-table" role="presentation">
         <?php
         $text_row( 'Nombre',      'fmdb_emergencia_nombre' );
+        $text_row( 'Cód. tel.',   'fmdb_emergencia_codigo_pais' );
         $text_row( 'Teléfono',    'fmdb_emergencia_telefono' );
         $text_row( 'Parentesco',  'fmdb_emergencia_parentesco' );
         ?>
@@ -284,7 +300,7 @@ function fmdb_save_affiliation_profile_fields( $user_id ) {
     }
     if ( isset( $_POST['fmdb_affiliation_status'] ) ) {
         $status = sanitize_key( wp_unslash( $_POST['fmdb_affiliation_status'] ) );
-        $allowed = [ '', 'pending', 'verified', 'rejected' ];
+        $allowed = [ '', 'pending', 'verified', 'expired', 'rejected' ];
         if ( in_array( $status, $allowed, true ) ) {
             update_user_meta( $user_id, 'fmdb_affiliation_status', $status );
             if ( $status !== 'pending' ) {
@@ -294,10 +310,12 @@ function fmdb_save_affiliation_profile_fields( $user_id ) {
     }
 
     $text_fields = [
-        'fmdb_apellido_materno', 'fmdb_fecha_nacimiento', 'fmdb_genero', 'fmdb_curp',
-        'fmdb_telefono', 'fmdb_tipo_sangre', 'fmdb_email_tutor',
+        'fmdb_apellido_materno', 'fmdb_fecha_nacimiento', 'fmdb_genero',
+        'fmdb_es_extranjero', 'fmdb_curp', 'fmdb_pais_origen', 'fmdb_pasaporte',
+        'fmdb_telefono_codigo_pais', 'fmdb_telefono', 'fmdb_tipo_sangre', 'fmdb_email_tutor',
         'fmdb_direccion', 'fmdb_ciudad', 'fmdb_estado', 'fmdb_codigo_postal',
-        'fmdb_emergencia_nombre', 'fmdb_emergencia_telefono', 'fmdb_emergencia_parentesco',
+        'fmdb_emergencia_nombre', 'fmdb_emergencia_codigo_pais', 'fmdb_emergencia_telefono',
+        'fmdb_emergencia_parentesco',
         'fmdb_tipo_afiliacion', 'fmdb_folio_pago', 'fmdb_precio_afiliacion',
         'fmdb_vigencia', 'fmdb_fecha_creacion',
         'fmdb_club', 'fmdb_representa_estado', 'fmdb_posicion',
@@ -467,7 +485,11 @@ function fmdb_render_affiliation_data_page(): void {
         'orderby'    => 'meta_value',
         'meta_key'   => 'fmdb_affiliation_id',
         'order'      => 'ASC',
-        'meta_query' => [ [ 'key' => 'fmdb_affiliation_status', 'value' => 'verified' ] ],
+        'meta_query' => [ [
+            'key'     => 'fmdb_affiliation_status',
+            'value'   => [ 'verified', 'expired' ],
+            'compare' => 'IN',
+        ] ],
     ] );
 
     $um = fn( int $id, string $key ) => esc_html( (string) get_user_meta( $id, $key, true ) );
@@ -483,31 +505,39 @@ function fmdb_render_affiliation_data_page(): void {
         $out = fopen( 'php://output', 'w' );
         fwrite( $out, "\xEF\xBB\xBF" );
         fputcsv( $out, [
-            'NUI', 'Nombre', 'Apellido paterno', 'Apellido materno', 'Fecha nacimiento',
-            'Género', 'CURP', 'Tipo sangre', 'Email', 'Email tutor', 'Teléfono',
-            'Dirección', 'Ciudad', 'Estado', 'CP',
-            'Emergencia nombre', 'Emergencia tel.', 'Emergencia parentesco',
+            'NUI', 'Estado', 'Nombre', 'Apellido paterno', 'Apellido materno', 'Fecha nacimiento',
+            'Género', 'Nacionalidad', 'CURP', 'País origen', 'Núm. pasaporte',
+            'Tipo sangre', 'Email', 'Email tutor',
+            'Cód. tel.', 'Teléfono', 'Dirección', 'Ciudad', 'Estado/Prov.', 'CP',
+            'Emergencia nombre', 'Emergencia cód.', 'Emergencia tel.', 'Emergencia parentesco',
             'Tipo afiliación', 'Folio pago', 'Precio', 'Vigencia', 'Fecha creación',
             'Club', 'Representa estado', 'Posición', 'Categoría', 'Modalidad', 'Asociación/estado',
         ] );
         foreach ( $users as $u ) {
-            $id = $u->ID;
+            $id  = $u->ID;
+            $ext = get_user_meta( $id, 'fmdb_es_extranjero', true ) === '1';
             fputcsv( $out, [
                 get_user_meta( $id, 'fmdb_affiliation_id', true ),
+                fmdb_affiliation_status( $id ),
                 $u->first_name, $u->last_name,
                 get_user_meta( $id, 'fmdb_apellido_materno', true ),
                 get_user_meta( $id, 'fmdb_fecha_nacimiento', true ),
                 get_user_meta( $id, 'fmdb_genero', true ),
-                get_user_meta( $id, 'fmdb_curp', true ),
+                $ext ? 'Extranjera' : 'Mexicana',
+                $ext ? '' : get_user_meta( $id, 'fmdb_curp', true ),
+                $ext ? get_user_meta( $id, 'fmdb_pais_origen', true ) : '',
+                $ext ? get_user_meta( $id, 'fmdb_pasaporte', true )   : '',
                 get_user_meta( $id, 'fmdb_tipo_sangre', true ),
                 $u->user_email,
                 get_user_meta( $id, 'fmdb_email_tutor', true ),
+                get_user_meta( $id, 'fmdb_telefono_codigo_pais', true ),
                 get_user_meta( $id, 'fmdb_telefono', true ),
                 get_user_meta( $id, 'fmdb_direccion', true ),
                 get_user_meta( $id, 'fmdb_ciudad', true ),
                 get_user_meta( $id, 'fmdb_estado', true ),
                 get_user_meta( $id, 'fmdb_codigo_postal', true ),
                 get_user_meta( $id, 'fmdb_emergencia_nombre', true ),
+                get_user_meta( $id, 'fmdb_emergencia_codigo_pais', true ),
                 get_user_meta( $id, 'fmdb_emergencia_telefono', true ),
                 get_user_meta( $id, 'fmdb_emergencia_parentesco', true ),
                 get_user_meta( $id, 'fmdb_tipo_afiliacion', true ),
@@ -541,7 +571,7 @@ function fmdb_render_affiliation_data_page(): void {
                 Exportar CSV
             </a>
         </h1>
-        <p style="color:#666;"><?php echo count( $users ); ?> afiliados verificados</p>
+        <p style="color:#666;"><?php echo count( $users ); ?> afiliados (verificados + expirados)</p>
 
         <div style="overflow-x:auto;">
         <table class="wp-list-table widefat fixed striped" style="font-size:12px;min-width:1400px;">
@@ -584,9 +614,23 @@ function fmdb_render_affiliation_data_page(): void {
                     </td>
                     <td><?php echo $um( $id, 'fmdb_genero' ); ?></td>
                     <td style="white-space:nowrap;"><?php echo $um( $id, 'fmdb_fecha_nacimiento' ); ?></td>
-                    <td><small><?php echo $um( $id, 'fmdb_curp' ); ?></small></td>
+                    <td><small><?php
+                        if ( get_user_meta( $id, 'fmdb_es_extranjero', true ) === '1' ) {
+                            $pais = $um( $id, 'fmdb_pais_origen' );
+                            $pas  = $um( $id, 'fmdb_pasaporte' );
+                            echo $pais ? esc_html( $pais ) . '<br>' : '';
+                            echo $pas  ? '<code>' . esc_html( $pas ) . '</code>' : '<em style="color:#999;">—</em>';
+                        } else {
+                            echo $um( $id, 'fmdb_curp' ) ?: '<em style="color:#999;">—</em>';
+                        }
+                    ?></small></td>
                     <td><small><?php echo esc_html( $u->user_email ); ?></small></td>
-                    <td><?php echo $um( $id, 'fmdb_telefono' ); ?></td>
+                    <td style="white-space:nowrap;"><?php
+                        $tel_code = $um( $id, 'fmdb_telefono_codigo_pais' );
+                        $tel_num  = $um( $id, 'fmdb_telefono' );
+                        if ( $tel_code && $tel_num ) echo esc_html( $tel_code ) . ' ';
+                        echo esc_html( $tel_num );
+                    ?></td>
                     <td>
                         <?php echo $um( $id, 'fmdb_ciudad' ); ?>
                         <?php $estado = $um( $id, 'fmdb_estado' ); if ( $estado ) echo '<br><small style="color:#888;">' . $estado . '</small>'; ?>
